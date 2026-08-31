@@ -10,7 +10,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import { SKIP_WAITING, activateUpdate, onUpdateReady } from '../swUpdate.js';
+import { SKIP_WAITING, activateUpdate, onUpdateReady, resolveRegistration } from '../swUpdate.js';
 import type { UpdatableRegistration, WaitingWorker } from '../swUpdate.js';
 
 function fakeWorker(): WaitingWorker & { messages: unknown[] } {
@@ -124,3 +124,27 @@ describe('activateUpdate', () => {
   });
 });
 
+describe('resolveRegistration', () => {
+  it('uses the registration that already exists', async () => {
+    const existing = { id: 1 };
+    const never = new Promise<typeof existing>(() => {});
+    const reg = await resolveRegistration({
+      getRegistration: () => Promise.resolve(existing),
+      ready: never,
+    });
+    expect(reg).toBe(existing);
+  });
+
+  it('waits for `ready` when registration has not happened yet', async () => {
+    // The cold-visit order: React commits its effects before main.tsx's
+    // `load` listener registers anything, so getRegistration resolves
+    // undefined. A bare getRegistration() would subscribe to nothing and the
+    // bar would never appear on a first visit.
+    const late = { id: 2 };
+    const reg = await resolveRegistration({
+      getRegistration: () => Promise.resolve(undefined),
+      ready: Promise.resolve(late),
+    });
+    expect(reg).toBe(late);
+  });
+});

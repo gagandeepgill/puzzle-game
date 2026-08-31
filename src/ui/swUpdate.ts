@@ -70,6 +70,29 @@ export function onUpdateReady(
 }
 
 /**
+ * Get a registration, whether or not one exists yet.
+ *
+ * `main.tsx` registers inside a `load` listener, and React commits its effects
+ * before `load` fires on a page still fetching fonts. So on a cold first visit
+ * the order is: React mounts, the effect calls `getRegistration()`, that
+ * resolves `undefined`, `load` fires, registration happens, and nobody is
+ * listening. It only appeared to work because every visit after the first has
+ * a registration already.
+ *
+ * `ready` covers the gap. It resolves once a worker is active, which is
+ * exactly the moment there is something to subscribe to. It never resolves
+ * when the page has no worker at all, which is correct: there is nothing to
+ * announce, and the caller's cancel flag stops the pending promise doing
+ * anything on unmount.
+ */
+export async function resolveRegistration<R>(container: {
+  getRegistration(): Promise<R | undefined>;
+  readonly ready: Promise<R>;
+}): Promise<R> {
+  return (await container.getRegistration()) ?? container.ready;
+}
+
+/**
  * Hand over to the waiting worker, then reload once it has taken control.
  *
  * Reloading on `controllerchange` rather than immediately: posting the message
