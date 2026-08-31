@@ -3,7 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Arcade</title>
+<!-- pwa:start -->
+<meta name="description" content="Two original puzzle games. Build a marble scoring machine in Payload, or route the gold through Ledger Lane. New daily run every day.">
+<meta name="theme-color" content="#131519">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Arcade">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Payload Arcade">
+<meta property="og:description" content="Two original puzzle games. Build a marble scoring machine in Payload, or route the gold through Ledger Lane. New daily run every day.">
+<meta property="og:image" content="icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<!-- pwa:end -->
+<title>Payload Arcade</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap">
 <style>
   :root {
@@ -43,6 +59,12 @@
   a.game.payload .tag { color: var(--brass); border: 1px solid var(--brass); }
   a.game.ledger:hover { border-color: var(--gold); }
   a.game.ledger .tag { color: var(--gold); border: 1px solid var(--gold); }
+  .install { font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+    color: var(--brass); background: none; border: 1px dashed var(--brass);
+    border-radius: 11px; padding: 12px; text-align: center; }
+  .install[hidden] { display: none; }
+  .install:hover { background: rgba(217,164,65,.07); }
+  .install:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
   footer { color: var(--steel); font-size: 12px; line-height: 1.6;
     border-top: 1px solid var(--edge); padding-top: 14px; }
 </style>
@@ -50,7 +72,7 @@
 <body>
   <div class="app">
     <div>
-      <h1>The <span>Arcade</span></h1>
+      <h1>Payload <span>Arcade</span></h1>
       <p class="sub">Two original machines. Pick your poison.</p>
     </div>
 
@@ -70,8 +92,61 @@
       <span class="tag">ROUTING PUZZLE</span>
     </a>
 
-    <footer>Prototype arcade — each game is a single self-contained HTML file.
-    Open this page in any browser, no build step, no server.</footer>
+    <button class="install" id="install" hidden></button>
+
+    <footer>Each game is a single self-contained HTML file — install the arcade and
+    both play fully offline, no account, no tracking, nothing stored off your device.</footer>
   </div>
+<script>
+  // Install affordance. Chromium fires beforeinstallprompt and gives us a real
+  // prompt; iOS Safari has no such API, so it gets the Share-sheet instruction
+  // instead — and only when not already running installed.
+  (() => {
+    const btn = document.getElementById('install');
+    const dismissed = () => { try { return localStorage.getItem('arcade.install.v1') === 'off'; } catch (e) { return false; } };
+    const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (standalone || dismissed()) return;
+
+    let deferred = null;
+    addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferred = e;
+      btn.textContent = '⤓ Install the arcade';
+      btn.hidden = false;
+    });
+    btn.addEventListener('click', async () => {
+      if (!deferred) return;
+      btn.hidden = true;
+      deferred.prompt();
+      await deferred.userChoice;
+      deferred = null;
+    });
+    addEventListener('appinstalled', () => {
+      btn.hidden = true;
+      try { localStorage.setItem('arcade.install.v1', 'off'); } catch (e) {}
+    });
+
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (iOS && !deferred) {
+      btn.textContent = '⤓ Add to Home Screen: tap Share, then “Add to Home Screen”';
+      btn.hidden = false;
+      btn.addEventListener('click', () => {
+        btn.hidden = true;
+        try { localStorage.setItem('arcade.install.v1', 'off'); } catch (e) {}
+      });
+    }
+  })();
+</script>
+<!-- sw:start -->
+<script>
+  // Registration is best-effort: the games are fully playable without it, and it
+  // throws on file:// and other insecure origins.
+  if ('serviceWorker' in navigator) {
+    addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+<!-- sw:end -->
 </body>
 </html>

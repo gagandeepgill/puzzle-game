@@ -1,7 +1,22 @@
-# puzzle-game
+# Payload Arcade
 
-A small arcade of original browser games. Open [`demo/index.html`](demo/index.html) in
-any browser — no build step, no server. Each game is a single self-contained HTML file.
+A small arcade of original browser games, shipped as an installable PWA. Each game is
+a single self-contained HTML file — no framework, no build step, no backend.
+
+```bash
+node tools/serve.js          # http://localhost:8000
+```
+
+Open [`demo/index.html`](demo/index.html) directly for quick edits, but use the server
+when testing anything installable: service workers and the install prompt need
+http/https and do not run from `file://`.
+
+**Deploying:** `demo/` is published verbatim. The
+[GitHub Pages workflow](.github/workflows/deploy.yml) does it on every push to `main`
+(enable Pages → Source: GitHub Actions, once); [`netlify.toml`](netlify.toml) is there
+as an alternative. Installed, the arcade plays fully offline — both games, fonts and
+all. Platform strategy and the path to the App Store are in
+[`docs/PLATFORM.md`](docs/PLATFORM.md).
 
 ## Payload ⚙️
 
