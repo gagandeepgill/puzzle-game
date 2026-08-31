@@ -14,6 +14,7 @@ Agent skills for this repo. Claude Code loads these automatically; each one is a
 | [game-feel](game-feel/SKILL.md) | Adding or tuning animation, sound or score presentation, or when a moment that should feel good does not. |
 | [game-typography](game-typography/SKILL.md) | Adding or restyling text, numbers, labels or buttons, and the contrast floors that set the sizing. |
 | [typescript-game-state](typescript-game-state/SKILL.md) | Writing or changing the types: discriminated phases, branded ids, exhaustive part handling, keeping the engine free of any renderer. |
+| [pwa-shell](pwa-shell/SKILL.md) | Touching the service worker, the manifest, caching or offline behaviour. Covers the cache version bump, what can and cannot be precached, the deliberate no-skipWaiting decision and the update prompt that completes it, and the stale-build trap. |
 
 ## Shared, from `ticket-master-app`
 
@@ -91,6 +92,13 @@ Two Ticketmaster skills were deliberately not copied, because they encode that
 app's infrastructure and would give wrong instructions here: `backend-work`, which
 is about Netlify Functions and Blobs that this repo does not use, and
 `verify-ticket-app`, which `verify-puzzle-game` replaces.
+
+#12 also asked for two new skills. `pwa-shell` is written, and against verified
+facts rather than the issue text: it said `CACHE_VERSION` sat at `v1` with no
+update flow, and that GitHub Pages was the deploy target. It is at `v3`, the
+target is Netlify, and the update flow now exists. `game-audio` is still
+outstanding and needs the same re-derivation, since the mute toggle the issue
+calls missing has shipped.
 
 `pet-pals-app` has no skills directory, so nothing was taken from it.
 
