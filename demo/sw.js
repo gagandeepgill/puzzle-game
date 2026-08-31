@@ -10,7 +10,7 @@
  * skipWaiting(), because swapping the shell out from under someone mid-run would
  * lose their game.
  */
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const SHELL_CACHE = `arcade-shell-${CACHE_VERSION}`;
 const FONT_CACHE = `arcade-fonts-${CACHE_VERSION}`;
 

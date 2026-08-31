@@ -28,7 +28,10 @@
     --ground: #131519;
     --panel: #1b1e24;
     --card: #22262e;
-    --edge: #30353f;
+    /* Raised from #30353f: component borders must clear 3:1 (WCAG 1.4.11).
+       The old value measured 1.36:1 and failed across six components at once. */
+    --edge: #58606e;
+    --edge-soft: #3a4150;
     --brass: #d9a441;
     --copper: #c47a4e;
     --steel: #8a93a5;
@@ -209,6 +212,22 @@
   .resetbtn:hover { color: var(--ink); }
   .resetbtn.arm { color: var(--bad); border-color: var(--bad); }
 
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .hdr-right { display: flex; align-items: center; gap: 8px; }
+  .ctxbtn { font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    color: var(--ink); background: var(--panel); border: 1px solid var(--edge);
+    border-radius: 9px; padding: 6px 11px; min-height: 34px; }
+  .ctxbtn:hover { border-color: var(--brass); }
+  .sheet { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px;
+    padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .sheet[hidden] { display: none; }
+  .sub-row { margin-top: 7px; font-size: 12px; }
+  .sub-row b { font-family: 'Outfit', sans-serif; font-size: 13.5px; font-weight: 700; }
+  .skipanim { font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+    color: var(--glow); background: none; border: 1px solid var(--glow);
+    border-radius: 8px; padding: 5px 11px; }
+  .skipanim[hidden] { display: none; }
   .modes { display: flex; gap: 6px; }
   .modetab { flex: 1; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
     background: var(--panel); color: var(--steel); border: 1px solid var(--edge);
@@ -236,43 +255,57 @@
   @media (prefers-reduced-motion: reduce) {
     .marble { transition: none; }
     .cell.fired { animation: none; }
-    .float-label { animation-duration: .01s; }
+    /* Do NOT shorten the duration — that deletes the "+8" before it can be read.
+       Hold it still instead; JS removes it on a timer. */
+    .float-label { animation: none; opacity: 1; }
+    .drop-tick.pop, .overlay, .modal, .fab { animation: none; }
+    .bar i { transition: none; }
+    .how summary::before { transition: none; }
+    .cell, .dropbtn, .btn, a { transition: none; }
   }
 </style>
 
-<div class="app">
+<main class="app" id="app">
   <header>
-    <div class="wordmark">Pay<span>load</span></div>
-    <div style="display:flex; align-items:center; gap:10px;">
-      <div class="roundlbl" id="roundlbl">Round 1 / 8</div>
-      <button class="resetbtn" id="resetbtn">↺ Reset</button>
+    <h1 class="wordmark">Pay<span>load</span></h1>
+    <div class="hdr-right">
+      <button class="ctxbtn" id="ctxbtn" aria-expanded="false" aria-controls="sheet">
+        <span id="ctxlabel">Daily · Easy</span> ⚙
+      </button>
+      <button class="resetbtn" id="resetbtn">↺</button>
     </div>
   </header>
 
-  <div class="modes">
-    <button class="modetab" id="mode-daily">🗓 Daily</button>
-    <button class="modetab" id="mode-free">∞ Free Play</button>
+  <div class="sheet" id="sheet" hidden>
+    <div class="modes" role="group" aria-label="Mode">
+      <button class="modetab" id="mode-daily">🗓 Daily</button>
+      <button class="modetab" id="mode-free">∞ Free Play</button>
+    </div>
+    <div class="modes" role="group" aria-label="Difficulty">
+      <button class="modetab" id="diff-easy">🌤 Easy · 4</button>
+      <button class="modetab" id="diff-hard">🔥 Hard · 8</button>
+    </div>
+    <p class="daily-banner" id="dailybanner" hidden></p>
   </div>
-  <div class="modes">
-    <button class="modetab" id="diff-easy">🌤 Easy · 4</button>
-    <button class="modetab" id="diff-hard">🔥 Hard · 8</button>
-  </div>
-  <p class="daily-banner" id="dailybanner" hidden></p>
-
-  <details class="how">
-    <summary>How to play</summary>
-    <p><strong>Build a scoring machine.</strong> Place drafted parts on the grid, then drop marbles down a column — every part they touch mutates their value. Adds feed multipliers, prisms clone marbles, springs re-trigger what's above. Beat the quota; it climbs steeply. Multiplication or death.</p>
-  </details>
 
   <div class="quota-wrap">
     <div class="quota-row">
-      <span>Round score <b id="score">0</b></span>
+      <span>Round <b id="roundlbl">1 / 8</b></span>
       <span class="drop-tick" id="droptick" hidden>▼ +0</span>
       <span class="q">Quota <b id="quota">10</b></span>
     </div>
     <div class="bar"><i id="bar"></i></div>
+    <div class="quota-row sub-row">
+      <span>Score <b id="score">0</b></span>
+      <span>Drops left <b class="hot" id="dropsleft">3</b></span>
+      <span>Banked <b id="total">0</b></span>
+    </div>
     <div class="jam" id="jam"></div>
   </div>
+
+  <!-- Announces the outcome of a drop and round changes to assistive tech.
+       Polite, and only ever written once per drop with the final figure. -->
+  <p class="sr-only" id="announcer" role="status" aria-live="polite"></p>
 
   <div class="draft" id="draft">
     <h3 id="draft-title">Draft a part</h3>
@@ -291,14 +324,18 @@
   </div>
 
   <div class="statusline">
-    <span>Drops left: <span class="hot" id="dropsleft">3</span></span>
     <button class="movebtn" id="movebtn">🔧 Move a part</button>
-    <span>Banked: <span id="total">0</span></span>
+    <button class="skipanim" id="skipanim" hidden>⏭ Skip animation</button>
   </div>
   <div class="bpchips" id="bpchips"></div>
 
+  <details class="how">
+    <summary>How to play</summary>
+    <p><strong>Build a scoring machine.</strong> Place drafted parts on the grid, then drop marbles down a column — every part they touch mutates their value. Adds feed multipliers, prisms clone marbles, springs re-trigger what's above. Beat the quota; it climbs steeply. Multiplication or death.</p>
+  </details>
+
   <button class="fab" id="fab" hidden>↻ Play again</button>
-</div>
+</main>
 
 <div class="overlay" id="overlay" hidden>
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -450,22 +487,32 @@ function blip(freq, dur = 0.07, type = 'square', gain = 0.04) {
 /* ---------- render ---------- */
 function renderGrid() {
   const grid = $('grid');
+  // The grid is rebuilt wholesale, which destroys focus. Remember where the
+  // keyboard was so it can be put back — otherwise every placement dumps a
+  // keyboard player at the top of the document.
+  const focusedCell = document.activeElement && document.activeElement.dataset
+    ? document.activeElement.dataset.cell : null;
   grid.innerHTML = '';
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
     const t = S.board[idx(r, c)];
     const el = document.createElement('button');
     el.className = 'cell' + (t ? ' tiled t-' + t : '');
     el.dataset.cell = idx(r, c);
+    const where = `Row ${r + 1}, column ${c + 1}`;
     if (t) {
-      el.innerHTML = `<span class="glyph">${TILES[t].g}</span><span class="mini">${TILES[t].mini}</span>`;
+      el.innerHTML = `<span class="glyph" aria-hidden="true">${TILES[t].g}</span><span class="mini" aria-hidden="true">${TILES[t].mini}</span>`;
+      el.setAttribute('aria-label',
+        `${where}: ${TILES[t].n}. ${TILES[t].r}${isForked(r, c) ? ' Doubled by an adjacent Tuning Fork.' : ''}`);
       if (isForked(r, c)) el.classList.add('forked');
       if (S.moveSrc === 'pick') el.classList.add('movable');
       el.onclick = () => {
         if (S.moveSrc === 'pick') { S.moveSrc = idx(r, c); renderGrid(); }
       };
     } else {
-      if (S.phase === 'draft' && S.draftKind === 'part' && S.sel !== null) el.classList.add('placeable');
+      const canPlace = S.phase === 'draft' && S.draftKind === 'part' && S.sel !== null;
+      if (canPlace) el.classList.add('placeable');
       if (typeof S.moveSrc === 'number') el.classList.add('movable');
+      el.setAttribute('aria-label', `${where}: empty${canPlace ? ', press to install the selected part' : ''}`);
       el.onclick = () => {
         if (typeof S.moveSrc === 'number') {
           S.board[idx(r, c)] = S.board[S.moveSrc];
@@ -480,6 +527,10 @@ function renderGrid() {
     }
     grid.appendChild(el);
   }
+  if (focusedCell !== null && focusedCell !== undefined) {
+    const back = grid.querySelector(`[data-cell="${focusedCell}"]`);
+    if (back) back.focus();
+  }
 }
 function isForked(r, c) {
   const t = S.board[idx(r, c)];
@@ -493,7 +544,8 @@ function renderDrops() {
   for (let c = 0; c < COLS; c++) {
     const b = document.createElement('button');
     b.className = 'dropbtn';
-    b.textContent = '▼';
+    b.innerHTML = '<span aria-hidden="true">▼</span>';
+    b.setAttribute('aria-label', `Drop a marble down column ${c + 1}`);
     b.disabled = S.phase !== 'drop' || S.busy;
     b.onclick = () => drop(c);
     box.appendChild(b);
@@ -522,8 +574,14 @@ function renderBlueprints() {
     box.appendChild(el);
   });
 }
+// Single polite announcement point. Written once per event with the final
+// figure — never per animation frame, which would flood the buffer.
+function announce(msg) { $('announcer').textContent = msg; }
+
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 function hud() {
-  $('roundlbl').textContent = `Round ${S.round + 1} / ${rounds()}`;
+  $('roundlbl').textContent = `${S.round + 1} / ${rounds()}`;
   $('score').textContent = S.roundScore;
   $('quota').textContent = quotaFor(S.round);
   $('bar').style.width = Math.min(100, 100 * S.roundScore / quotaFor(S.round)) + '%';
@@ -627,7 +685,13 @@ function flash(r, c) {
   void cell.offsetWidth;
   cell.classList.add('fired');
 }
-const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+// Skippable wait. When the player hits "skip animation" — or has reduced motion
+// on — every remaining pause collapses to zero and the deterministic simulation
+// resolves straight to its final state. The maths is unaffected either way.
+let skipping = false;
+const sleep = (ms) => (skipping || reducedMotion())
+  ? Promise.resolve()
+  : new Promise((res) => setTimeout(res, ms));
 
 async function runMarble(m, queue, stats) {
   const el = document.createElement('div');
@@ -718,8 +782,10 @@ async function runMarble(m, queue, stats) {
 async function drop(col) {
   if (S.phase !== 'drop' || S.busy || S.dropsLeft <= 0) return;
   S.busy = true;
+  skipping = false;
   S.moveSrc = null;
   renderDrops(); renderMoveBtn();
+  $('skipanim').hidden = reducedMotion();   // pointless when nothing animates
   S.dropsLeft -= 1;
   hud();
 
@@ -754,6 +820,10 @@ async function drop(col) {
   await animateScore(from, S.roundScore);
   hud();
   S.busy = false;
+  skipping = false;
+  $('skipanim').hidden = true;
+  announce(`Drop scored ${banked}. Round score ${S.roundScore} of ${quotaFor(S.round)}. ` +
+    `${S.dropsLeft} drop${S.dropsLeft === 1 ? '' : 's'} left.`);
 
   if (S.roundScore >= quotaFor(S.round)) return roundWon();
   if (S.dropsLeft <= 0) return runLost();
@@ -882,8 +952,27 @@ function finishRun(won, text) {
 
   $('overlay').hidden = false;
   $('fab').hidden = true;
+  // aria-modal alone is a claim, not a behaviour: make the background genuinely
+  // unreachable, or the tab ring wanders behind the dialog.
+  $('app').inert = true;
   $('modal-again').focus();
 }
+function closeModal() {
+  $('overlay').hidden = true;
+  $('app').inert = false;
+  $('fab').hidden = false;
+  $('fab').focus();          // move focus to what the close actually revealed
+}
+// Trap Tab inside the dialog while it is open.
+$('modal').addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  const focusable = [...$('modal').querySelectorAll('button:not([hidden])')]
+    .filter((b) => b.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 async function copyShare() {
   const btn = $('modal-copy');
   try {
@@ -893,14 +982,28 @@ async function copyShare() {
   setTimeout(() => { btn.textContent = 'Copy result'; }, 1800);
 }
 $('modal-copy').onclick = copyShare;
-$('modal-close').onclick = () => { $('overlay').hidden = true; $('fab').hidden = false; };
+$('modal-close').onclick = closeModal;
 $('fab').onclick = () => startRun(S.mode);
-$('overlay').addEventListener('click', (e) => {
-  if (e.target === $('overlay')) { $('overlay').hidden = true; $('fab').hidden = false; }
-});
+$('overlay').addEventListener('click', (e) => { if (e.target === $('overlay')) closeModal(); });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !$('overlay').hidden) { $('overlay').hidden = true; $('fab').hidden = false; }
+  if (e.key === 'Escape' && !$('overlay').hidden) closeModal();
 });
+
+/* ---------- settings sheet + skip control ---------- */
+$('ctxbtn').onclick = () => {
+  const sheet = $('sheet');
+  const open = sheet.hidden;
+  sheet.hidden = !open;
+  $('ctxbtn').setAttribute('aria-expanded', String(open));
+};
+$('skipanim').onclick = () => {
+  skipping = true;
+  $('skipanim').hidden = true;
+};
+function renderCtxLabel() {
+  $('ctxlabel').textContent =
+    `${S.mode === 'daily' ? 'Daily' : 'Free'} · ${S.diff.key === 'easy' ? 'Easy' : 'Hard'}`;
+}
 
 /* ---------- run setup & modes ---------- */
 function renderDailyBanner() {
@@ -938,13 +1041,17 @@ function startRun(mode, diffKey) {
   S.blueprints = new Set(); S.screwUsed = false; S.moveSrc = null;
   S.pendingBlueprint = false; S.busy = false;
   $('overlay').hidden = true;
+  $('app').inert = false;
   $('fab').hidden = true;
   $('droptick').hidden = true;
+  $('skipanim').hidden = true;
+  $('sheet').hidden = true;
+  $('ctxbtn').setAttribute('aria-expanded', 'false');
   $('mode-daily').classList.toggle('active', mode === 'daily');
   $('mode-free').classList.toggle('active', mode === 'free');
   $('diff-easy').classList.toggle('active', S.diff.key === 'easy');
   $('diff-hard').classList.toggle('active', S.diff.key === 'hard');
-  renderDailyBanner(); renderBlueprints();
+  renderDailyBanner(); renderBlueprints(); renderCtxLabel();
   renderGrid(); renderDrops(); renderMoveBtn(); hud();
   const lead = mode === 'daily' ? `Daily #${dayNumber} · ${S.diff.name}` : S.diff.name;
   startDraft(`${lead} — draft your first part`, 'part');
