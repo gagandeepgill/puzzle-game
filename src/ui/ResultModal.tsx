@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { shareText } from '../game/daily.js';
-import { Icon } from './icons.js';
+import { Icon, UIIcon } from './icons.js';
 import type { DailyRecord, Streak } from '../game/daily.js';
 import type { RunState } from '../game/types.js';
 
@@ -89,7 +89,7 @@ export function ResultModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="over-title"
-        className={`relative w-full max-w-[380px] bg-panel border rounded-[18px] p-5 flex flex-col gap-3 animate-pop ${
+        className={`relative w-full max-w-[380px] cockpit:max-w-[440px] bg-panel-lit border rounded-[18px] shadow-panel p-5 cockpit:p-6 flex flex-col gap-3 animate-pop ${
           won ? 'border-ok' : 'border-bad'
         }`}
       >
@@ -97,9 +97,9 @@ export function ResultModal({
           type="button"
           onClick={onDismiss}
           aria-label="View the board"
-          className="absolute top-2.5 right-2.5 w-9 h-9 text-steel border border-edge rounded-[9px] flex items-center justify-center"
+          className="absolute top-2.5 right-2.5 w-9 h-9 text-steel hover:text-ink bg-raised border border-edge shadow-raised rounded-[9px] flex items-center justify-center transition-colors duration-150 active:shadow-sunk"
         >
-          <span aria-hidden>✕</span>
+          <UIIcon name="close" size={16} />
         </button>
 
         <Icon name={won ? 'won' : 'lost'} size={44} className={won ? 'text-brass' : 'text-bad'} />
@@ -109,14 +109,14 @@ export function ResultModal({
              one headline the player stares at costs nothing and is the cheapest
              identity lever available. */
           style={{ fontVariationSettings: "'opsz' 144" }}
-          className="font-display text-[30px] leading-[1.1]"
+          className="font-display text-payout"
         >
           {won ? 'The Grand Payout' : 'The machine seized'}
         </h2>
         {/* The gap is the lesson. "More than the machine paid" tells a player
             nothing they can act on; 145 against 96 tells them they needed a
             multiplier two rounds ago. */}
-        <p className="text-[13.5px] text-steel leading-normal">
+        <p className="text-lead text-steel">
           {won
             ? `Every quota on the ${state.difficulty.name} line, beaten.`
             : `Round ${state.round + 1} demanded ${quota}; the machine paid ${state.roundScore}.`}
@@ -126,7 +126,7 @@ export function ResultModal({
             as a bug. The stats are the run just played; the block below is
             the first attempt, which is the one that counts and gets posted. */}
         {record && !recordIsThisRun && <Caption>This run</Caption>}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Stat value={`${won ? state.difficulty.rounds : state.round}/${state.difficulty.rounds}`} label="rounds" />
           <Stat value={String(state.total)} label="banked" />
           <Stat value={String(state.bestDrop)} label="best drop" />
@@ -135,16 +135,16 @@ export function ResultModal({
         {/* Daily only. The record is written on the first attempt, so this is
             what the player is sharing even if they replay afterwards. */}
         {record && (
-          <div className="bg-card border border-edge rounded-[11px] p-2.5 flex flex-col gap-2">
+          <div className="bg-raised border border-edge shadow-raised rounded-[11px] p-3 flex flex-col gap-2">
             <Caption>
               {recordIsThisRun ? "Today's result" : "Today's result — your first attempt"}
             </Caption>
             {!recordIsThisRun && (
-              <p className="text-[11px] text-steel leading-snug -mt-1">
+              <p className="text-meta text-steel -mt-1">
                 You already played today. Replays won't change what is locked in.
               </p>
             )}
-            <pre className="text-[11.5px] text-steel font-sans whitespace-pre-wrap leading-snug">
+            <pre className="text-meta text-steel font-sans whitespace-pre-wrap">
               {shareText(record, state.variant, streak)}
             </pre>
             <button
@@ -159,9 +159,10 @@ export function ResultModal({
                   setCopied(false);
                 }
               }}
-              className="text-[12.5px] font-bold text-glow border border-glow rounded-[9px] py-2 min-h-[40px]"
+              className="text-body font-bold text-glow border border-glow rounded-[9px] py-2 min-h-[44px] flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-glow/10 active:shadow-sunk"
             >
-              {copied ? '✓ Copied' : 'Copy result'}
+              {copied && <UIIcon name="check" size={15} />}
+              {copied ? 'Copied' : 'Copy result'}
             </button>
           </div>
         )}
@@ -170,7 +171,7 @@ export function ResultModal({
           type="button"
           autoFocus
           onClick={onPlayAgain}
-          className="bg-brass text-[#241a05] font-bold rounded-[11px] py-3 min-h-[46px]"
+          className="bg-machined-brass text-[#241a05] text-body font-bold rounded-[11px] py-3 min-h-[48px] shadow-raised transition-[box-shadow,transform] duration-150 active:shadow-sunk active:translate-y-px"
         >
           Play again
         </button>
@@ -179,7 +180,7 @@ export function ResultModal({
           <button
             type="button"
             onClick={onSwitchDifficulty}
-            className="text-[13px] font-semibold text-glow border border-dashed border-glow/60 rounded-[10px] py-2.5 min-h-[44px]"
+            className="text-body font-semibold text-glow border border-dashed border-glow/60 rounded-[10px] py-2.5 min-h-[44px] transition-colors duration-150 hover:bg-glow/10 hover:border-glow active:shadow-sunk"
           >
             {won ? `Ready for more? Try ${other}` : `Try ${other} instead`}
           </button>
@@ -192,20 +193,20 @@ export function ResultModal({
 
 function Caption({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-bold uppercase tracking-[.08em] text-steel">{children}</p>
+    <p className="text-label font-bold uppercase tracking-[.08em] text-steel">{children}</p>
   );
 }
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="flex-1 bg-card border border-edge rounded-[11px] py-2.5 flex flex-col items-center gap-0.5">
+    <div className="grow basis-[5.5rem] min-w-0 bg-raised border border-edge shadow-raised rounded-[11px] py-3 flex flex-col items-center gap-1">
       <span
         style={{ fontVariationSettings: "'opsz' 144" }}
-        className="font-display text-[30px] font-bold text-brass tabular-nums leading-none"
+        className="font-display text-payout font-bold text-brass tabular-nums"
       >
         {value}
       </span>
-      <span className="text-[10px] text-steel uppercase tracking-[.07em]">{label}</span>
+      <span className="text-label text-steel uppercase tracking-[.07em]">{label}</span>
     </div>
   );
 }
