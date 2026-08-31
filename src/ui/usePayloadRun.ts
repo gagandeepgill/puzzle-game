@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   dropInto, dropsForRound, jamFor, quotaFor, reduce, startOptions, startRun,
 } from '../game/run.js';
@@ -79,7 +79,19 @@ function toneFor(text: string): string {
 }
 
 export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }) {
-  const optsRef = useRef<RunOptions>({ ...initial, dateKey: utcDateKey() });
+  // Options live in state, not only in a ref. The banner, the streak line and
+  // the "locked in" lookup all read dateKey, and a ref cannot tell them it
+  // changed — a session left open across UTC midnight kept showing yesterday's
+  // day number against today's puzzle. The ref mirrors it so callbacks can read
+  // the current value synchronously without taking it as a dependency.
+  const [opts, setOpts] = useState<RunOptions>(() => ({ ...initial, dateKey: utcDateKey() }));
+  const optsRef = useRef<RunOptions>(opts);
+  // Kept in step every render, not only in restart. restart is the sole writer
+  // today, so this is redundant — but a second writer added later would
+  // silently desync the seed from the banner, and that is a nasty way to find
+  // out. Mirroring state into a ref during render is safe; the ref is not read
+  // during render.
+  optsRef.current = opts;
   // startRun calls Math.random in free play, so it must not run during render.
   // Seeding once in a lazy initialiser and again only in restart keeps render
   // pure and stops StrictMode's double invoke from re-rolling the board.
@@ -112,10 +124,14 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
    * difficulty produced no state change at all and the modal stayed up.
    */
   const restart = useCallback((next: Partial<RunOptions> = {}) => {
-    const opts: RunOptions = { ...optsRef.current, ...next };
-    optsRef.current = opts;
+    // Re-read the date rather than reusing the one this session started with.
+    // A run already in progress keeps its day — changing the seed underneath
+    // someone mid-run would be worse — but a new run gets today's.
+    const fresh: RunOptions = { ...optsRef.current, dateKey: utcDateKey(), ...next };
+    optsRef.current = fresh;
+    setOpts(fresh);
     runIdRef.current += 1;
-    const seeded = startRun(startOptions(opts));
+    const seeded = startRun(startOptions(fresh));
     rngRef.current = seeded.rng;
     setState(seeded.state);
     setPlayback(EMPTY_PLAYBACK);
@@ -344,12 +360,16 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
    * attempt even if this somehow runs again.
    */
   const [record, setRecord] = useState<DailyRecord | null>(null);
+  /** Whether `record` came from the run just played, or from an earlier
+   *  attempt at the same day. The dialog shows both sets of numbers, and on a
+   *  replay they disagree, so it has to say which is which. */
+  const [recordIsThisRun, setRecordIsThisRun] = useState(true);
   const [streak, setStreak] = useState<Streak>(() => loadStreak());
 
   useEffect(() => {
     if (state.phase.kind !== 'runOver') { setRecord(null); return; }
-    const dateKey = optsRef.current.dateKey;
     if (state.mode !== 'daily') return;
+    const { dateKey } = opts;
 
     const won = state.phase.won;
     const attempt: DailyRecord = {
@@ -361,23 +381,35 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
       total: state.total,
       bestDrop: state.bestDrop,
     };
+    // recordFor returns `attempt` itself when it accepted it, so reference
+    // equality answers "did this run set the record" exactly, rather than by
+    // comparing figures that could coincide.
     const kept = recordFor(loadRecord(state.difficulty.key), attempt);
     saveRecord(kept);
     setRecord(kept);
+    setRecordIsThisRun(kept === attempt);
 
     // Only the attempt that produced the record moves the streak. A replay
     // returns the stored record, and bumpStreak is idempotent for the day.
     const next = bumpStreak(loadStreak(), dateKey, kept.won);
     saveStreak(next);
     setStreak(next);
-  }, [state.phase, state.mode, state.difficulty, state.round, state.total, state.bestDrop]);
+  }, [opts, state.phase, state.mode, state.difficulty, state.round, state.total, state.bestDrop]);
 
-  /** Today's stored result, if the player has already finished this daily. */
-  const todaysRecord = useMemo(() => {
-    if (state.mode !== 'daily') return null;
+  /**
+   * Today's stored result, if the player already finished this daily.
+   *
+   * Loaded in an effect rather than a useMemo. loadRecord touches
+   * localStorage, and a storage read during render is a side effect that
+   * misbehaves the moment anything renders this component twice.
+   */
+  const [todaysRecord, setTodaysRecord] = useState<DailyRecord | null>(null);
+
+  useEffect(() => {
+    if (opts.mode !== 'daily') { setTodaysRecord(null); return; }
     const stored = loadRecord(state.difficulty.key);
-    return stored && stored.dateKey === optsRef.current.dateKey ? stored : null;
-  }, [state.mode, state.difficulty, record]);
+    setTodaysRecord(stored && stored.dateKey === opts.dateKey ? stored : null);
+  }, [opts, state.difficulty, record]);
 
   return {
     state,
@@ -388,12 +420,13 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     skip,
     restart,
     record,
+    recordIsThisRun,
     todaysRecord,
     cleared,
     streak,
-    streakLive: streakIsLive(streak, optsRef.current.dateKey),
-    dateKey: optsRef.current.dateKey,
-    day: dayNumber(optsRef.current.dateKey),
+    streakLive: streakIsLive(streak, opts.dateKey),
+    dateKey: opts.dateKey,
+    day: dayNumber(opts.dateKey),
     quota: quotaFor(state, state.round),
     jam: jamFor(state, state.round),
     dropsThisRound: dropsForRound(state, state.round),
