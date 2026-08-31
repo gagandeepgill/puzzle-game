@@ -189,7 +189,7 @@ export function App() {
           <button
             type="button"
             onClick={() => (resetArmed ? startOver() : setResetArmed(true))}
-            className={`text-body font-semibold rounded-[9px] px-2.5 min-h-[36px] flex items-center gap-1.5 ${
+            className={`text-body font-semibold rounded-[9px] px-2.5 min-h-[34px] md:min-h-[36px] flex items-center gap-1.5 ${
               resetArmed
                 ? `bg-raised border border-bad text-bad shadow-raised ${PRESSABLE}`
                 : `text-steel hover:text-ink ${RAISED}`
@@ -204,7 +204,7 @@ export function App() {
             aria-expanded={sheetOpen}
             aria-controls="settings-sheet"
             onClick={() => setSheetOpen((o) => !o)}
-            className={`text-body font-semibold text-ink rounded-[9px] px-3 min-h-[36px] flex items-center gap-2 whitespace-nowrap ${RAISED}`}
+            className={`text-body font-semibold text-ink rounded-[9px] px-3 min-h-[34px] md:min-h-[36px] flex items-center gap-2 whitespace-nowrap ${RAISED}`}
           >
             {state.mode === 'daily' ? 'Daily' : 'Free'} · {state.difficulty.key === 'easy' ? 'Easy' : 'Hard'}
             <UIIcon name="sliders" size={15} className="text-steel" />
@@ -214,11 +214,11 @@ export function App() {
 
       {sheetOpen && (
         <div id="settings-sheet" className={`${PANEL} p-2.5 flex flex-col gap-2`}>
-          <div role="group" aria-label="Mode" className="flex gap-1.5">
+          <div role="group" aria-label="Mode" className="flex flex-wrap gap-1.5">
             <Tab on={state.mode === 'daily'} onClick={() => setMode('daily')} icon="calendar">Daily</Tab>
             <Tab on={state.mode === 'free'} onClick={() => setMode('free')} icon="infinity">Free Play</Tab>
           </div>
-          <div role="group" aria-label="Difficulty" className="flex gap-1.5">
+          <div role="group" aria-label="Difficulty" className="flex flex-wrap gap-1.5">
             <Tab on={state.difficulty.key === 'easy'} onClick={() => setDifficulty('easy')} icon="sun">Easy · 4</Tab>
             <Tab on={state.difficulty.key === 'hard'} onClick={() => setDifficulty('hard')} icon="flame">Hard · 8</Tab>
           </div>
@@ -267,7 +267,7 @@ export function App() {
       </div>
 
       <div className="ck-hud flex flex-col gap-2.5">
-      <div className={`${PANEL} px-3 py-2.5`}>
+      <div className={`${PANEL} px-3 py-2 md:py-2.5`}>
         <div className="flex justify-between items-baseline gap-2 text-body text-steel tabular-nums">
           <span>Round <b className="font-display text-stat text-ink">{state.round + 1} / {state.difficulty.rounds}</b></span>
           <span>Quota <b className="font-display text-stat text-brass">{run.quota}</b></span>
@@ -275,13 +275,13 @@ export function App() {
         {/* A channel cut into the panel with a lit fill sitting in it, rather
             than two flat bars. Same light as everything else, and it is the
             one element that is pure progress, so it earns the treatment. */}
-        <div className="h-[8px] bg-ground rounded-full mt-2 overflow-hidden shadow-sunk">
+        <div className="h-[6px] md:h-[8px] bg-ground rounded-full mt-1.5 md:mt-2 overflow-hidden shadow-sunk">
           <div
             className="h-full bg-gradient-to-r from-copper to-brass rounded-full transition-[width] duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,.28)]"
             style={{ width: `${Math.min(100, (state.roundScore / run.quota) * 100)}%` }}
           />
         </div>
-        <div className="flex justify-between items-baseline gap-2 text-meta text-steel mt-2 tabular-nums">
+        <div className="flex justify-between items-baseline gap-2 text-meta text-steel mt-1.5 md:mt-2 tabular-nums">
           <span>
             Score <b className="text-ink font-bold text-body">{state.roundScore}</b>
             {/* Climbs as each marble banks, so the round score is not a single
@@ -296,7 +296,7 @@ export function App() {
           <span>Banked <b className="text-ink font-bold text-body">{state.total}</b></span>
         </div>
         {run.jam && (
-          <p className="mt-2 text-meta font-bold text-bad flex items-start gap-1.5">
+          <p className="mt-1.5 md:mt-2 text-meta font-bold text-bad flex items-start gap-1.5">
             <UIIcon name="alert" size={14} className="mt-px" />
             <span>JAM — {run.jam.name}: {run.jam.rule}</span>
           </p>
@@ -306,7 +306,7 @@ export function App() {
             stay visible after their draft panel closes. Gravity Well in
             particular is otherwise invisible. */}
         {state.blueprints.size > 0 && (
-          <ul aria-label="Blueprints in effect" className="flex flex-wrap gap-1 mt-2 cockpit:flex-col">
+          <ul aria-label="Blueprints in effect" className="flex flex-wrap gap-1 mt-1.5 md:mt-2 cockpit:flex-col">
             {[...state.blueprints].map((key) => (
               <li
                 key={key}
@@ -368,7 +368,7 @@ export function App() {
             Unseeded: every run reshuffles.
           </p>
         )}
-        <div role="group" aria-label="Difficulty" className="flex gap-1.5 pt-0.5">
+        <div role="group" aria-label="Difficulty" className="flex flex-wrap gap-1.5 pt-0.5">
           <Tab on={state.difficulty.key === 'easy'} onClick={() => setDifficulty('easy')} icon="sun">Easy</Tab>
           <Tab on={state.difficulty.key === 'hard'} onClick={() => setDifficulty('hard')} icon="flame">Hard</Tab>
         </div>
@@ -416,7 +416,7 @@ export function App() {
           which pushed the board 59% down a 375x812 phone and let it overflow
           by 70px — you could not see the machine you were drafting for. */}
       {drafting && (
-        <div className="bg-panel-lit border border-brass rounded-[13px] shadow-panel p-2.5 flex flex-col gap-2">
+        <div className="bg-panel-lit border border-brass rounded-[13px] shadow-panel p-2.5 flex flex-col gap-1.5 md:gap-2">
           <div className="flex justify-between items-center gap-2">
             <h2 className="font-display text-lead font-bold text-brass">Draft a part</h2>
             <button
@@ -427,7 +427,12 @@ export function App() {
               Skip
             </button>
           </div>
-          <div className="flex gap-1.5">
+          {/* Wraps rather than overflowing. `flex-1` gave the cards a zero
+              basis but left min-width:auto, so at a 200% browser font size
+              the third card ran 21px outside the rail. A rem basis reflows
+              the row to two-up and then one-up as text grows, which is what
+              WCAG 1.4.10 asks for and what flex-1 could not do. */}
+          <div className="flex flex-wrap gap-1.5">
             {state.phase.offers.map((key, i) => {
               const on = state.phase.kind === 'drafting' && state.phase.selected === i;
               return (
@@ -436,7 +441,7 @@ export function App() {
                   type="button"
                   onClick={() => run.dispatch({ type: 'selectOffer', index: i })}
                   aria-pressed={on}
-                  className={`flex-1 rounded-[10px] px-1.5 py-2 flex flex-col items-center gap-1 border-[1.5px] ${PRESSABLE} ${
+                  className={`grow basis-[6.5rem] min-w-0 rounded-[10px] px-1.5 py-1.5 md:py-2 flex flex-col items-center gap-0.5 md:gap-1 border-[1.5px] ${PRESSABLE} ${
                     on
                       // Selected reads as pressed into the panel, not merely
                       // tinted: the card you are holding should look held.
@@ -458,13 +463,13 @@ export function App() {
       {state.phase.kind === 'blueprint' && (
         <div className="bg-panel-lit border border-glow rounded-[13px] shadow-panel p-3 flex flex-col gap-2">
           <h2 className="font-display text-lead font-bold text-glow">A blueprint surfaces</h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {state.phase.offers.map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => run.dispatch({ type: 'takeBlueprint', key })}
-                className={`flex-1 border-[1.5px] rounded-[11px] px-2 py-2.5 flex flex-col gap-1 hover:border-glow/70 ${RAISED}`}
+                className={`grow basis-[8rem] min-w-0 border-[1.5px] rounded-[11px] px-2 py-2.5 flex flex-col gap-1 hover:border-glow/70 ${RAISED}`}
               >
                 <Icon name={BLUEPRINTS[key].glyph as IconName} size={26} className="text-glow" />
                 <span className="font-bold text-body">{BLUEPRINTS[key].name}</span>
@@ -512,7 +517,7 @@ export function App() {
                 onPointerLeave={() => setPeekColumn((p) => (p === c ? null : p))}
                 onFocus={() => setPeekColumn(c)}
                 onBlur={() => setPeekColumn((p) => (p === c ? null : p))}
-                className={`rounded-[9px] min-h-[46px] flex flex-col items-center justify-center leading-none ${PRESSABLE} bg-raised shadow-raised border disabled:opacity-35 disabled:cursor-not-allowed disabled:shadow-none disabled:active:translate-y-0 ${
+                className={`rounded-[9px] min-h-[44px] md:min-h-[46px] flex flex-col items-center justify-center leading-none ${PRESSABLE} bg-raised shadow-raised border disabled:opacity-35 disabled:cursor-not-allowed disabled:shadow-none disabled:active:translate-y-0 ${
                   best
                     ? 'border-brass text-brass enabled:hover:bg-brass/[0.12]'
                     : 'border-edge text-steel enabled:hover:border-steel enabled:hover:text-ink'
@@ -565,7 +570,7 @@ export function App() {
             if (moving) { setMoving(false); setMoveFrom(null); }
             else setMoving(true);
           }}
-          className={`self-center text-body font-bold rounded-[10px] px-3 min-h-[38px] flex items-center gap-2 ${PRESSABLE} ${
+          className={`self-center text-body font-bold rounded-[10px] px-3 min-h-[36px] md:min-h-[38px] flex items-center gap-2 ${PRESSABLE} ${
             moving
               ? 'text-glow border border-glow bg-glow/[0.09] shadow-sunk'
               : `text-steel hover:text-ink ${RAISED}`
@@ -686,7 +691,7 @@ function Tab({ on, onClick, icon, children }: {
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      className={`flex-1 text-body font-bold rounded-[10px] py-2 min-h-[38px] flex items-center justify-center gap-1.5 border ${PRESSABLE} ${
+      className={`grow basis-[7rem] min-w-0 text-body font-bold rounded-[10px] py-2 min-h-[38px] flex items-center justify-center gap-1.5 border ${PRESSABLE} ${
         on
           ? 'text-brass border-brass bg-brass/[0.1] shadow-sunk'
           : 'text-steel border-edge bg-raised shadow-raised hover:text-ink hover:border-steel'

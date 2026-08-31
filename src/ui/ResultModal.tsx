@@ -126,7 +126,7 @@ export function ResultModal({
             as a bug. The stats are the run just played; the block below is
             the first attempt, which is the one that counts and gets posted. */}
         {record && !recordIsThisRun && <Caption>This run</Caption>}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Stat value={`${won ? state.difficulty.rounds : state.round}/${state.difficulty.rounds}`} label="rounds" />
           <Stat value={String(state.total)} label="banked" />
           <Stat value={String(state.bestDrop)} label="best drop" />
@@ -199,7 +199,7 @@ function Caption({ children }: { children: React.ReactNode }) {
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="flex-1 bg-raised border border-edge shadow-raised rounded-[11px] py-3 flex flex-col items-center gap-1">
+    <div className="grow basis-[5.5rem] min-w-0 bg-raised border border-edge shadow-raised rounded-[11px] py-3 flex flex-col items-center gap-1">
       <span
         style={{ fontVariationSettings: "'opsz' 144" }}
         className="font-display text-payout font-bold text-brass tabular-nums"
