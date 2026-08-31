@@ -1,0 +1,17 @@
+{
+  "name": "payload-arcade",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Payload Arcade — engine-builder and routing puzzle games",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "serve": "node tools/serve.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
