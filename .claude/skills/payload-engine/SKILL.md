@@ -5,7 +5,7 @@ description: 'Map of the Payload engine-builder — the marble simulation loop, 
 
 # The Payload engine
 
-One file: `demo/payload.html` (edit the scratchpad fragment, regenerate the repo copy —
+One file: `public/payload.html` (edit the scratchpad fragment, regenerate the repo copy —
 see [verify-puzzle-game](../verify-puzzle-game/SKILL.md)). No framework, no build.
 
 ## The shape of a run

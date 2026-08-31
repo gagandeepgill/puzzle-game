@@ -1,33 +1,67 @@
 ---
 name: verify-puzzle-game
-description: 'Run and verify this repo''s games for real — there is no build step or dev server, how to drive a game in the browser pane, how to bot-play a full run to check balance, and the scratchpad→demo→artifact publishing path. Use when asked to run, start, preview, screenshot, test or verify Payload or Ledger Lane, or to confirm a change actually works rather than only reading right.'
+description: 'Run and verify this repo''s games for real — which of them build and which are single files, how to drive a game in the browser pane, how to bot-play a full run to check balance, and the scratchpad→site→artifact publishing path. Use when asked to run, start, preview, screenshot, test or verify Payload or Ledger Lane, or to confirm a change actually works rather than only reading right.'
 ---
 
 # Verifying the games
 
-## There is no build step and no dev server
+## Payload builds; everything else is a single file
 
-Every game is one self-contained HTML file. Do not run `npm install`, look for a
-bundler, or start a server — there is nothing to start.
+This used to say there was no build step. That stopped being true when Payload
+was ported to React and TypeScript.
 
 ```
-demo/index.html    The Arcade hub (relative links to the two games)
-demo/payload.html  Payload — engine-builder run
-demo/ledger.html   Ledger Lane — routing puzzle
+src/                 Payload's source: pure engine in src/game, views in src/ui
+app/index.html       Payload's entry
+public/index.html    The Arcade hub
+public/ledger.html   Ledger Lane — routing puzzle, still one self-contained file
+public/payload.html  The superseded single-file Payload. Kept only as the
+                     reference src/game/__tests__/parity.test.ts diffs against.
+                     It is not the game the hub links to. Do not verify against it.
+dist/                THE SITE. Built from the above, gitignored. This is what
+                     tools/serve.js serves and what Netlify publishes.
 ```
 
-To look at one, open the file directly:
+So:
 
 ```bash
-start demo/payload.html
+npm ci                       # once
+npm run build                # public/ + app/ -> dist/
+node tools/serve.js          # serves dist/ at http://localhost:8000
 ```
+
+`npm run dev` gives Vite with hot reload at :5173, but the service worker, the
+install prompt and anything reading `public/`'s sibling files need `tools/serve.js`.
+
+**Rebuild before you look.** `dist/` is stale until `npm run build` runs, so a
+change you just made to `src/` — or to anything in `public/` — will not be on
+screen. This is the single most common way to conclude a fix did not work when
+it did.
 
 ## Driving a game from the browser pane
 
-The Claude browser tools work on `file://` URLs, so navigate straight to the file:
+Payload needs the server, because it loads hashed bundles and registers a
+service worker:
 
 ```
-mcp__Claude_Browser__navigate → file:///C:/Users/Gagan/Desktop/puzzle-game/demo/payload.html
+mcp__Claude_Browser__navigate → http://localhost:8000/app/
+```
+
+Ledger Lane is still one file, so `file://` works for it straight from source:
+
+```
+mcp__Claude_Browser__navigate → file:///C:/Users/Gagan/Desktop/puzzle-game/public/ledger.html
+```
+
+**The service worker will serve you a stale build.** It caches the app shell, so
+after a rebuild you can reload and still see the old code. Clear it first:
+
+```js
+const rs = await navigator.serviceWorker.getRegistrations();
+await Promise.all(rs.map(r => r.unregister()));
+const ks = await caches.keys();
+await Promise.all(ks.map(k => caches.delete(k)));
+location.reload();
 ```
 
 **The trap that will waste your time:** files *outside* the project folder open as a
@@ -114,7 +148,7 @@ innerHeight` — do not eyeball it), and tap targets are ≥44px.
 ## Publishing
 
 The scratchpad copy is a **fragment** (starts with `<title>`); the repo copy is a full
-document. The wrapper is applied at build time, so never hand-edit `demo/*.html` and the
+document. The wrapper is applied at build time, so never hand-edit `public/*.html` and the
 scratchpad separately — edit the scratchpad, then regenerate:
 
 ```bash
@@ -123,7 +157,7 @@ SCRATCH=<scratchpad dir>
   sed -n '1,2p' "$SCRATCH/payload.html"      # <title> + font <link>
   printf '</head>\n<body>\n'
   sed -n '3,$p' "$SCRATCH/payload.html"
-  printf '</body>\n</html>\n'; } > demo/payload.html
+  printf '</body>\n</html>\n'; } > public/payload.html
 ```
 
 Publish the **scratchpad fragment** as the Artifact (the Artifact tool adds its own

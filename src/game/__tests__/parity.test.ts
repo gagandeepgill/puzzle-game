@@ -2,7 +2,7 @@
  * Differential test against the shipped implementation.
  *
  * `referenceDrop` below is a faithful transcription of `runMarble` and `drop`
- * from demo/payload.html with the rendering stripped out. It is deliberately
+ * from public/payload.html with the rendering stripped out. It is deliberately
  * written in the original's style, not refactored, so that agreement between
  * it and simulate.ts means something.
  *
