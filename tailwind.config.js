@@ -96,6 +96,23 @@ export default {
         pop: {
           from: { opacity: '0', transform: 'translateY(16px) scale(.94)' },
         },
+        // Three tiers, tied to what the drop was worth against the quota. Only
+        // the largest rotates; rotation on a small hit reads as a glitch.
+        'shake-1': {
+          '25%': { transform: 'translate(1px, -1px)' },
+          '75%': { transform: 'translate(-1px, 1px)' },
+        },
+        'shake-2': {
+          '20%': { transform: 'translate(-3px, 2px)' },
+          '50%': { transform: 'translate(3px, -2px)' },
+          '80%': { transform: 'translate(-2px, 1px)' },
+        },
+        'shake-3': {
+          '15%': { transform: 'translate(-5px, 3px) rotate(-.5deg)' },
+          '40%': { transform: 'translate(5px, -3px) rotate(.5deg)' },
+          '65%': { transform: 'translate(-4px, 2px) rotate(-.3deg)' },
+          '85%': { transform: 'translate(3px, -1px)' },
+        },
       },
       animation: {
         fire: 'fire .34s',
@@ -103,6 +120,9 @@ export default {
         // Overshoot, so motion reads as mechanical rather than as a web page.
         // Machines accelerate and stop dead; ease-in-out is the web-page tell.
         pop: 'pop .32s cubic-bezier(.34,1.56,.64,1)',
+        'shake-1': 'shake-1 .2s ease-out',
+        'shake-2': 'shake-2 .3s ease-out',
+        'shake-3': 'shake-3 .5s ease-out',
       },
     },
   },

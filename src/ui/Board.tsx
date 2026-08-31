@@ -136,6 +136,9 @@ interface BoardProps {
    *  landing on the same cell twice replays the animation; toggling a class
    *  back on within one paint does not restart a CSS animation. */
   readonly firingSeq: number;
+  /** The current frame's dwell. The marble's transition is derived from it so
+   *  travel always finishes inside the frame, however fast the fall gets. */
+  readonly stepMs: number;
   /** Marbles currently in flight. Empty outside a drop, and empty for the
    *  whole drop when motion is reduced or the player skipped it. */
   readonly marbles: readonly MarbleView[];
@@ -152,7 +155,7 @@ interface BoardProps {
 }
 
 export function Board({
-  board, placeable, firingCells, firingSeq, marbles, labels, movable,
+  board, placeable, firingCells, firingSeq, stepMs, marbles, labels, movable,
   heat, forkReach, path, onCellPress,
 }: BoardProps) {
   const cells = [];
@@ -191,12 +194,13 @@ export function Board({
         {marbles.map((m) => (
           <div
             key={m.id}
-            style={cellBox(m.cell)}
-            /* 55ms against a 60ms quiet frame, so the marble actually arrives.
-               It was 90ms against 60ms, which meant the transition was
-               retargeted before it finished and the marble never landed on a
-               cell at all — it glided about a third of a cell behind itself. */
-            className="absolute flex items-center justify-center transition-[left,top] duration-[55ms] ease-linear"
+            /* Always a little under the frame's dwell, so travel finishes
+               before the next position is written. It was a hardcoded 90ms
+               against a 60ms frame, which meant the transition was retargeted
+               before it finished and the marble never landed on a cell at all.
+               Now the fall accelerates, so this has to track it. */
+            style={{ ...cellBox(m.cell), transitionDuration: `${Math.max(30, stepMs - 8)}ms` }}
+            className="absolute flex items-center justify-center transition-[left,top] ease-linear"
           >
             <span className="relative w-[64%] aspect-square rounded-full flex items-center justify-center text-[10px] font-bold text-[#2b1e06] tabular-nums shadow-marble bg-[radial-gradient(circle_at_34%_26%,#fffaf0_0%,#f4d08a_14%,#d9a441_44%,#9c7025_72%,#5e410f_100%)]">
               {/* The specular dot is its own element so it can be blurred

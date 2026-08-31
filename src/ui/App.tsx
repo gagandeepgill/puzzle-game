@@ -439,7 +439,13 @@ export function App() {
           Capping the width is also what gets all six rows onto a phone. */}
       </div>
 
-      <div className="ck-board ck-machine flex flex-col gap-2 w-full mx-auto">
+      <div
+        className={`ck-board ck-machine flex flex-col gap-2 w-full mx-auto ${
+          playback.shake === 3 ? 'animate-shake-3'
+          : playback.shake === 2 ? 'animate-shake-2'
+          : playback.shake === 1 ? 'animate-shake-1' : ''
+        }`}
+      >
       <div className="relative w-full flex flex-col gap-2">
         {/* 9px = the board panel's 8px padding plus its 1px border. */}
         <div className="grid grid-cols-5 gap-1.5 px-[9px]">
@@ -487,6 +493,7 @@ export function App() {
           path={path}
           firingCells={playback.firingCells}
           firingSeq={playback.firingSeq}
+          stepMs={playback.stepMs}
           marbles={playback.marbles}
           labels={playback.labels}
           movable={movable}

@@ -75,8 +75,14 @@ export const sfx = {
   bank: (value: number) => blip(value > 80 ? 1046 : 784, 0.11, 'triangle', 0.06),
   place: () => blip(520, 0.05, 'square', 0.04),
   blueprint: () => blip(700, 0.12, 'triangle', 0.06),
-  roundWon: () => [523, 659, 784].forEach((f, i) => {
-    setTimeout(() => blip(f, 0.16, 'triangle', 0.07), i * 110);
-  }),
+  roundWon: () => {
+    // A bass note under the arpeggio. Peggle gates its whole musical climax to
+    // the last orange peg; spending it per part is what makes it stop meaning
+    // anything, so this fires only when a quota is crossed.
+    blip(98, 0.5, 'sine', 0.09);
+    [523, 659, 784].forEach((f, i) => {
+      setTimeout(() => blip(f, 0.16, 'triangle', 0.07), i * 110);
+    });
+  },
   runLost: () => blip(110, 0.5, 'sawtooth', 0.07),
 };
