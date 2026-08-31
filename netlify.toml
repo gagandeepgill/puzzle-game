@@ -11,10 +11,6 @@
   # that fails its own suite is worse than not publishing.
   command = "npm test && npm run build"
 
-[build.environment]
-  # Match the version CI builds with. Netlify's default floats.
-  NODE_VERSION = "20"
-
 # The service worker must never be served stale, or players get pinned to an
 # old app shell until they clear site data.
 [[headers]]
