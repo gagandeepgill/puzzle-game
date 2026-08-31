@@ -37,16 +37,16 @@ jobs:
       - name: Check the service worker precaches every page
         run: |
           missing=0
-          for f in demo/*.html; do
+          for f in public/*.html; do
             name=$(basename "$f")
-            if ! grep -q "'$name'" demo/sw.js; then
-              echo "::error file=demo/sw.js::$name is not precached in SHELL"
+            if ! grep -q "'$name'" public/sw.js; then
+              echo "::error file=public/sw.js::$name is not precached in SHELL"
               missing=1
             fi
           done
           # The React entry is built, not committed, so it is checked by name.
-          if ! grep -q "'app/index.html'" demo/sw.js; then
-            echo "::error file=demo/sw.js::app/index.html is not precached in SHELL"
+          if ! grep -q "'app/index.html'" public/sw.js; then
+            echo "::error file=public/sw.js::app/index.html is not precached in SHELL"
             missing=1
           fi
           exit $missing
