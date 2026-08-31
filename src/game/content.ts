@@ -4,7 +4,7 @@
  */
 import type {
   BlueprintDef, BlueprintKey, DifficultyDef, DifficultyKey,
-  PartDef, PartKey, VariantDef,
+  JamDef, PartDef, PartKey, VariantDef,
 } from './types.js';
 
 export const PARTS: Record<PartKey, PartDef> = {
@@ -68,7 +68,8 @@ export const DIFFICULTIES: Record<DifficultyKey, DifficultyDef> = {
     quotas: [12, 30, 68, 145],
     drops: 4,
     start: [['weight', 2, 2], ['weight', 4, 2], ['coil', 5, 2]],
-    jams: { 2: { key: 'noBells', text: '⚠ JAM — Power Cut: Echo Bells stay silent this round.' } },
+    jams: { 2: { key: 'noBells', name: 'Power Cut',
+      rule: 'Echo Bells stay silent this round.' } },
     blueprintAfter: [1],
     pools: [
       ['coil', 'weight', 'wire', 'prism'],
@@ -83,8 +84,10 @@ export const DIFFICULTIES: Record<DifficultyKey, DifficultyDef> = {
     drops: 3,
     start: [['weight', 2, 2], ['weight', 4, 2]],
     jams: {
-      2: { key: 'shortShift', text: '⚠ JAM — Short Shift: the foreman allows only 2 drops this round.' },
-      5: { key: 'slippery', text: '⚠ JAM — Slippery marbles: each marble skids past the FIRST part it touches.' },
+      2: { key: 'shortShift', name: 'Short Shift',
+        rule: 'The foreman allows only 2 drops this round.' },
+      5: { key: 'slippery', name: 'Slippery Marbles',
+        rule: 'Each marble skids past the FIRST part it touches.' },
     },
     blueprintAfter: [1, 3, 5],
     pools: [
@@ -99,3 +102,20 @@ export const DIFFICULTIES: Record<DifficultyKey, DifficultyDef> = {
     ],
   },
 };
+
+/**
+ * Every jam in the game, deduped across difficulties.
+ *
+ * Derived rather than hand-listed: jams are declared per round inside
+ * DIFFICULTIES, and a second list would be free to drift from the one the
+ * rules actually read.
+ */
+export const JAMS: readonly JamDef[] = (() => {
+  const seen = new Map<string, JamDef>();
+  for (const d of Object.values(DIFFICULTIES)) {
+    for (const jam of Object.values(d.jams)) {
+      if (jam && !seen.has(jam.key)) seen.set(jam.key, jam);
+    }
+  }
+  return [...seen.values()];
+})();
