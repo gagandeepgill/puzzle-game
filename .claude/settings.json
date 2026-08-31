@@ -1,0 +1,82 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(gh-axi *)"
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "knowledge-work-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/knowledge-work-plugins"
+      }
+    },
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
+      }
+    },
+    "claude-code": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-code"
+      }
+    },
+    "sumi-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "phazurlabs/sumi"
+      }
+    },
+    "frontend-design-audit": {
+      "source": {
+        "source": "github",
+        "repo": "mistyhx/frontend-design-audit"
+      }
+    },
+    "ui-ux-pro-max-skill": {
+      "source": {
+        "source": "github",
+        "repo": "nextlevelbuilder/ui-ux-pro-max-skill"
+      }
+    },
+    "impeccable": {
+      "source": {
+        "source": "github",
+        "repo": "pbakaus/impeccable"
+      }
+    },
+    "compound-engineering-plugin": {
+      "source": {
+        "source": "github",
+        "repo": "EveryInc/compound-engineering-plugin"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "design@knowledge-work-plugins": true,
+    "engineering@knowledge-work-plugins": true,
+    "modern-web-guidance@knowledge-work-plugins": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "superpowers@superpowers-marketplace": true,
+    "pr-review-toolkit@claude-code": true,
+    "sumi@sumi-marketplace": true,
+    "frontend-design-audit@frontend-design-audit": true,
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true,
+    "impeccable@impeccable": true,
+    "compound-engineering@compound-engineering-plugin": true,
+    "claude-security@claude-plugins-official": true
+  }
+}
