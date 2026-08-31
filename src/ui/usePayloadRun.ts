@@ -323,7 +323,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
               fired += 1;
               // Capped: eight marbles landing on parts in the same frame is a
               // burst of noise, not information.
-              if (fired <= 2) sfx.trigger(triggers);
+              if (fired <= 2) sfx.trigger(triggers, event.part);
               seq += 1;
               break;
             }
