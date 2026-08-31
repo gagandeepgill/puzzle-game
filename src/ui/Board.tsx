@@ -6,6 +6,7 @@ import { COLS, ROWS, cellAt, cellIndex, colOf, rowOf } from '../game/types.js';
 import type { Board as BoardModel, CellIndex, PartKey } from '../game/types.js';
 import type { HeatTier } from '../game/preview.js';
 import { Icon } from './icons.js';
+import { PixelMarble, PixelPart, hasPixelArt } from './pixel/PixelSprite.js';
 import type { IconName } from './icons.js';
 import type { FloatLabel, MarbleView } from './usePayloadRun.js';
 
@@ -43,6 +44,9 @@ interface CellProps {
   readonly step: number;
   readonly movable: boolean;
   readonly firing: boolean;
+  /** Draw the pixel skin's sprites instead of the SVG glyphs. Presentation
+   *  only: nothing about the cell's behaviour or accessible name changes. */
+  readonly pixel: boolean;
   readonly onPress: (cell: CellIndex) => void;
 }
 
@@ -51,7 +55,7 @@ interface CellProps {
  * twenty-five cells. Identity is the cell index, which never changes.
  */
 const Cell = memo(function Cell({
-  index, part, row, col, forked, placeable, heat, wouldFork, step, movable, firing, onPress,
+  index, part, row, col, forked, placeable, heat, wouldFork, step, movable, firing, pixel, onPress,
 }: CellProps) {
   const where = `Row ${row + 1}, column ${col + 1}`;
   const affordance = movable
@@ -83,6 +87,7 @@ const Cell = memo(function Cell({
         part
           ? 'bg-machined border border-edge shadow-machined'
           : 'bg-ground border border-dashed border-edge shadow-recess',
+        pixel && part ? 'px-filled' : '',
         placeable ? 'border-[1.5px] border-dashed border-brass cursor-pointer' : '',
         // Shaded by what the part would actually be worth here, from the same
         // simulation the drop runs. Flat cells stay dim rather than going red:
@@ -112,7 +117,11 @@ const Cell = memo(function Cell({
             className="shrink-0"
             style={{ width: 'var(--glyph)', height: 'var(--glyph)' }}
           >
-            <Icon name={PARTS[part].glyph as IconName} size={undefined} className="w-full h-full" />
+            {/* Four of the ten parts have no sprite in the supplied pack, so
+                they keep the SVG glyph rather than rendering an empty cell. */}
+            {pixel && hasPixelArt(part)
+              ? <PixelPart part={part} active={firing} />
+              : <Icon name={PARTS[part].glyph as IconName} size={undefined} className="w-full h-full" />}
           </span>
           <span
             aria-hidden
@@ -153,11 +162,13 @@ interface BoardProps {
   /** Cells the marble would enter, in order, for the previewed column. */
   readonly path: readonly CellIndex[];
   readonly onCellPress: (cell: CellIndex) => void;
+  /** True when the pixel skin is selected. */
+  readonly pixel: boolean;
 }
 
 export function Board({
   board, placeable, firingCells, firingSeq, stepMs, marbles, labels, movable,
-  heat, forkReach, path, onCellPress,
+  heat, forkReach, path, pixel, onCellPress,
 }: BoardProps) {
   const cells = [];
   for (let r = 0; r < ROWS; r++) {
@@ -179,6 +190,7 @@ export function Board({
           step={path.indexOf(index) + 1}
           movable={movable.has(index)}
           firing={firing}
+          pixel={pixel}
           onPress={onCellPress}
         />,
       );
@@ -203,21 +215,26 @@ export function Board({
             style={{ ...cellBox(m.cell), transitionDuration: `${Math.max(30, stepMs - 8)}ms` }}
             className="absolute flex items-center justify-center transition-[left,top] ease-linear"
           >
-            <span
-              /* Sized from the cell, like the part badges. It was a fixed
-                 10px, which is legible in a 55px phone cell and lost inside a
-                 90px one on a monitor. */
-              style={{ fontSize: 'var(--badge)' }}
-              className="relative w-[64%] aspect-square rounded-full flex items-center justify-center font-bold text-[#2b1e06] tabular-nums shadow-marble bg-[radial-gradient(circle_at_34%_26%,#fffaf0_0%,#f4d08a_14%,#d9a441_44%,#9c7025_72%,#5e410f_100%)]"
-            >
-              {/* The specular dot is its own element so it can be blurred
-                  without softening the value sitting on top of it. */}
+            {/* Same 64% of the cell either way, so switching skin does not
+                move the marble relative to the board. Position and timing are
+                untouched: both are still whatever playback wrote. */}
+            {pixel ? <PixelMarble label={m.value} /> : (
               <span
-                aria-hidden
-                className="absolute left-[22%] top-[16%] w-[26%] h-[22%] rounded-full bg-white/70 blur-[2px]"
-              />
-              <span className="relative">{m.value}</span>
-            </span>
+                /* Sized from the cell, like the part badges. It was a fixed
+                   10px, which is legible in a 55px phone cell and lost inside a
+                   90px one on a monitor. */
+                style={{ fontSize: 'var(--badge)' }}
+                className="relative w-[64%] aspect-square rounded-full flex items-center justify-center font-bold text-[#2b1e06] tabular-nums shadow-marble bg-[radial-gradient(circle_at_34%_26%,#fffaf0_0%,#f4d08a_14%,#d9a441_44%,#9c7025_72%,#5e410f_100%)]"
+              >
+                {/* The specular dot is its own element so it can be blurred
+                    without softening the value sitting on top of it. */}
+                <span
+                  aria-hidden
+                  className="absolute left-[22%] top-[16%] w-[26%] h-[22%] rounded-full bg-white/70 blur-[2px]"
+                />
+                <span className="relative">{m.value}</span>
+              </span>
+            )}
           </div>
         ))}
         {labels.map((l) => (

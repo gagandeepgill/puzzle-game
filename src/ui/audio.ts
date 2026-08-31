@@ -9,6 +9,22 @@
  * start one outside a user gesture — constructing it at module load leaves a
  * permanently suspended context and silence for the rest of the session.
  */
+import { pixelVoices } from './pixel/pixelSfx.js';
+import type { PartKey } from '../game/types.js';
+
+/**
+ * Which sound language is playing.
+ *
+ * Paired with the visual skin, but kept a separate type because the two are
+ * separate decisions: the spec is explicit that classic keeps its existing
+ * sound language rather than being replaced.
+ */
+export type SoundTheme = 'classic' | 'pixel';
+
+let theme: SoundTheme = 'classic';
+export const setSoundTheme = (next: SoundTheme): void => { theme = next; };
+export const soundTheme = (): SoundTheme => theme;
+
 let ctx: AudioContext | null = null;
 let muted = false;
 
@@ -65,17 +81,36 @@ export function blip(
   }
 }
 
-/** Rising with each part a marble touches, so a long cascade audibly builds. */
+/**
+ * The cues, as the rest of the app calls them.
+ *
+ * Every signature is unchanged from before the pixel theme existed, so
+ * `usePayloadRun.ts` needed no rewrite: each cue asks the theme what it should
+ * sound like. `trigger` gained an optional part key, which the drop already
+ * carries on its event, so the pixel theme can give all ten parts their own
+ * voice while classic keeps its one rising blip.
+ */
 export const sfx = {
-  trigger: (n: number) => blip(300 + Math.min(n, 22) * 45),
-  split: () => blip(880, 0.09, 'triangle'),
-  spring: () => blip(660, 0.1, 'sine', 0.06),
-  skid: () => blip(180, 0.07, 'sawtooth', 0.04),
-  seized: () => blip(120, 0.22, 'sawtooth', 0.06),
-  bank: (value: number) => blip(value > 80 ? 1046 : 784, 0.11, 'triangle', 0.06),
-  place: () => blip(520, 0.05, 'square', 0.04),
-  blueprint: () => blip(700, 0.12, 'triangle', 0.06),
+  trigger: (n: number, part?: PartKey) => {
+    if (theme === 'pixel' && part) {
+      const ac = context();
+      if (ac) pixelVoices.part(ac, part);
+      return;
+    }
+    blip(300 + Math.min(n, 22) * 45);
+  },
+  split: () => voice('part', 'prism', () => blip(880, 0.09, 'triangle')),
+  spring: () => voice('part', 'spring', () => blip(660, 0.1, 'sine', 0.06)),
+  skid: () => voice('part', 'anvil', () => blip(180, 0.07, 'sawtooth', 0.04)),
+  seized: () => pixelOr('gateFail', () => blip(120, 0.22, 'sawtooth', 0.06)),
+  bank: (value: number) => pixelOr(
+    value > 80 ? 'scoreBig' : value > 20 ? 'scoreMedium' : 'scoreSmall',
+    () => blip(value > 80 ? 1046 : 784, 0.11, 'triangle', 0.06),
+  ),
+  place: () => pixelOr('place', () => blip(520, 0.05, 'square', 0.04)),
+  blueprint: () => pixelOr('blueprint', () => blip(700, 0.12, 'triangle', 0.06)),
   roundWon: () => {
+    if (theme === 'pixel') { const ac = context(); if (ac) pixelVoices.quotaClear(ac); return; }
     // A bass note under the arpeggio. Peggle gates its whole musical climax to
     // the last orange peg; spending it per part is what makes it stop meaning
     // anything, so this fires only when a quota is crossed.
@@ -84,5 +119,24 @@ export const sfx = {
       setTimeout(() => blip(f, 0.16, 'triangle', 0.07), i * 110);
     });
   },
-  runLost: () => blip(110, 0.5, 'sawtooth', 0.07),
+  runLost: () => pixelOr('gameOver', () => blip(110, 0.5, 'sawtooth', 0.07)),
 };
+
+/**
+ * Play a pixel voice when the pixel theme is on, otherwise the classic one.
+ *
+ * The classic fallback is a thunk rather than a value so its oscillators are
+ * only built when it actually plays.
+ */
+function pixelOr(name: Exclude<keyof typeof pixelVoices, 'part'>, classic: () => void): void {
+  if (theme !== 'pixel') { classic(); return; }
+  const ac = context();
+  if (ac) pixelVoices[name](ac);
+}
+
+/** The same, for cues whose pixel version is a specific part voice. */
+function voice(_kind: 'part', part: PartKey, classic: () => void): void {
+  if (theme !== 'pixel') { classic(); return; }
+  const ac = context();
+  if (ac) pixelVoices.part(ac, part);
+}
