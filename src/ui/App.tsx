@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from './Board.js';
 import { ResultModal } from './ResultModal.js';
 import { Compendium } from './Compendium.js';
+import { Icon } from './icons.js';
+import type { IconName } from './icons.js';
 import { usePayloadRun } from './usePayloadRun.js';
 import { isMuted, setMuted } from './audio.js';
 import { PARTS, BLUEPRINTS } from '../game/content.js';
@@ -198,7 +200,7 @@ export function App() {
             <p className="text-[12px] text-steel leading-snug">
               <b className="text-ink">
                 Day #{run.day}
-                {state.variant && ` — ${state.variant.icon} ${state.variant.name}`}
+                {state.variant && ` — ${state.variant.name}`}
               </b>{' '}
               {state.variant?.desc} Everyone gets this same run today.
               {run.todaysRecord && (
@@ -262,7 +264,8 @@ export function App() {
                 title={BLUEPRINTS[key].rule}
                 className="text-[10.5px] font-semibold text-glow border border-glow/50 bg-glow/[0.07] rounded-full px-2 py-0.5"
               >
-                <span aria-hidden>{BLUEPRINTS[key].glyph} </span>{BLUEPRINTS[key].name}
+                <Icon name={BLUEPRINTS[key].glyph as IconName} size={13} className="inline-block -mt-px mr-1 align-text-bottom" />
+                {BLUEPRINTS[key].name}
               </li>
             ))}
           </ul>
@@ -303,7 +306,7 @@ export function App() {
                     ? 'border-brass bg-brass/[0.08]' : 'border-edge'
                 }`}
               >
-                <span aria-hidden className="text-[18px] leading-none">{PARTS[key].glyph}</span>
+                <Icon name={PARTS[key].glyph as IconName} size={22} className="text-ink/90" />
                 <span className="font-bold text-[11.5px] leading-tight text-center">{PARTS[key].name}</span>
                 <span className="text-[10px] text-steel leading-[1.25] text-center">{PARTS[key].rule}</span>
               </button>
@@ -324,7 +327,7 @@ export function App() {
                 onClick={() => run.dispatch({ type: 'takeBlueprint', key })}
                 className="flex-1 bg-card border-[1.5px] border-edge rounded-[11px] px-1.5 py-2.5 flex flex-col gap-1"
               >
-                <span aria-hidden className="text-[23px]">{BLUEPRINTS[key].glyph}</span>
+                <Icon name={BLUEPRINTS[key].glyph as IconName} size={24} className="text-glow" />
                 <span className="font-bold text-[13px]">{BLUEPRINTS[key].name}</span>
                 <span className="text-[11px] text-steel leading-snug">{BLUEPRINTS[key].rule}</span>
               </button>
