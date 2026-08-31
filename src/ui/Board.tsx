@@ -107,10 +107,16 @@ const Cell = memo(function Cell({
       )}
       {part && (
         <>
-          <Icon name={PARTS[part].glyph as IconName} size={26} className="shrink-0" />
+          <span
+            className="shrink-0"
+            style={{ width: 'var(--glyph)', height: 'var(--glyph)' }}
+          >
+            <Icon name={PARTS[part].glyph as IconName} size={undefined} className="w-full h-full" />
+          </span>
           <span
             aria-hidden
-            className={`text-[9.5px] font-bold tracking-[.02em] ${
+            style={{ fontSize: 'var(--badge)' }}
+            className={`font-bold tracking-[.02em] ${
               PARTS[part].role === 'multiply' ? 'text-brass' : 'text-steel'
             }`}
           >

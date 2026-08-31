@@ -43,18 +43,18 @@ export const ICON_NAMES: readonly string[] = Object.keys(PATHS);
 interface Props {
   readonly name: IconName;
   /** Rendered size in px. The board scales this with the cell. */
-  readonly size?: number;
+  /** Omit to let CSS size it, which the board does so glyphs scale with the cell. */
+  readonly size?: number | undefined;
   readonly className?: string;
 }
 
-export function Icon({ name, size = 24, className = '' }: Props) {
+export function Icon({ name, size, className = '' }: Props) {
   return (
     <svg
       aria-hidden
       focusable="false"
       viewBox="0 0 512 512"
-      width={size}
-      height={size}
+      {...(size === undefined ? {} : { width: size, height: size })}
       fill="currentColor"
       className={className}
     >

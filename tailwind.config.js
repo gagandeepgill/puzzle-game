@@ -24,6 +24,11 @@
 export default {
   content: ['./index.html', './app/index.html', './src/**/*.{ts,tsx}'],
   theme: {
+    screens: {
+      sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1536px',
+      // The three-column cockpit. 280 + 470 + 320 plus gutters and padding.
+      cockpit: '1140px',
+    },
     extend: {
       colors: {
         // The three darks. Empty board cells use `ground`, so they read as
