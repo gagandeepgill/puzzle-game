@@ -2,6 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * The type scale.
+ *
+ * Eight roles, three tiers. `tailwind.config.js` maps each role to one of
+ * these variables and pairs it with a line height, so a component says
+ * `text-meta` and the viewport decides what that measures.
+ *
+ * On `:root` rather than on `.ck`, because the result modal is portalled to
+ * document.body and would otherwise fall outside the scale entirely.
+ *
+ * In rem, not px. Every size in this app used to be px, which meant a player
+ * who raised their browser's default font size got nothing: setting root
+ * font-size to 32px changed the page by zero pixels. That was verified rather
+ * than assumed, and it is a WCAG 1.4.4 failure, not a nicety.
+ *
+ * The mobile tier reproduces the sizes the phone layout was tuned at, so the
+ * 375x812 result that got all six rows above the fold is unchanged. Only the
+ * wider tiers grow. The step is about 1.09 per tier for reading sizes and
+ * less for the small caps, because a 10px label going to 13px stops being a
+ * label; large text needs proportionally less growth than small text does.
+ */
+@layer base {
+  :root {
+    --t-micro: 0.625rem;    /* 10.0px — part badges, path steps */
+    --t-label: 0.625rem;    /* 10.0px — uppercase section captions */
+    --t-meta: 0.71875rem;   /* 11.5px — part rules, secondary lines */
+    --t-body: 0.78125rem;   /* 12.5px — copy, buttons, HUD labels */
+    --t-lead: 0.84375rem;   /* 13.5px — emphasised copy, card titles */
+    --t-stat: 1.1875rem;    /* 19.0px — HUD numbers */
+    --t-head: 1.6875rem;    /* 27.0px — wordmark, modal headline */
+    --t-payout: 1.875rem;   /* 30.0px — modal stat values */
+  }
+
+  /* Tablet and up. The board no longer owns the whole viewport, so the
+     vertical budget that forced the phone sizes is gone. */
+  @media (min-width: 768px) {
+    :root {
+      --t-micro: 0.65625rem;  /* 10.5px */
+      --t-label: 0.6875rem;   /* 11.0px */
+      --t-meta: 0.78125rem;   /* 12.5px */
+      --t-body: 0.84375rem;   /* 13.5px */
+      --t-lead: 0.9375rem;    /* 15.0px */
+      --t-stat: 1.3125rem;    /* 21.0px */
+      --t-head: 1.75rem;      /* 28.0px */
+    }
+  }
+
+  /* The cockpit. Body copy reaches 15px and lead 16.5px, which is where the
+     rails' 300 and 348px widths still give a 40-plus character line. */
+  @media (min-width: 1180px) {
+    :root {
+      --t-micro: 0.6875rem;   /* 11.0px */
+      --t-label: 0.71875rem;  /* 11.5px */
+      --t-meta: 0.84375rem;   /* 13.5px */
+      --t-body: 0.9375rem;    /* 15.0px */
+      --t-lead: 1.03125rem;   /* 16.5px */
+      --t-stat: 1.5rem;       /* 24.0px */
+      --t-head: 1.875rem;     /* 30.0px */
+      --t-payout: 2rem;       /* 32.0px */
+    }
+  }
+}
+
 @layer base {
   html { -webkit-text-size-adjust: 100%; }
   body {
@@ -39,7 +102,7 @@
  * keyboard.
  *
  * Sizes come from the content, not from device folklore. The three-column
- * form needs 280 + 470 + 320 plus gutters and padding, which lands at 1140.
+ * form needs 300 + 470 + 348 plus gutters and padding, which lands at 1180.
  */
 @layer components {
   .ck {
@@ -55,7 +118,7 @@
     .ck {
       display: grid;
       max-width: 1040px;
-      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-columns: minmax(0, 1fr) 348px;
       grid-template-rows: auto auto auto 1fr;
       grid-template-areas:
         "header header"
@@ -71,12 +134,12 @@
      up, centre is the machine. The draft has to be on the right: selecting a
      card lights a heat map across all 30 cells, and a card 900px from the cell
      you are about to click breaks that link. */
-  @media (min-width: 1140px) {
+  @media (min-width: 1180px) {
     .ck {
       /* Rails are fixed and the board absorbs the slack, which is what Lichess
          does and why a wide monitor still looks deliberate. */
-      max-width: 1520px;
-      grid-template-columns: 280px minmax(0, 1fr) 320px;
+      max-width: 1560px;
+      grid-template-columns: 300px minmax(0, 1fr) 348px;
       grid-template-rows: auto auto 1fr;
       grid-template-areas:
         "header header header"
@@ -107,6 +170,10 @@
  * actually constrains a 5x6 grid. The floor keeps a 44px touch target on a
  * tablet; the ceiling stops a 2560 monitor turning 30 cells into dinner plates.
  *
+ * The width subtrahends are the layout, added up, not round numbers: at the
+ * cockpit tier it is 20px of page padding, 648px of rails, 40px of column
+ * gaps and 42px of board-panel chrome, so 750.
+ *
  * The glyph and badge are derived from the cell rather than hardcoded, because
  * a 19px glyph in an 84px cell reads as sparse and unfinished.
  */
@@ -120,17 +187,20 @@
 
   @media (min-width: 768px) {
     .ck-machine {
-      --cell: clamp(56px, min((100dvh - 300px) / 6, (100vw - 460px) / 5), 84px);
+      --cell: clamp(56px, min((100dvh - 300px) / 6, (100vw - 488px) / 5), 84px);
       --glyph: calc(var(--cell) * 0.44);
-      --badge: clamp(9.5px, calc(var(--cell) * 0.155), 13px);
+      --badge: clamp(9.5px, calc(var(--cell) * 0.155), 14px);
       /* five cells, four 6px gaps, plus the panel's 8px padding and 1px border */
       max-width: calc(var(--cell) * 5 + 42px);
     }
   }
 
-  @media (min-width: 1140px) {
+  @media (min-width: 1180px) {
     .ck-machine {
-      --cell: clamp(56px, min((100dvh - 260px) / 6, (100vw - 700px) / 5), 84px);
+      /* Ceiling raised from 84: at 1560px the board column is 812px wide, so
+         width stops binding and the cells were sitting at the old cap with
+         room to spare. 90 keeps the 6-row board inside a 1080p viewport. */
+      --cell: clamp(56px, min((100dvh - 260px) / 6, (100vw - 750px) / 5), 90px);
     }
   }
 }
