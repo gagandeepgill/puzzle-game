@@ -1,0 +1,29 @@
+name: Typecheck and test
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'package.json', 'tsconfig.json', '.github/workflows/test.yml']
+  pull_request:
+    paths: ['src/**', 'package.json', 'tsconfig.json', '.github/workflows/test.yml']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      # The engine must stay free of any renderer, or the same code can't serve
+      # web, native and a server-side replay verifier.
+      - name: Check the engine imports no DOM or UI
+        run: |
+          if grep -rnE "from '(react|react-native|react-dom)|document\.|window\." src/game --include=*.ts | grep -v __tests__; then
+            echo "::error::src/game must not import a renderer or touch the DOM"
+            exit 1
+          fi
