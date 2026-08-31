@@ -1,0 +1,48 @@
+name: Deploy arcade to GitHub Pages
+
+# The site is static — demo/ is published verbatim, no build step.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'demo/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two deploys at once, but let an in-flight one finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the service worker lists every page
+        run: |
+          missing=0
+          for f in demo/*.html; do
+            name=$(basename "$f")
+            if ! grep -q "'$name'" demo/sw.js; then
+              echo "::error file=demo/sw.js::$name is not precached in SHELL — it will not work offline"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: demo
+      - id: deployment
+        uses: actions/deploy-pages@v4
