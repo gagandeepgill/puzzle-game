@@ -86,6 +86,12 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
   // the current value synchronously without taking it as a dependency.
   const [opts, setOpts] = useState<RunOptions>(() => ({ ...initial, dateKey: utcDateKey() }));
   const optsRef = useRef<RunOptions>(opts);
+  // Kept in step every render, not only in restart. restart is the sole writer
+  // today, so this is redundant — but a second writer added later would
+  // silently desync the seed from the banner, and that is a nasty way to find
+  // out. Mirroring state into a ref during render is safe; the ref is not read
+  // during render.
+  optsRef.current = opts;
   // startRun calls Math.random in free play, so it must not run during render.
   // Seeding once in a lazy initialiser and again only in restart keeps render
   // pure and stops StrictMode's double invoke from re-rolling the board.
