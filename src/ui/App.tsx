@@ -6,6 +6,7 @@ import { Icon, UIIcon } from './icons.js';
 import type { IconName } from './icons.js';
 import { usePayloadRun } from './usePayloadRun.js';
 import { isMuted, setMuted } from './audio.js';
+import { isCockpit, watchCockpit } from './breakpoints.js';
 import { PARTS, BLUEPRINTS } from '../game/content.js';
 import { COLS, ROWS, cellAt, column } from '../game/types.js';
 import {
@@ -52,9 +53,14 @@ export function App() {
    * and open a disclosure. It stays collapsed on a phone, where the vertical
    * budget is the constraint.
    */
-  const [refOpen, setRefOpen] = useState(
-    () => typeof matchMedia === 'function' && matchMedia('(min-width: 1180px)').matches,
-  );
+  const [refOpen, setRefOpen] = useState(isCockpit);
+  /**
+   * Set once the player opens or closes the panel themselves, after which the
+   * viewport stops having an opinion. Without it, widening a window would
+   * reopen a panel somebody had just deliberately collapsed, which is the
+   * layout overruling a decision rather than making one.
+   */
+  const refTouched = useRef(false);
   /** Column whose fall path is being previewed, from hover or keyboard focus. */
   const [peekColumn, setPeekColumn] = useState<number | null>(null);
 
@@ -158,6 +164,16 @@ export function App() {
 
   const setMode = (mode: Mode) => startOver({ mode });
   const setDifficulty = (difficulty: DifficultyKey) => startOver({ difficulty });
+
+  // Reading the query once at mount meant loading narrow and widening to the
+  // cockpit left the panel collapsed with an empty rail beside it, and
+  // rotating a tablet did the same. Empty deps: subscribe once, and read the
+  // touched flag through a ref so a manual toggle does not resubscribe.
+  // Empty deps: subscribe once. The rule about not overruling a manual
+  // toggle lives in watchCockpit, where it can be tested — CDP viewport
+  // emulation changes `matches` without firing `change`, so a browser check
+  // of this path is not available.
+  useEffect(() => watchCockpit(setRefOpen, () => refTouched.current), []);
 
   useEffect(() => {
     if (!resetArmed) return;
@@ -637,7 +653,10 @@ export function App() {
           nothing on a phone until it is wanted. */}
       <details
         open={refOpen}
-        onToggle={(e) => setRefOpen((e.currentTarget as HTMLDetailsElement).open)}
+        onToggle={(e) => {
+          refTouched.current = true;
+          setRefOpen((e.currentTarget as HTMLDetailsElement).open);
+        }}
         className={`${PANEL} px-3 py-2`}
       >
         <summary className="text-body font-semibold text-steel hover:text-ink cursor-pointer py-1 transition-colors duration-150">
