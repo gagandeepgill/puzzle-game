@@ -13,6 +13,8 @@ on:
       - 'package-lock.json'
       - 'vite.config.ts'
       - 'tailwind.config.js'
+      - 'tsconfig.json'
+      - 'postcss.config.js'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
