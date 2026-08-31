@@ -115,3 +115,17 @@ describe('startFrames', () => {
     }
   });
 });
+
+describe('start frames do not depend on log order', () => {
+  it('schedules the same way when the marbles are enumerated out of order', () => {
+    // startFrames walks ids ascending rather than trusting the Map's insertion
+    // order, because a copy is always created while its parent resolves and so
+    // always has the larger id. Shuffling the map must change nothing.
+    const board = place(['prism', 0, 2], ['prism', 2, 3], ['bell', 0, 0]);
+    const events = simulateDrop(board, column(2), RULES).events;
+    const inOrder = chunkByMarble(events);
+    const shuffled = new Map([...inOrder].reverse());
+
+    expect(startFrames(shuffled)).toEqual(startFrames(inOrder));
+  });
+});

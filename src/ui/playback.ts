@@ -39,13 +39,16 @@ export function chunkByMarble(events: readonly DropEvent[]): Map<number, Chunk[]
  * the split that created it, so it visibly leaves the prism rather than
  * appearing from nowhere.
  *
- * Relies on the log listing a parent before its copy, which holds because the
- * simulation pushes the copy onto the queue while resolving the parent.
+ * A copy is always created while its parent is being resolved, so its id is
+ * always larger. Walking ids in ascending order therefore guarantees a
+ * parent has its own start frame before any of its copies read it — without
+ * depending on the log or the Map preserving processing order.
  */
 export function startFrames(byMarble: Map<number, Chunk[]>): Map<number, number> {
   const start = new Map<number, number>();
   for (const id of byMarble.keys()) start.set(id, 0);
-  for (const [id, chunks] of byMarble) {
+  for (const id of [...byMarble.keys()].sort((a, b) => a - b)) {
+    const chunks = byMarble.get(id) ?? [];
     const base = start.get(id) ?? 0;
     chunks.forEach((chunk, i) => {
       for (const e of chunk) {
