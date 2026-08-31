@@ -5,6 +5,10 @@ import { usePayloadRun } from './usePayloadRun.js';
 import { isMuted, setMuted } from './audio.js';
 import { PARTS, BLUEPRINTS } from '../game/content.js';
 import { COLS, ROWS, cellAt, column } from '../game/types.js';
+import {
+  columnTotals, fallPath, forkReach, heatFor, placementScores,
+} from '../game/preview.js';
+import { rulesFor } from '../game/run.js';
 import type { CellIndex, DifficultyKey, Mode } from '../game/types.js';
 
 export function App() {
@@ -17,9 +21,44 @@ export function App() {
   const [moving, setMoving] = useState(false);
   const [resetArmed, setResetArmed] = useState(false);
   const [mute, setMute] = useState(() => isMuted());
+  /** Column whose fall path is being previewed, from hover or keyboard focus. */
+  const [peekColumn, setPeekColumn] = useState<number | null>(null);
 
   const drafting = state.phase.kind === 'drafting';
   const placeable = drafting && state.phase.selected !== null;
+  const selectedPart = state.phase.kind === 'drafting' && state.phase.selected !== null
+    ? state.phase.offers[state.phase.selected] ?? null
+    : null;
+
+  const rules = useMemo(() => rulesFor(state), [state]);
+
+  /**
+   * What each placement would be worth, from the same simulation the drop
+   * runs. Up to 150 simulations, so it is memoised on the board and the card
+   * rather than recomputed per render — but it is cheap enough to do
+   * synchronously when either changes.
+   */
+  const heat = useMemo(() => {
+    if (!selectedPart) return new Map();
+    return heatFor(placementScores(state.board, selectedPart, rules));
+  }, [state.board, selectedPart, rules]);
+
+  /** Cells an existing Tuning Fork already reaches, so the doubling is visible
+   *  before committing rather than discovered afterwards. */
+  const reach = useMemo(
+    () => (selectedPart ? forkReach(state.board, selectedPart) : new Set<CellIndex>()),
+    [state.board, selectedPart],
+  );
+
+  const totals = useMemo(
+    () => (state.phase.kind === 'playing' ? columnTotals(state.board, rules) : []),
+    [state.board, rules, state.phase.kind],
+  );
+
+  const path = useMemo(
+    () => (peekColumn === null ? [] : fallPath(state.board, column(peekColumn), rules)),
+    [state.board, peekColumn, rules],
+  );
   const canMove = state.blueprints.has('screws') && !state.screwUsed
     && state.phase.kind === 'playing';
 
@@ -296,23 +335,48 @@ export function App() {
       <div className="relative w-full max-w-[320px] mx-auto flex flex-col gap-2">
         {/* 9px = the board panel's 8px padding plus its 1px border. */}
         <div className="grid grid-cols-5 gap-1.5 px-[9px]">
-          {Array.from({ length: COLS }, (_, c) => (
-            <button
-              key={c}
-              type="button"
-              aria-label={`Drop a marble down column ${c + 1}`}
-              disabled={state.phase.kind !== 'playing' || busy || state.dropsLeft <= 0}
-              onClick={() => void run.drop(column(c))}
-              className="bg-card text-brass border border-edge rounded-[9px] min-h-[44px] text-[17px] font-bold disabled:opacity-35"
-            >
-              <span aria-hidden>▼</span>
-            </button>
-          ))}
+          {Array.from({ length: COLS }, (_, c) => {
+            const total = totals[c];
+            const best = total !== undefined && total > 0
+              && total === Math.max(...totals.filter((t): t is number => t !== undefined));
+            return (
+              <button
+                key={c}
+                type="button"
+                // The projection is in the name, not only the colour, so the
+                // choice is available without seeing the board.
+                aria-label={
+                  total === undefined
+                    ? `Drop a marble down column ${c + 1}`
+                    : `Drop a marble down column ${c + 1}. Would bank ${total}${best ? ', the best column' : ''}`
+                }
+                disabled={state.phase.kind !== 'playing' || busy || state.dropsLeft <= 0}
+                onClick={() => void run.drop(column(c))}
+                onPointerEnter={() => setPeekColumn(c)}
+                onPointerLeave={() => setPeekColumn((p) => (p === c ? null : p))}
+                onFocus={() => setPeekColumn(c)}
+                onBlur={() => setPeekColumn((p) => (p === c ? null : p))}
+                className={`bg-card border rounded-[9px] min-h-[44px] flex flex-col items-center justify-center leading-none disabled:opacity-35 ${
+                  best ? 'border-brass text-brass' : 'border-edge text-steel'
+                }`}
+              >
+                <span aria-hidden className="text-[15px] font-bold">▼</span>
+                {total !== undefined && (
+                  <span aria-hidden className="text-[10.5px] font-bold tabular-nums mt-0.5">
+                    {total}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <Board
           board={state.board}
           placeable={placeable}
+          heat={heat}
+          forkReach={reach}
+          path={path}
           firingCells={playback.firingCells}
           firingSeq={playback.firingSeq}
           marbles={playback.marbles}
