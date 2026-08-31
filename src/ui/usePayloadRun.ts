@@ -10,6 +10,7 @@ import type { DailyRecord, Streak } from '../game/daily.js';
 import { loadRecord, loadStreak, saveRecord, saveStreak } from './store.js';
 import { sfx } from './audio.js';
 import { assertNever } from '../game/types.js';
+import { chunkByMarble, startFrames } from './playback.js';
 import type {
   CellIndex, Column, DifficultyKey, DropEvent, DropResult, Mode, RunState,
 } from '../game/types.js';
@@ -38,8 +39,9 @@ export interface FloatLabel {
 }
 
 export interface Playback {
-  /** Cell currently firing, for the flash. */
-  readonly firingCell: CellIndex | null;
+  /** Cells firing this frame. Plural because marbles now advance together,
+   *  so a bell drop can trigger several parts at once. */
+  readonly firingCells: readonly CellIndex[];
   /** Bumped on every flash so a Spring re-triggering the same cell restarts
    *  the animation, which a class toggle alone cannot do. */
   readonly firingSeq: number;
@@ -66,7 +68,7 @@ export interface Playback {
  * the maths, and what will let a replay verifier re-derive a score server-side.
  */
 const EMPTY_PLAYBACK: Playback = {
-  firingCell: null, firingSeq: 0, tick: 0, ticking: false,
+  firingCells: [], firingSeq: 0, tick: 0, ticking: false,
   marbles: [], labels: [], breakdown: [], announcement: '',
 };
 
@@ -207,7 +209,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     const live = new Map<number, MarbleView>();
     let labels: FloatLabel[] = [];
     let labelId = 0;
-    let firingCell: CellIndex | null = null;
+    let firingCells: CellIndex[] = [];
 
     // Animating and not animating are the same loop; only the sleeps differ.
     // A drop the player skipped, or one under prefers-reduced-motion, drops
@@ -217,10 +219,10 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
       if (abandoned() || instant || skipRef.current) return;
       const marbles = [...live.values()];
       const shown = labels.slice(-8);   // bound the DOM; older ones have faded
-      const at = firingCell;
+      const at = firingCells;
       const n = seq;
       setPlayback((p) => ({
-        ...p, firingCell: at, firingSeq: n, marbles, labels: shown,
+        ...p, firingCells: at, firingSeq: n, marbles, labels: shown,
         tick: running, ticking: true,
       }));
       await sleep(ms);
@@ -230,70 +232,90 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
       labels = [...labels, { id: labelId++, cell, text, tone: toneFor(text) }];
     };
 
-    for (const event of result.events) {
+    const byMarble = chunkByMarble(result.events);
+    const starts = startFrames(byMarble);
+    const frames = Math.max(
+      0,
+      ...[...byMarble].map(([id, cs]) => (starts.get(id) ?? 0) + cs.length),
+    );
+
+    // One frame advances every marble that is in flight by one cell, rather
+    // than running each marble to the bottom before starting the next. The
+    // simulation resolves them one at a time because that is the cheapest
+    // correct order; showing them that way made a prism split look like two
+    // unrelated drops.
+    for (let f = 0; f < frames; f++) {
       if (abandoned()) return;
-      switch (event.kind) {
-        case 'enter':
-          live.set(event.marble, { id: event.marble, cell: event.cell, value: event.value });
-          firingCell = null;
-          await paint(60);
-          break;
+      firingCells = [];
+      let fired = 0;
 
-        case 'gravity':
-          live.set(event.marble, { id: event.marble, cell: event.cell, value: event.value });
-          await paint(0);
-          break;
+      for (const [id, chunks] of byMarble) {
+        const chunk = chunks[f - (starts.get(id) ?? 0)];
+        if (!chunk) continue;
 
-        case 'trigger': {
-          const m = live.get(event.marble);
-          if (m) live.set(event.marble, { ...m, value: event.after });
-          if (event.label) float(event.cell, event.label);
-          triggers += 1;
-          sfx.trigger(triggers);
-          seq += 1;
-          firingCell = event.cell;
-          await paint(130);   // one part at a time, paced for comprehension
-          break;
+        for (const event of chunk) {
+          switch (event.kind) {
+            case 'enter':
+            case 'gravity':
+              live.set(event.marble, {
+                id: event.marble, cell: event.cell, value: event.value,
+              });
+              break;
+
+            case 'trigger': {
+              const m = live.get(event.marble);
+              if (m) live.set(event.marble, { ...m, value: event.after });
+              if (event.label) float(event.cell, event.label);
+              firingCells = [...firingCells, event.cell];
+              triggers += 1;
+              fired += 1;
+              // Capped: eight marbles landing on parts in the same frame is a
+              // burst of noise, not information.
+              if (fired <= 2) sfx.trigger(triggers);
+              seq += 1;
+              break;
+            }
+
+            case 'skid':
+              sfx.skid();
+              float(event.cell, 'skid!');
+              break;
+
+            case 'split':
+              sfx.split();
+              float(event.cell, 'SPLIT');
+              break;
+
+            case 'confiscated':
+              sfx.seized();
+              float(event.cell, 'seized');
+              live.delete(event.marble);
+              break;
+
+            case 'banked': {
+              const m = live.get(event.marble);
+              sfx.bank(event.value);
+              if (m) float(m.cell, `+${event.value}`);
+              live.delete(event.marble);
+              running += event.value;
+              break;
+            }
+
+            case 'bounce':
+              sfx.spring();
+              // The row change shows up in the next `enter`, which moves the
+              // marble; there is nothing extra to draw here.
+              break;
+
+            default:
+              assertNever(event);
+          }
         }
-
-        case 'skid':
-          sfx.skid();
-          float(event.cell, 'skid!');
-          await paint(90);
-          break;
-
-        case 'split':
-          sfx.split();
-          float(event.cell, 'SPLIT');
-          await paint(90);
-          break;
-
-        case 'confiscated':
-          sfx.seized();
-          float(event.cell, 'seized');
-          live.delete(event.marble);
-          await paint(200);
-          break;
-
-        case 'banked': {
-          const m = live.get(event.marble);
-          sfx.bank(event.value);
-          if (m) float(m.cell, `+${event.value}`);
-          live.delete(event.marble);
-          running += event.value;
-          await paint(140);
-          break;
-        }
-
-        case 'bounce':
-          sfx.spring();
-          // The row change shows up in the next `enter`, which moves the
-          // marble; there is nothing extra to draw here.
-          break;
-
-        default:
-          assertNever(event);
       }
+
+      // A frame where something fired holds longer, so the part that scored is
+      // readable before the next one does.
+      await paint(fired > 0 ? 130 : 60);
     }
 
     // A restart landed while this drop was animating, so its score belongs to
@@ -307,7 +329,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     const roundAfter = state.roundScore + result.total;
     const dropsAfter = state.dropsLeft - 1;
     setPlayback({
-      firingCell: null,
+      firingCells: [],
       firingSeq: seq,
       tick: result.total,
       ticking: false,

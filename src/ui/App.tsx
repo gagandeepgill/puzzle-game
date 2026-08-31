@@ -313,7 +313,7 @@ export function App() {
         <Board
           board={state.board}
           placeable={placeable}
-          firingCell={playback.firingCell}
+          firingCells={playback.firingCells}
           firingSeq={playback.firingSeq}
           marbles={playback.marbles}
           labels={playback.labels}
