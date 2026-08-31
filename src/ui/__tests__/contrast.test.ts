@@ -1,0 +1,135 @@
+/**
+ * Every text colour must clear its contrast floor on every surface it can
+ * land on.
+ *
+ * This exists because the comment in `tailwind.config.js` was wrong twice.
+ * It claimed `card` was the tightest background in the app, which stopped
+ * being true the day `bg-machined` shipped on board cells: on that gradient's
+ * lit top stop, `edge` measured 2.86:1 against the 3.0 WCAG 1.4.11 wants of a
+ * component boundary, and a `steel` part badge measured 4.23:1 against the
+ * 4.5 body text wants. Both shipped, both were caught only because someone
+ * re-measured by hand months later.
+ *
+ * A comment cannot fail a build. So the values are read out of the config
+ * rather than restated here — adding a colour adds a case, and lightening a
+ * surface fails here instead of in production.
+ */
+import { describe, expect, it } from 'vitest';
+import config from '../../../tailwind.config.js';
+
+type Hex = `#${string}`;
+
+const colors = config.theme?.extend?.colors as Record<string, string>;
+const backgroundImage = config.theme?.extend?.backgroundImage as Record<string, string>;
+
+/** Relative luminance, WCAG 2.x §Relative luminance. */
+function luminance(hex: Hex): number {
+  const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const linear = channels.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  const [r, g, b] = linear as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Contrast ratio, WCAG 2.x §Contrast ratio. Order-independent. */
+export function contrast(a: Hex, b: Hex): number {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * The lit top stop of a gradient, which is the worst case for anything drawn
+ * on it. A surface lit from the top-left is lightest at 0%, so text sitting
+ * anywhere on it has at least this much contrast and usually more.
+ */
+function topStop(gradient: string): Hex | null {
+  const match = /#[0-9a-fA-F]{6}/.exec(gradient);
+  return match ? (match[0].toLowerCase() as Hex) : null;
+}
+
+/**
+ * Every surface the app paints text or a border on. The flat darks, plus the
+ * lit edge of every gradient in the theme — that second half is what the old
+ * comment missed.
+ *
+ * `machined-brass` is excluded: it is a brass button face, and the only thing
+ * drawn on it is `#241a05`, which is checked separately below because it is a
+ * one-off literal rather than a token.
+ */
+const SURFACES: ReadonlyArray<readonly [string, Hex]> = [
+  ['ground', colors.ground as Hex],
+  ['panel', colors.panel as Hex],
+  ['card', colors.card as Hex],
+  ...Object.entries(backgroundImage)
+    .filter(([name]) => name !== 'machined-brass')
+    .map(([name, gradient]) => {
+      const stop = topStop(gradient);
+      if (!stop) throw new Error(`no hex stop in backgroundImage.${name}`);
+      return [`${name} (lit stop)`, stop] as const;
+    }),
+];
+
+/**
+ * `edge` is a component boundary, which WCAG 1.4.11 puts at 3.0. Everything
+ * else here is drawn as text somewhere and takes the 4.5 of 1.4.3.
+ *
+ * `copper` only appears as a gradient stop in the quota bar today. It is held
+ * to the text floor anyway, so that using it as text later is not a silent
+ * regression.
+ */
+const FLOOR: Record<string, number> = { edge: 3 };
+const TEXT_FLOOR = 4.5;
+
+const FOREGROUNDS = Object.entries(colors)
+  .filter(([name]) => !['ground', 'panel', 'card'].includes(name));
+
+describe('contrast floors', () => {
+  it('has surfaces to check, including the gradients', () => {
+    // Guards the parsing above: if the config is restructured and SURFACES
+    // silently empties, every assertion below would pass vacuously.
+    expect(SURFACES.length).toBeGreaterThanOrEqual(6);
+    expect(SURFACES.map(([n]) => n)).toContain('machined (lit stop)');
+    expect(FOREGROUNDS.length).toBeGreaterThanOrEqual(7);
+  });
+
+  for (const [fgName, fg] of FOREGROUNDS) {
+    const floor = FLOOR[fgName] ?? TEXT_FLOOR;
+    it(`${fgName} clears ${floor}:1 on every surface`, () => {
+      for (const [bgName, bg] of SURFACES) {
+        const ratio = contrast(fg as Hex, bg);
+        expect(
+          Number(ratio.toFixed(2)),
+          `${fgName} on ${bgName} is ${ratio.toFixed(2)}:1, under the ${floor}:1 floor. `
+          + 'Lighten the token or darken the surface, then update the table in '
+          + 'tailwind.config.js with the measured number.',
+        ).toBeGreaterThanOrEqual(floor);
+      }
+    });
+  }
+
+  it('the brass button face carries its label', () => {
+    // The one hardcoded foreground in the app: `text-[#241a05]` on the Play
+    // again and dismissed-modal buttons.
+    const brassFace = topStop(backgroundImage['machined-brass'] as string);
+    expect(brassFace).not.toBeNull();
+    expect(contrast('#241a05', brassFace as Hex)).toBeGreaterThanOrEqual(TEXT_FLOOR);
+  });
+
+  it('records the worst case for each foreground', () => {
+    // Not an assertion so much as the table the config comment quotes. If this
+    // output and that comment disagree, the comment is the one that is wrong.
+    const worst = FOREGROUNDS.map(([name, hex]) => {
+      const [ratio, where] = SURFACES.reduce<[number, string]>(
+        (acc, [bgName, bg]) => {
+          const r = contrast(hex as Hex, bg);
+          return r < acc[0] ? [r, bgName] : acc;
+        },
+        [Infinity, ''],
+      );
+      return { name, ratio: Number(ratio.toFixed(2)), on: where };
+    });
+    // Every worst case sits on the same surface, which is the point: one
+    // background is the binding constraint and the config should name it.
+    const surfaces = new Set(worst.map((w) => w.on));
+    expect(surfaces.size, `worst cases are spread across ${[...surfaces].join(', ')}`).toBe(1);
+  });
+});

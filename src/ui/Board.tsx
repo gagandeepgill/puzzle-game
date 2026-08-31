@@ -82,7 +82,7 @@ const Cell = memo(function Cell({
         // the board read as a machine rather than a grid of rectangles.
         part
           ? 'bg-machined border border-edge shadow-machined'
-          : 'bg-ground border border-dashed border-edge-soft shadow-recess',
+          : 'bg-ground border border-dashed border-edge shadow-recess',
         placeable ? 'border-[1.5px] border-dashed border-brass cursor-pointer' : '',
         // Shaded by what the part would actually be worth here, from the same
         // simulation the drop runs. Flat cells stay dim rather than going red:
@@ -103,7 +103,8 @@ const Cell = memo(function Cell({
       ].join(' ')}
     >
       {step > 0 && !part && (
-        <span aria-hidden className="text-[10px] font-bold text-glow/80 tabular-nums">{step}</span>
+        <span aria-hidden style={{ fontSize: 'var(--badge)' }}
+            className="font-bold text-glow/80 tabular-nums">{step}</span>
       )}
       {part && (
         <>
@@ -185,7 +186,7 @@ export function Board({
   }
 
   return (
-    <div className="relative bg-panel border border-edge rounded-[13px] p-2">
+    <div className="relative bg-panel-lit border border-edge rounded-[13px] shadow-panel p-2">
       <div className="grid grid-cols-5 gap-1.5">{cells}</div>
 
       {/* inset-2 matches the panel's p-2, so the overlay's box is exactly the
@@ -202,7 +203,13 @@ export function Board({
             style={{ ...cellBox(m.cell), transitionDuration: `${Math.max(30, stepMs - 8)}ms` }}
             className="absolute flex items-center justify-center transition-[left,top] ease-linear"
           >
-            <span className="relative w-[64%] aspect-square rounded-full flex items-center justify-center text-[10px] font-bold text-[#2b1e06] tabular-nums shadow-marble bg-[radial-gradient(circle_at_34%_26%,#fffaf0_0%,#f4d08a_14%,#d9a441_44%,#9c7025_72%,#5e410f_100%)]">
+            <span
+              /* Sized from the cell, like the part badges. It was a fixed
+                 10px, which is legible in a 55px phone cell and lost inside a
+                 90px one on a monitor. */
+              style={{ fontSize: 'var(--badge)' }}
+              className="relative w-[64%] aspect-square rounded-full flex items-center justify-center font-bold text-[#2b1e06] tabular-nums shadow-marble bg-[radial-gradient(circle_at_34%_26%,#fffaf0_0%,#f4d08a_14%,#d9a441_44%,#9c7025_72%,#5e410f_100%)]"
+            >
               {/* The specular dot is its own element so it can be blurred
                   without softening the value sitting on top of it. */}
               <span
@@ -219,7 +226,7 @@ export function Board({
             style={cellBox(l.cell)}
             className="absolute flex items-start justify-center"
           >
-            <span className={`animate-floatup font-bold text-[12px] drop-shadow-[0_1px_2px_rgba(0,0,0,.8)] ${l.tone}`}>
+            <span className={`animate-floatup font-bold text-body drop-shadow-[0_1px_2px_rgba(0,0,0,.8)] ${l.tone}`}>
               {l.text}
             </span>
           </div>

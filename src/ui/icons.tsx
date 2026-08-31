@@ -40,6 +40,76 @@ const PATHS = {
  *  nothing else can check them against this table. */
 export const ICON_NAMES: readonly string[] = Object.keys(PATHS);
 
+/**
+ * Interface chrome. A second family on purpose, and the split is by hierarchy,
+ * not by whim: the 512-grid glyphs above are game *content* — a part, a
+ * blueprint, a result — drawn filled and dense. These are *controls*: reset,
+ * settings, sound, close. Drawing a control in the same heavy filled style as
+ * a Tuning Fork makes the two read as the same kind of thing, which is exactly
+ * what a chrome set exists to prevent.
+ *
+ * Every one of these was an emoji until now. Emoji render as full-colour OS
+ * glyphs that ignore `currentColor`, so a 🔥 in a steel button was the single
+ * loudest thing on the page and looked different on every machine. They cannot
+ * be themed, which makes them incompatible with a token-driven material system.
+ *
+ * Paths from Lucide, ISC licensed, on a 24 grid with a 2px stroke. One grid,
+ * one weight, one cap style — mixing stroke widths inside a family is the
+ * cheapest way to look unfinished.
+ */
+const UI_PATHS = {
+  sliders: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6',
+  reset: 'M3 2v6h6M3.05 13A9 9 0 1 0 6 5.3L3 8',
+  replay: 'M21 2v6h-6M20.95 13A9 9 0 1 1 18 5.3L21 8',
+  calendar: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
+  infinity: 'M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z',
+  sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  flame: 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z',
+  soundOn: 'M11 5 6 9H2v6h4l5 4V5ZM15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14',
+  soundOff: 'M11 5 6 9H2v6h4l5 4V5ZM22 9l-6 6M16 9l6 6',
+  wrench: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z',
+  alert: 'M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z',
+  drop: 'm6 9 6 6 6-6',
+  close: 'M18 6 6 18M6 6l12 12',
+  check: 'M20 6 9 17l-5-5',
+  streak: 'M13 2 3 14h9l-1 8 10-12h-9l1-8z',
+} as const;
+
+export type UIIconName = keyof typeof UI_PATHS;
+
+interface UIProps {
+  readonly name: UIIconName;
+  /** Rendered size in px. Defaults to 16, which is the one that sits on the
+   *  baseline of `text-body` without needing a nudge. */
+  readonly size?: number;
+  readonly className?: string;
+}
+
+/**
+ * Always `aria-hidden`. Every call site pairs one of these with visible text
+ * or with an `aria-label` on the button itself, so announcing the icon as well
+ * would only make a screen reader say everything twice.
+ */
+export function UIIcon({ name, size = 16, className = '' }: UIProps) {
+  return (
+    <svg
+      aria-hidden
+      focusable="false"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`shrink-0 ${className}`}
+    >
+      <path d={UI_PATHS[name]} />
+    </svg>
+  );
+}
+
 interface Props {
   readonly name: IconName;
   /** Rendered size in px. The board scales this with the cell. */
