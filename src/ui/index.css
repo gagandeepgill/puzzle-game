@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-ground text-ink font-sans;
+    min-height: 100dvh;
+  }
+  button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  /* Every animation here is decoration. None of it may carry meaning alone. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+}

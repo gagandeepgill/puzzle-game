@@ -8,21 +8,30 @@
  *
  *   node tools/serve.js [port]     → http://localhost:8000
  */
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.join(__dirname, '..', 'demo');
+const here = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(here, '..', 'demo');
 const PORT = Number(process.argv[2]) || 8000;
 
+// A missing entry here is not cosmetic: a stylesheet served as
+// application/octet-stream is silently refused by the browser in standards
+// mode, and the page renders unstyled with no console error.
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
 };
 
 http.createServer((req, res) => {
