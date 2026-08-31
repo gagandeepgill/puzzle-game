@@ -63,6 +63,24 @@
         "source": "github",
         "repo": "EveryInc/compound-engineering-plugin"
       }
+    },
+    "wshobson-agents": {
+      "source": {
+        "source": "github",
+        "repo": "wshobson/agents"
+      }
+    },
+    "hairyf-skills": {
+      "source": {
+        "source": "github",
+        "repo": "hairyf/skills"
+      }
+    },
+    "gamedev-skills": {
+      "source": {
+        "source": "github",
+        "repo": "gamedev-skills/awesome-gamedev-agent-skills"
+      }
     }
   },
   "enabledPlugins": {
@@ -72,11 +90,11 @@
     "claude-code-setup@claude-plugins-official": true,
     "superpowers@superpowers-marketplace": true,
     "pr-review-toolkit@claude-code": true,
-    "sumi@sumi-marketplace": true,
     "frontend-design-audit@frontend-design-audit": true,
     "ui-ux-pro-max@ui-ux-pro-max-skill": true,
     "impeccable@impeccable": true,
     "compound-engineering@compound-engineering-plugin": true,
-    "claude-security@claude-plugins-official": true
+    "frontend-mobile-development@wshobson-agents": true,
+    "ui-design@wshobson-agents": true
   }
 }
