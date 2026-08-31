@@ -40,6 +40,19 @@ self.addEventListener('install', (event) => {
   );
 });
 
+/*
+ * The other half of not calling skipWaiting() on install.
+ *
+ * A waiting worker only takes over once every tab on the origin closes, and
+ * an installed PWA on a phone is suspended rather than closed — so without
+ * this a player could sit on a months old build forever. The page detects the
+ * waiting worker, tells them, and posts this message only when they say so.
+ * The decision stays theirs, which is the point of not doing it on install.
+ */
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'payload:skip-waiting') self.skipWaiting();
+});
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()

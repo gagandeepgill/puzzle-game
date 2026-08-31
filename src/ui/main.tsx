@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.js';
+import { UpdateBar } from './UpdateBar.js';
 import './index.css';
 
 const root = document.getElementById('root');
@@ -8,6 +9,20 @@ if (!root) throw new Error('No #root element');
 createRoot(root).render(
   <StrictMode>
     <App />
+  </StrictMode>,
+);
+
+/*
+ * Its own root, not a child of <App>. Two reasons: it must not re-render the
+ * board, and <App> gets `inert` applied to it while the result modal is open,
+ * which would make the update bar unreachable exactly when someone has
+ * finished a run and is most able to take an update.
+ */
+const updateHost = document.createElement('div');
+document.body.appendChild(updateHost);
+createRoot(updateHost).render(
+  <StrictMode>
+    <UpdateBar />
   </StrictMode>,
 );
 
