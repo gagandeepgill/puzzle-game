@@ -134,6 +134,11 @@
     border-radius: 11px; padding: 11px 16px; border: 1px solid var(--brass);
     background: var(--brass); color: #241a05; }
 
+  .resetbtn { font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--steel);
+    background: none; border: 1px solid var(--edge); border-radius: 8px; padding: 4px 10px; }
+  .resetbtn:hover { color: var(--ink); }
+  .resetbtn.arm { color: var(--bad); border-color: var(--bad); }
+
   .how { color: var(--steel); font-size: 12.5px; line-height: 1.55; }
   .how strong { color: var(--ink); }
   button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -147,7 +152,10 @@
 <div class="app">
   <header>
     <div class="wordmark">Pay<span>load</span></div>
-    <div class="roundlbl" id="roundlbl">Round 1 / 8</div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="roundlbl" id="roundlbl">Round 1 / 8</div>
+      <button class="resetbtn" id="resetbtn">↺ Reset</button>
+    </div>
   </header>
 
   <p class="how"><strong>Build a scoring machine.</strong> Place drafted parts on the grid, then drop marbles down a column — every part they touch mutates their value. Adds feed multipliers, prisms clone marbles, springs re-trigger what's above. Beat the quota; it climbs steeply. Multiplication or death.</p>
@@ -609,6 +617,20 @@ function runLost() {
   $('losecard').classList.add('show');
   renderDrops(); renderMoveBtn();
 }
+
+/* reset (two-tap confirm) */
+let resetArmed = null;
+$('resetbtn').onclick = () => {
+  const b = $('resetbtn');
+  if (resetArmed) { location.reload(); return; }
+  b.textContent = 'Reset run?';
+  b.classList.add('arm');
+  resetArmed = setTimeout(() => {
+    resetArmed = null;
+    b.textContent = '↺ Reset';
+    b.classList.remove('arm');
+  }, 2500);
+};
 
 /* boot */
 renderGrid(); renderDrops(); renderMoveBtn(); renderBlueprints(); hud();
