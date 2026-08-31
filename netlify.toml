@@ -1,0 +1,24 @@
+# Alternative to the GitHub Pages workflow — point Netlify at this repo and it
+# publishes demo/ as-is. There is nothing to build.
+[build]
+  publish = "demo"
+  command = ""
+
+# The service worker must never be served stale, or players get pinned to an old
+# version of the app shell until they clear site data.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Everything else is content-addressed by the service worker's cache version,
+# so it can be cached hard.
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
