@@ -27,6 +27,8 @@ Deploying: Netlify builds from `main` and publishes `dist/`. The settings live i
 
 Platform strategy and the path to the App Store are in [`docs/PLATFORM.md`](docs/PLATFORM.md).
 
+Decisions that were argued out rather than just made live in [`docs/adr/`](docs/adr/).
+
 ## Payload
 
 A run-based engine builder. Draft a part from three, install it on a 5x6 grid, then drop marbles down a column. Every part a marble touches changes its value. Weights add, Coils multiply, Prisms clone the marble into the next column, Springs bounce it back up to re-trigger parts, Tuning Forks double whatever sits next to them.
