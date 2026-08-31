@@ -6,6 +6,9 @@ import { Icon, UIIcon } from './icons.js';
 import type { IconName } from './icons.js';
 import { usePayloadRun } from './usePayloadRun.js';
 import { isMuted, setMuted } from './audio.js';
+import { loadSkin, saveSkin } from './pixel/skin.js';
+import { PixelPart, hasPixelArt } from './pixel/PixelSprite.js';
+import type { GameSkin } from './pixel/skin.js';
 import { isCockpit, watchCockpit } from './breakpoints.js';
 import { PARTS, BLUEPRINTS } from '../game/content.js';
 import { COLS, ROWS, cellAt, column } from '../game/types.js';
@@ -46,6 +49,10 @@ export function App() {
   const [moving, setMoving] = useState(false);
   const [resetArmed, setResetArmed] = useState(false);
   const [mute, setMute] = useState(() => isMuted());
+  /** Presentation only. Persisted, and read once on mount like the mute
+   *  preference; nothing about the run depends on it. */
+  const [skin, setSkin] = useState<GameSkin>(loadSkin);
+  const pixel = skin === 'pixel';
   /**
    * The parts reference is the highest-value thing to promote on a wide
    * screen: the board draws each part as a glyph and a badge, and until now
@@ -186,7 +193,7 @@ export function App() {
     // chrome between the page and the notch or the home indicator.
     <main
       id="app-root"
-      className="ck w-full mx-auto"
+      className={`ck w-full mx-auto${pixel ? ' pixel-skin' : ''}`}
       style={{
         paddingLeft: 'max(10px, env(safe-area-inset-left))',
         paddingRight: 'max(10px, env(safe-area-inset-right))',
@@ -247,6 +254,26 @@ export function App() {
             <UIIcon name={mute ? 'soundOff' : 'soundOn'} size={15} />
             {mute ? 'Sound off' : 'Sound on'}
           </button>
+          {/* Presentation only, so it sits with sound rather than with mode
+              and difficulty, which restart the run. Switching skins mid-run is
+              safe and deliberately does not reset anything. */}
+          <div role="group" aria-label="Skin" className="flex flex-wrap gap-1.5">
+            <Tab
+              on={!pixel}
+              onClick={() => { setSkin('classic'); saveSkin('classic'); }}
+              icon="sliders"
+            >
+              Classic
+            </Tab>
+            <Tab
+              on={pixel}
+              onClick={() => { setSkin('pixel'); saveSkin('pixel'); }}
+              icon="sliders"
+            >
+              Pixel
+            </Tab>
+          </div>
+
           {/* The daily has no identity without its number, and free play had
               no copy at all — it looked like a daily that failed to load. */}
           {state.mode === 'daily' ? (
@@ -465,7 +492,9 @@ export function App() {
                       : 'border-edge bg-raised shadow-raised hover:border-brass/70'
                   }`}
                 >
-                  <Icon name={PARTS[key].glyph as IconName} size={24} className="text-ink/90" />
+                  {pixel && hasPixelArt(key)
+                    ? <PixelPart part={key} size="28px" />
+                    : <Icon name={PARTS[key].glyph as IconName} size={24} className="text-ink/90" />}
                   <span className="font-bold text-body leading-tight text-center">{PARTS[key].name}</span>
                   <span className="text-micro text-steel leading-[1.3] text-center">{PARTS[key].rule}</span>
                 </button>
@@ -562,6 +591,7 @@ export function App() {
           marbles={playback.marbles}
           labels={playback.labels}
           movable={movable}
+          pixel={pixel}
           onCellPress={onCellPress}
         />
 
@@ -702,7 +732,7 @@ export function App() {
 function Tab({ on, onClick, icon, children }: {
   on: boolean;
   onClick: () => void;
-  icon: 'calendar' | 'infinity' | 'sun' | 'flame';
+  icon: 'calendar' | 'infinity' | 'sun' | 'flame' | 'sliders';
   children: React.ReactNode;
 }) {
   return (

@@ -1,0 +1,161 @@
+/**
+ * The pixel skin.
+ *
+ * Everything here is scoped under `.pixel-skin` on the app root, so the
+ * classic theme is untouched and switching is a class toggle rather than a
+ * rebuild. Nothing in this file changes layout, sizing or spacing: the board
+ * still derives `--cell`, `--glyph` and `--badge` exactly as it does in the
+ * classic skin, so the mobile guarantee that all six rows stay above the fold
+ * holds without being re-verified per skin.
+ *
+ * ## The coupling worth knowing about
+ *
+ * The classic theme paints its four surface tiers with Tailwind's `bg-*`
+ * utilities, which compile to literal gradients rather than to custom
+ * properties. So flattening them means overriding those utility classes by
+ * name. That is a real coupling: renaming `bg-panel-lit` in
+ * `tailwind.config.js` silently stops flattening panels here. If the palette
+ * ever moves to CSS variables, this section should follow it and shrink.
+ */
+
+.pixel-skin {
+  --px-bg: #0b0f18;
+  --px-panel: #121826;
+  --px-raised: #18203050;
+  --px-line: #2b3550;
+  --px-line-lit: #3d4a6b;
+  --px-blue: #4bc3f5;
+  --px-purple: #a06cff;
+  --px-green: #5fd08a;
+  --px-gold: #f0a63c;
+}
+
+/* Flat, thin-bordered surfaces. The classic skin's bevels are a single light
+   source; this one has no light source at all, which is what stops the sprites
+   reading as decals stuck onto a 3D panel. */
+.pixel-skin .bg-panel-lit,
+.pixel-skin .bg-raised,
+.pixel-skin .bg-machined {
+  background-image: none;
+}
+.pixel-skin .bg-panel-lit { background-color: var(--px-panel); }
+.pixel-skin .bg-raised { background-color: #161d2c; }
+.pixel-skin .bg-machined { background-color: #1a2233; }
+
+.pixel-skin .shadow-panel,
+.pixel-skin .shadow-raised,
+.pixel-skin .shadow-machined,
+.pixel-skin .shadow-sunk,
+.pixel-skin .shadow-recess,
+.pixel-skin .shadow-marble {
+  box-shadow: none;
+}
+
+/* One border weight everywhere. The brief asks for thin flat borders, and the
+   fastest way to lose that is to leave the 1.5px accents the classic skin uses
+   for selection sitting next to 1px chrome. */
+.pixel-skin .border,
+.pixel-skin .border-\[1\.5px\] {
+  border-width: 1px;
+}
+.pixel-skin .border-edge { border-color: var(--px-line); }
+
+/* Board cells. An empty cell is the supplied tile; a filled one is a slightly
+   lifted flat fill with a lit edge, so occupancy reads without a bevel. */
+.pixel-skin .ck-board button[aria-label^='Row'] {
+  border-radius: 2px;
+  background-image: url('/assets/pixel/tiles/cell.png');
+  background-size: 100% 100%;
+  background-color: transparent;
+  image-rendering: pixelated;
+}
+.pixel-skin .ck-board button[aria-label^='Row'].px-filled {
+  background-image: none;
+  background-color: #1a2233;
+  border-color: var(--px-line-lit);
+}
+
+/* Sprites. The whole point: no resampling at any cell size. */
+.px-sprite {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+  flex: none;
+  user-select: none;
+}
+
+/* The marble. Value sits on top of the sprite rather than inside it, so the
+   number stays legible while the art scales. */
+.px-marble {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+}
+.px-marble-img { width: 100%; height: 100%; }
+.px-marble-value {
+  position: absolute;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #04121c;
+  line-height: 1;
+}
+
+/* Part activation. Two frames of scale with no easing, because a pixel sprite
+   that eases reads as a smooth object pretending to be pixels. `steps()` is
+   what keeps it mechanical. */
+@keyframes px-activate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.px-activate { animation: px-activate 0.18s steps(3) 1; }
+
+/* The supplied 4-frame sheets, 128x32 each. Driven by background-position in
+   whole 32px steps so no frame is ever shown half-scrolled. Available for a
+   caller that wants them; the board's own firing flash uses px-activate. */
+.px-sheet {
+  width: 32px;
+  height: 32px;
+  background-repeat: no-repeat;
+  background-size: 400% 100%;
+  image-rendering: pixelated;
+}
+.px-sheet-activate { background-image: url('/assets/pixel/effects/activate-sheet.png'); }
+.px-sheet-drop { background-image: url('/assets/pixel/effects/marble-drop-sheet.png'); }
+@keyframes px-sheet-play { to { background-position: -128px 0; } }
+.px-sheet-play { animation: px-sheet-play 0.32s steps(4) 1; }
+
+/* Accent roles from the brief: blue operational, purple prism and jam, green
+   spring and success, gold coil and value. Applied to the text that already
+   carries those meanings rather than to new elements. */
+.pixel-skin .text-glow { color: var(--px-blue); }
+.pixel-skin .text-brass { color: var(--px-gold); }
+.pixel-skin .text-ok { color: var(--px-green); }
+.pixel-skin .text-bad { color: var(--px-purple); }
+
+/* No blurred neon anywhere, per the brief. The classic skin uses drop-shadow
+   on the quota banner and the float labels. */
+.pixel-skin [class*='drop-shadow'] { filter: none; }
+
+/* Corners. Pixel art next to a 13px radius reads as two eras at once. */
+.pixel-skin .rounded-xl,
+.pixel-skin .rounded-\[13px\],
+.pixel-skin .rounded-\[11px\],
+.pixel-skin .rounded-\[10px\],
+.pixel-skin .rounded-\[9px\],
+.pixel-skin .rounded-lg { border-radius: 2px; }
+.pixel-skin .rounded-full { border-radius: 2px; }
+
+/* Every animation in this file is decoration and none of it carries meaning
+   alone, so it is safe to stop. The app's global reduced-motion rule already
+   clamps durations; this makes the intent explicit for the sheet animations,
+   which would otherwise freeze mid-strip on their first frame offset. */
+@media (prefers-reduced-motion: reduce) {
+  .px-activate,
+  .px-sheet-play {
+    animation: none;
+  }
+  .px-sheet { background-position: 0 0; }
+}
