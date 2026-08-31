@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { activateUpdate, onUpdateReady } from './swUpdate.js';
+import { activateUpdate, onUpdateReady, resolveRegistration } from './swUpdate.js';
 import type { WaitingWorker } from './swUpdate.js';
 
 /**
@@ -27,8 +27,11 @@ export function UpdateBar() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
     let cancelled = false;
-    void navigator.serviceWorker.getRegistration().then((reg) => {
-      if (!reg || cancelled) return;
+    // Not a bare getRegistration(): on a cold first visit this effect runs
+    // before main.tsx's `load` listener has registered anything, so it would
+    // resolve undefined and never subscribe.
+    void resolveRegistration(navigator.serviceWorker).then((reg) => {
+      if (cancelled) return;
       onUpdateReady(reg, (w) => { if (!cancelled) setWorker(w); });
     });
     return () => { cancelled = true; };
