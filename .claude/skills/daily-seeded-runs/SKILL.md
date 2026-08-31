@@ -1,113 +1,138 @@
 ---
 name: daily-seeded-runs
-description: 'How this repo builds Wordle-style daily puzzles — UTC date keys, deterministic seeding, rotating rule variants, first-attempt-counts records, streaks that survive being offline, and spoiler-free share payloads. Use when adding or changing a daily mode, a seed, a streak, a share string, or when a puzzle must be identical for every player on a given day.'
+description: 'How this repo builds Wordle-style daily puzzles: UTC date keys, deterministic seeding, rotating rule variants, first-attempt-counts records, streaks that survive being offline, and spoiler-free share payloads. Use when adding or changing a daily mode, a seed, a streak, a share string, or when a puzzle must be identical for every player on a given day.'
 ---
 
 # Daily seeded runs
 
-Both games use the same spine: the calendar date *is* the seed, so everyone in the world
-gets the same puzzle without a backend. Reference implementation: the daily block at the
-top of `public/payload.html`.
+Both games use the same spine: the calendar date is the seed, so everyone in the
+world gets the same puzzle without a backend.
+
+Payload's implementation is `src/game/rng.ts` for seeding and `src/game/daily.ts`
+for records, streaks and share text. Both are pure, and both are tested. Ledger
+Lane has no daily yet.
 
 ## The date is the identity
 
-```js
-const EPOCH = '2026-08-31';
-const dateKey = new Date().toISOString().slice(0, 10);          // UTC — never getDate()
-const dayNumber = Math.max(1,
-  Math.round((Date.parse(dateKey) - Date.parse(EPOCH)) / 864e5) + 1);
+```ts
+export const EPOCH_DATE_KEY = '2026-08-31';
+
+export function utcDateKey(now: Date = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+export function dayNumber(dateKey: string): number {
+  const ms = Date.parse(`${dateKey}T00:00:00Z`) - Date.parse(`${EPOCH_DATE_KEY}T00:00:00Z`);
+  return Math.max(1, Math.round(ms / 86_400_000) + 1);
+}
 ```
 
-`toISOString()` is what makes this UTC. Local-time date math is the classic bug here: it
-gives players either side of midnight different puzzles and silently breaks streaks.
-`dateKey` — not "now" — is the identity for the puzzle, the stored record, and the
-streak comparison.
+`toISOString()` is what makes this UTC. Local-time date maths is the classic bug:
+it gives players either side of midnight different puzzles and silently breaks
+streaks. The `dateKey`, not "now", is the identity for the puzzle, the stored
+record and the streak comparison.
+
+The `Math.max(1, ...)` clamp matters. A wrong system clock would otherwise produce
+a negative day number, index the variant table out of bounds, and throw from deep
+inside the content table with an error naming the wrong thing.
+
+Hold the date in state, not only in a ref. Anything that reads it, the banner, the
+streak line, the locked-in lookup, needs to be told when it changes; a session left
+open across UTC midnight otherwise keeps showing yesterday.
 
 ## Deterministic generation
 
-FNV-1a hash into mulberry32, then route *every* random decision through it:
+FNV-1a hash into mulberry32, then route every random decision through it:
 
-```js
-function hashDateKey(k) {
-  let h = 2166136261;
-  for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 16777619);
-  return h >>> 0;
+```ts
+export function dailyRng(dateKey: string, difficulty: DifficultyKey): Rng {
+  return mulberry32(hashDateKey(`${dateKey}:${difficulty}`));
 }
-function mulberry32(a) {
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-S.rng = mulberry32(hashDateKey(dateKey + ':' + S.diff.key));
 ```
 
-**Salt the seed with anything that should not repeat.** Payload salts with the
-difficulty key so Easy and Hard deal completely different parts on the same day —
-playing one never spoils the other.
+Salt the seed with anything that should not repeat. Payload salts with the
+difficulty key, so Easy and Hard deal completely different parts on the same day
+and playing one never spoils the other.
 
 Rules for keeping it deterministic:
 
-- One `S.rng` for the run; free play swaps in `Math.random`. Never call `Math.random()`
+- One rng for the run; free play swaps in `Math.random`. Never call `Math.random()`
   on a code path a daily can reach.
-- Draw in a fixed order. Adding a draw earlier in the sequence reshuffles everything
-  after it, which changes today's puzzle for anyone mid-run.
-- **Resolution must not consume randomness at all** — only generation does. In Payload a
-  drop is pure simulation, so replays of the same machine always pay the same.
-- If generation logic changes materially, bump a `generatorVersion` into the hash rather
-  than silently serving a different puzzle under the same day number.
+- Draw in a fixed order. Adding a draw earlier in the sequence reshuffles
+  everything after it, which changes today's puzzle for anyone mid-run.
+- Shuffle with Fisher-Yates over explicit draws. `sort(() => rng() - 0.5)` is not
+  portable: the number and order of comparator calls is implementation-defined, so
+  the same seed can deal different offers in different browsers. That was a real
+  bug here, fixed in #31.
+- Resolution must not consume randomness at all. Only generation does. In Payload
+  a drop is pure simulation, so replaying the same machine always pays the same.
+- If generation logic changes materially, bump a version into the hash rather than
+  silently serving a different puzzle under the same day number.
 
 ## Rotating variants
 
 The day number picks a rule twist, so consecutive days feel different without new
 content:
 
-```js
-S.variant = VARIANTS[(dayNumber - 1) % VARIANTS.length];
+```ts
+export function variantForDay(day: number): VariantDef {
+  const v = VARIANTS[(day - 1) % VARIANTS.length];
+  if (!v) throw new Error('VARIANTS must not be empty');
+  return v;
+}
 ```
 
-A variant is a small config object folded in through the helpers (`quotaFor`,
-`baseValue`, `springLimit`, `dropsForRound`) — never by branching at the call sites.
-Each pairs a buff with a cost (`Heavyworks`: marbles start at 3, quotas ×1.5) so the
-variants stay differently-shaped rather than easier/harder.
+A variant is a small config object folded in through the helpers, `quotaFor`,
+`dropsForRound`, `rulesFor`, rather than by branching at the call sites. Each pairs
+a buff with a cost, so Heavyworks starts marbles at 3 and raises quotas by half.
+That keeps variants differently shaped rather than simply easier or harder.
 
-Always show the player what today's rules are. An unannounced rule change reads as a bug.
+Always show the player what today's rules are. An unannounced rule change reads as
+a bug.
 
 ## Records and streaks
 
-```js
-const dailyKey = () => `payload.daily.${S.diff.key}.v1`;   // per-difficulty record
-```
+The logic is pure in `src/game/daily.ts`; `src/ui/store.ts` is the only thing that
+touches storage.
 
-- **First attempt counts.** `recordDaily` returns early if a record for `dateKey`
-  already exists. Replays stay allowed — they just cannot improve the recorded result,
-  which keeps the one-and-done ritual intact without hiding the game.
-- **Compute the streak against the record's own dateKey**, comparing to `yesterday`
-  derived from it — never against "now". An attempt finished offline and synced later
-  must not break the chain.
-- Difficulties record separately but share one day streak: playing either keeps it alive.
-- **Wrap every storage call in try/catch.** `localStorage` throws outright in some
-  contexts (`data:` URLs, private mode). The run must stay playable with persistence
-  quietly disabled — verify that path, it is easy to regress.
-- Version the storage key (`.v1`) so a future shape change cannot crash on old data.
+- First attempt counts. `recordFor` returns the stored record when one already
+  exists for that `dateKey`. Replays stay allowed, they just cannot improve the
+  recorded result, which keeps the one-and-done ritual without hiding the game.
+  It returns the attempt object itself when it accepts it, so reference equality
+  tells the UI whether the run just played is the one that counts.
+- Compute the streak against the record's own `dateKey`, comparing to a yesterday
+  derived from it, never against "now". An attempt finished offline and synced
+  later must not break the chain.
+- `bumpStreak` is idempotent for a day already counted, so replays cannot inflate
+  it, and a loss ends the streak rather than pausing it.
+- A streak is only live if it was extended today or yesterday. Otherwise it is a
+  stale number that reads as still running.
+- Wrap every storage call in try/catch. `localStorage` throws outright in some
+  contexts, including `data:` URLs and private mode. The run must stay playable
+  with persistence quietly disabled, and that path is easy to regress.
+- Version the storage key, and validate what comes back rather than casting it.
+  Payload uses `.v2` because the vanilla build wrote a different shape under `.v1`:
+  reading it produced a share string saying "stalled at 4/undefined" and reported
+  an Easy run as Hard. A stored value is untrusted input like any other.
 
 ## Share payloads
 
-Spoiler-free: report the *performance*, never the board or solution.
+Spoiler-free: report the performance, never the board or the solution.
 
 ```
-Payload Daily #1 ⚒️ Heavyworks · 🌤 Easy
-🏆 all 4 quotas · banked 344 · best drop 60
-🔥 3-day streak
+Payload Daily #6 ⚒️ Heavyworks
+🌤 Easy · cleared 4/4
+banked 210 · best drop 96
+⚙ 4-day streak
 ```
 
-Line 1 identifies the day, variant and difficulty so results are comparable; line 2 is
-the outcome; the streak line is omitted below 2 so a first-timer's share is not sad.
-Offer a copy button and fall back gracefully when the clipboard API is unavailable
-(`navigator.clipboard` rejects on insecure origins) — tell the player to select the text
-rather than failing silently.
+Line 1 identifies the day and variant so results are comparable, the rest is the
+outcome, and the streak line is omitted when it is not live so a first-timer's
+share is not sad. There is a test asserting the string contains no part names,
+rows or columns.
 
-Free play produces no share text at all: there is nothing to compare.
+Offer a copy button and fall back gracefully when the clipboard API is
+unavailable, since `navigator.clipboard` rejects on insecure origins. Keep the
+text on screen so there is still a way to share it.
+
+Free play produces no share text at all. There is nothing to compare.
