@@ -1,6 +1,8 @@
 import { BLUEPRINTS, JAMS, PARTS, SCALER_KEYS } from '../game/content.js';
 import { PART_KEYS, BLUEPRINT_KEYS } from '../game/types.js';
 import type { PartRole } from '../game/types.js';
+import { Icon } from './icons.js';
+import type { IconName } from './icons.js';
 
 /**
  * Every part, blueprint and jam in one place.
@@ -37,8 +39,8 @@ export function Compendium() {
             const p = PARTS[key];
             return (
               <li key={key} className="flex gap-2 items-start">
-                <span aria-hidden className="text-[17px] leading-none w-[22px] shrink-0 text-center">
-                  {p.glyph}
+                <span className="w-[22px] shrink-0 flex justify-center pt-px">
+                  <Icon name={p.glyph as IconName} size={19} />
                 </span>
                 <span className="flex-1">
                   <span className="font-bold text-[12.5px] text-ink">{p.name}</span>
@@ -73,8 +75,8 @@ export function Compendium() {
         <ul className="flex flex-col gap-1.5">
           {BLUEPRINT_KEYS.map((key) => (
             <li key={key} className="flex gap-2 items-start">
-              <span aria-hidden className="text-[17px] leading-none w-[22px] shrink-0 text-center">
-                {BLUEPRINTS[key].glyph}
+              <span className="w-[22px] shrink-0 flex justify-center pt-px text-glow">
+                <Icon name={BLUEPRINTS[key].glyph as IconName} size={19} />
               </span>
               <span className="flex-1">
                 <span className="font-bold text-[12.5px] text-ink">{BLUEPRINTS[key].name}</span>
@@ -105,6 +107,16 @@ export function Compendium() {
           ))}
         </ul>
       </section>
+
+      {/* CC BY 3.0 requires attribution, and this is the surface where the
+          icons are all on screen at once. */}
+      <p className="text-[10.5px] text-steel/80 leading-snug border-t border-edge/40 pt-2">
+        Icons by{' '}
+        <a href="https://game-icons.net" className="underline decoration-dotted">
+          game-icons.net
+        </a>{' '}
+        (Lorc, Delapouite), CC BY 3.0.
+      </p>
     </div>
   );
 }

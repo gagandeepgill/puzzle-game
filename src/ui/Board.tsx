@@ -5,6 +5,8 @@ import { isForked } from '../game/simulate.js';
 import { COLS, ROWS, cellAt, cellIndex, colOf, rowOf } from '../game/types.js';
 import type { Board as BoardModel, CellIndex, PartKey } from '../game/types.js';
 import type { HeatTier } from '../game/preview.js';
+import { Icon } from './icons.js';
+import type { IconName } from './icons.js';
 import type { FloatLabel, MarbleView } from './usePayloadRun.js';
 
 /** Matches `gap-1.5` on the grid below. The overlay is positioned by
@@ -75,9 +77,12 @@ const Cell = memo(function Cell({
       className={[
         'aspect-square rounded-[9px] flex flex-col items-center justify-center gap-0 p-0',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2',
+        // A part sits proud of the board and catches the light; an empty
+        // cell is a recess cut into it. That difference is most of what makes
+        // the board read as a machine rather than a grid of rectangles.
         part
-          ? 'bg-card border border-edge'
-          : 'bg-[#191c22] border border-dashed border-edge-soft',
+          ? 'bg-machined border border-edge shadow-machined'
+          : 'bg-ground border border-dashed border-edge-soft shadow-recess',
         placeable ? 'border-[1.5px] border-dashed border-brass cursor-pointer' : '',
         // Shaded by what the part would actually be worth here, from the same
         // simulation the drop runs. Flat cells stay dim rather than going red:
@@ -102,7 +107,7 @@ const Cell = memo(function Cell({
       )}
       {part && (
         <>
-          <span aria-hidden className="text-[19px] leading-[1.1]">{PARTS[part].glyph}</span>
+          <Icon name={PARTS[part].glyph as IconName} size={26} className="shrink-0" />
           <span
             aria-hidden
             className={`text-[9.5px] font-bold tracking-[.02em] ${
@@ -181,10 +186,20 @@ export function Board({
           <div
             key={m.id}
             style={cellBox(m.cell)}
-            className="absolute flex items-center justify-center transition-[left,top] duration-[90ms] ease-linear"
+            /* 55ms against a 60ms quiet frame, so the marble actually arrives.
+               It was 90ms against 60ms, which meant the transition was
+               retargeted before it finished and the marble never landed on a
+               cell at all — it glided about a third of a cell behind itself. */
+            className="absolute flex items-center justify-center transition-[left,top] duration-[55ms] ease-linear"
           >
-            <span className="w-[64%] aspect-square rounded-full flex items-center justify-center text-[10px] font-bold text-[#2b1e06] tabular-nums bg-[radial-gradient(circle_at_32%_27%,#fff4d8,#e0ae4d_48%,#8d6119)] shadow-[0_0_9px_rgba(217,164,65,.5)]">
-              {m.value}
+            <span className="relative w-[64%] aspect-square rounded-full flex items-center justify-center text-[10px] font-bold text-[#2b1e06] tabular-nums shadow-marble bg-[radial-gradient(circle_at_34%_26%,#fffaf0_0%,#f4d08a_14%,#d9a441_44%,#9c7025_72%,#5e410f_100%)]">
+              {/* The specular dot is its own element so it can be blurred
+                  without softening the value sitting on top of it. */}
+              <span
+                aria-hidden
+                className="absolute left-[22%] top-[16%] w-[26%] h-[22%] rounded-full bg-white/70 blur-[2px]"
+              />
+              <span className="relative">{m.value}</span>
             </span>
           </div>
         ))}
