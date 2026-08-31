@@ -14,6 +14,10 @@ import type { WaitingWorker } from './swUpdate.js';
  * another hour, and a bar that reloaded itself would hand back exactly the
  * problem that decision avoided. Dismiss is a real option: the update stays
  * waiting and arrives on the next natural reload.
+ *
+ * Built on the same four surface tiers as everything else — `panel-lit` for the
+ * housing, `raised` for what you press, `sunk` while pressed. It is the newest
+ * surface in the app and would otherwise have been the only flat one.
  */
 export function UpdateBar() {
   const [worker, setWorker] = useState<WaitingWorker | null>(null);
@@ -35,14 +39,14 @@ export function UpdateBar() {
   return (
     <div
       role="status"
-      className="fixed left-1/2 -translate-x-1/2 bottom-4 z-50 w-[min(24rem,calc(100vw-1.25rem))]
-                 bg-panel border border-brass rounded-xl px-3 py-2.5 flex items-center gap-2
-                 shadow-[0_10px_30px_rgba(0,0,0,.5)]"
+      className="fixed left-1/2 -translate-x-1/2 bottom-4 z-50 w-[min(26rem,calc(100vw-1.25rem))]
+                 bg-panel-lit border border-brass rounded-xl shadow-panel px-3 py-2.5
+                 flex items-center gap-2"
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <p className="flex-1 text-[12.5px] leading-snug text-ink">
+      <p className="flex-1 text-body text-ink">
         A new version is ready.
-        <span className="block text-[11.5px] text-steel">
+        <span className="block text-meta text-steel">
           Finish your run first — this won't reload on its own.
         </span>
       </p>
@@ -53,7 +57,9 @@ export function UpdateBar() {
           setApplying(true);
           activateUpdate(worker, navigator.serviceWorker, () => location.reload());
         }}
-        className="text-[12.5px] font-bold text-[#241a05] bg-brass rounded-[9px] px-3 min-h-[36px] disabled:opacity-60"
+        className="text-body font-bold text-[#241a05] bg-machined-brass rounded-[9px] px-3 min-h-[38px]
+                   shadow-raised transition-[box-shadow,transform] duration-150
+                   active:shadow-sunk active:translate-y-px disabled:opacity-60"
       >
         {applying ? 'Updating…' : 'Reload'}
       </button>
@@ -61,7 +67,10 @@ export function UpdateBar() {
         type="button"
         onClick={() => setDismissed(true)}
         aria-label="Dismiss the update notice"
-        className="text-[12.5px] font-semibold text-steel border border-edge rounded-[9px] px-2.5 min-h-[36px]"
+        className="text-body font-semibold text-steel hover:text-ink bg-raised border border-edge
+                   shadow-raised rounded-[9px] px-2.5 min-h-[38px]
+                   transition-[background-color,border-color,color,box-shadow] duration-150
+                   active:shadow-sunk active:translate-y-px"
       >
         Later
       </button>
