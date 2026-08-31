@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { shareText } from '../game/daily.js';
+import { Icon } from './icons.js';
 import type { DailyRecord, Streak } from '../game/daily.js';
 import type { RunState } from '../game/types.js';
 
@@ -101,8 +102,15 @@ export function ResultModal({
           <span aria-hidden>✕</span>
         </button>
 
-        <div aria-hidden className="text-[40px] leading-none">{won ? '🏆' : '💥'}</div>
-        <h2 id="over-title" className="font-display text-[25px] leading-tight">
+        <Icon name={won ? 'won' : 'lost'} size={44} className={won ? 'text-brass' : 'text-bad'} />
+        <h2
+          id="over-title"
+          /* Fraunces is variable on opsz 9-144. Pushing the optical size up on the
+             one headline the player stares at costs nothing and is the cheapest
+             identity lever available. */
+          style={{ fontVariationSettings: "'opsz' 144" }}
+          className="font-display text-[30px] leading-[1.1]"
+        >
           {won ? 'The Grand Payout' : 'The machine seized'}
         </h2>
         {/* The gap is the lesson. "More than the machine paid" tells a player
@@ -191,7 +199,12 @@ function Caption({ children }: { children: React.ReactNode }) {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex-1 bg-card border border-edge rounded-[11px] py-2.5 flex flex-col items-center gap-0.5">
-      <span className="font-display text-[21px] font-bold text-brass tabular-nums">{value}</span>
+      <span
+        style={{ fontVariationSettings: "'opsz' 144" }}
+        className="font-display text-[30px] font-bold text-brass tabular-nums leading-none"
+      >
+        {value}
+      </span>
       <span className="text-[10px] text-steel uppercase tracking-[.07em]">{label}</span>
     </div>
   );

@@ -8,25 +8,25 @@ import type {
 } from './types.js';
 
 export const PARTS: Record<PartKey, PartDef> = {
-  weight: { name: 'Weight', glyph: '🔩', badge: '+3', role: 'add',
+  weight: { name: 'Weight', glyph: 'weight', badge: '+3', role: 'add',
     rule: 'Marble value +3.' },
-  anvil: { name: 'Anvil', glyph: '⚒️', badge: '+8 ⬅', role: 'add',
+  anvil: { name: 'Anvil', glyph: 'anvil', badge: '+8 ⬅', role: 'add',
     rule: '+8, but knocks the marble one column left.' },
-  coil: { name: 'Coil', glyph: '⚡', badge: '×2', role: 'multiply',
+  coil: { name: 'Coil', glyph: 'coil', badge: '×2', role: 'multiply',
     rule: 'Marble value ×2.' },
-  prism: { name: 'Prism', glyph: '🔷', badge: 'SPLIT', role: 'route',
+  prism: { name: 'Prism', glyph: 'prism', badge: 'SPLIT', role: 'route',
     rule: 'Splits the marble — a full copy drops into the next column.' },
-  spring: { name: 'Spring', glyph: '🌀', badge: '↑2', role: 'route',
+  spring: { name: 'Spring', glyph: 'spring', badge: '↑2', role: 'route',
     rule: 'Bounces the marble 2 cells up, re-triggering parts. Once per marble.' },
-  wire: { name: 'Copper Wire', glyph: '🧵', badge: '+touch', role: 'add',
+  wire: { name: 'Copper Wire', glyph: 'wire', badge: '+touch', role: 'add',
     rule: '+1 for every part this marble has already touched.' },
-  reso: { name: 'Resonator', glyph: '💠', badge: '×1.5', role: 'multiply',
+  reso: { name: 'Resonator', glyph: 'reso', badge: '×1.5', role: 'multiply',
     rule: '×1.5 — or ×3 if the marble already touched another Resonator.' },
-  fork: { name: 'Tuning Fork', glyph: '🎵', badge: '2× adj', role: 'multiply',
+  fork: { name: 'Tuning Fork', glyph: 'fork', badge: '2× adj', role: 'multiply',
     rule: 'Does nothing itself — DOUBLES the effect of the 4 adjacent parts.' },
-  gate: { name: 'Gilded Gate', glyph: '🚪', badge: '≥10:×3', role: 'multiply',
+  gate: { name: 'Gilded Gate', glyph: 'gate', badge: '≥10:×3', role: 'multiply',
     rule: 'Value ≥ 10 → ×3. Below 10, the marble is confiscated.' },
-  bell: { name: 'Echo Bell', glyph: '🔔', badge: '+marble', role: 'route',
+  bell: { name: 'Echo Bell', glyph: 'bell', badge: '+marble', role: 'route',
     rule: 'Every drop also releases a bonus marble down this column.' },
 };
 
@@ -36,24 +36,24 @@ export const SCALER_KEYS: readonly PartKey[] =
   ['coil', 'prism', 'reso', 'fork', 'spring', 'bell'];
 
 export const BLUEPRINTS: Record<BlueprintKey, BlueprintDef> = {
-  lead: { name: 'Lead Marbles', glyph: '🪙',
+  lead: { name: 'Lead Marbles', glyph: 'lead',
     rule: 'All marbles start at value 2 instead of 1.' },
-  overtime: { name: 'Overtime', glyph: '⏱️',
+  overtime: { name: 'Overtime', glyph: 'overtime',
     rule: '+1 drop every round, for the rest of the run.' },
-  gravity: { name: 'Gravity Well', glyph: '🌌',
+  gravity: { name: 'Gravity Well', glyph: 'gravity',
     rule: 'Marbles gain +1 for every row they fall.' },
-  screws: { name: 'Loose Screws', glyph: '🔧',
+  screws: { name: 'Loose Screws', glyph: 'screws',
     rule: 'Once per round, relocate one installed part.' },
 };
 
 /** Daily rule twists, rotating by day number. Each pairs a buff with a cost
  *  so the variants are differently shaped rather than easier or harder. */
 export const VARIANTS: readonly VariantDef[] = [
-  { icon: '⚒️', name: 'Heavyworks', quotaMultiplier: 1.5, baseBonus: 2,
+  { icon: 'heavyworks', name: 'Heavyworks', quotaMultiplier: 1.5, baseBonus: 2,
     desc: 'Marbles start at value 3 — but quotas are half again as steep.' },
-  { icon: '🌀', name: 'Perpetual Motion', quotaMultiplier: 1.2, springUses: 2,
+  { icon: 'perpetual', name: 'Perpetual Motion', quotaMultiplier: 1.2, springUses: 2,
     desc: 'Every Spring fires TWICE per marble. Quotas up 20%.' },
-  { icon: '💰', name: 'Tight Purse', quotaMultiplier: 0.65, drops: 2,
+  { icon: 'tightpurse', name: 'Tight Purse', quotaMultiplier: 0.65, drops: 2,
     desc: 'Only 2 drops per round — quotas eased to match. Every drop must count.' },
 ];
 
