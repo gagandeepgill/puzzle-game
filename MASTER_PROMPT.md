@@ -1,8 +1,8 @@
-# Master Developer Prompt — Ledger Lane
+# Master Developer Prompt: Ledger Lane
 
 > A daily 4x4 grid-rotation puzzle game for React Native. One puzzle per day, worldwide.
 > Tap tiles to rotate arrows and route the day's gold shipment from the **Vault** to the
-> **Market** — any connection wins, but the best couriers bank the most gold.
+> **Market.** Any connection wins, but the best couriers bank the most gold.
 >
 > This document is a complete, self-contained build specification. An engineer (or agent)
 > should be able to implement the production feature from this file alone.
@@ -11,11 +11,11 @@
 
 ## 1. Product overview
 
-**Working title:** Ledger Lane (original IP — all theming in this document is invented for this game).
+**Working title:** Ledger Lane (original IP; all theming in this document is invented for this game).
 
 **Elevator pitch:** Wordle's daily ritual meets a rotate-to-connect routing puzzle. Every
 player in the world gets the same 4x4 board each UTC day. Tapping a lane tile rotates its
-arrow 90° clockwise. Any path from the Vault to the Market wins — but coin purses, pickpocket
+arrow 90° clockwise. Any path from the Vault to the Market wins, but coin purses, pickpocket
 adjacency taxes, and a per-tile courier toll make *which* route you build a real optimization.
 Your score is your net gold as a percentage of the day's provable optimum, plus a
 taps-vs-par efficiency substat, compressed into one spoiler-free shareable line.
@@ -35,7 +35,7 @@ taps-vs-par efficiency substat, compressed into one spoiler-free shareable line.
    solver-verified so a thoughtful player can always reason their way to the optimum.
 5. **Par as aspiration, not punishment.** There is no move limit and no fail state. Par
    (minimum clockwise rotations to build the optimal route) is a substat, like Flow Free's
-   "perfect" star — never a wall.
+   "perfect" star, never a wall.
 6. **Share the performance trace, never the board.** The solved layout is the spoiler; the
    share payload shows only how well you did.
 
@@ -70,7 +70,7 @@ taps-vs-par efficiency substat, compressed into one spoiler-free shareable line.
 - Tapping an unlocked lane rotates its arrow **90° clockwise**. That is the only move.
 - Tap count increments immediately on tap (animation is cosmetic and never blocks input).
 - Unlimited taps. No fail state. Over-rotating past the desired direction costs 3 extra
-  taps to come around — haste is the only enemy.
+  taps to come around. Haste is the only enemy.
 
 ### 2.3 Path
 
@@ -139,7 +139,7 @@ ledgerlane.app
 ## 3. Architecture
 
 Feature-module (micro-frontend) layout. Nothing outside `features/puzzle` may import from
-its subfolders — only from `index.ts`.
+its subfolders, only from `index.ts`.
 
 ```
 features/puzzle/
@@ -198,7 +198,7 @@ export interface BoardState {
 
 export interface DailyPuzzle {
   readonly puzzleId: string;           // `ll-${dateKey}`
-  readonly dateKey: string;            // 'YYYY-MM-DD' in UTC — sole identity
+  readonly dateKey: string;            // 'YYYY-MM-DD' in UTC, the sole identity
   readonly dayNumber: number;          // days since epoch date, for "#214"
   readonly seed: number;               // mulberry32 seed derived from dateKey
   readonly generatorVersion: number;   // bump on any generation-logic change
@@ -339,7 +339,7 @@ export function starsFor(netGold: number, optimalGold: number): 1 | 2 | 3 {
 
 ```ts
 // features/puzzle/utils/prng.ts
-/** mulberry32 — deterministic PRNG so every client generates identical dailies. */
+/** mulberry32: a deterministic PRNG, so every client generates identical dailies. */
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -365,7 +365,7 @@ export function hashDateKey(dateKey: string, generatorVersion: number): number {
 export const EPOCH_DATE_KEY = '2026-09-01';   // day #1
 
 export function getUtcDateKey(now: Date = new Date()): string {
-  return now.toISOString().slice(0, 10);      // UTC only — never getDate()
+  return now.toISOString().slice(0, 10);      // UTC only. Never getDate()
 }
 
 export function dayNumberFor(dateKey: string): number {
@@ -462,7 +462,7 @@ export const usePuzzleStore = create<PuzzleStore>()(
       set((s) => {
         if (s.status !== 'playing' || !s.puzzle) return;
         s.grid = s.puzzle.initialGrid.map((t) => ({ ...t }));
-        s.moveCount = 0;                // reset restores taps too — it's a fresh attempt
+        s.moveCount = 0;                // reset restores taps too, it is a fresh attempt
         refreshDerived(s);
       }),
   })),
@@ -477,25 +477,25 @@ export const usePuzzleStore = create<PuzzleStore>()(
 
 ```ts
 // features/puzzle/store/sessionStore.ts  (Zustand + persist(AsyncStorage))
-// Key rules — implement exactly:
+// Key rules, implement exactly:
 // 1. history (Record<dateKey, DailyResult>) is the source of truth; streak is DERIVED.
 // 2. On recordResult(dateKey, result):
 //      streak = history[yesterdayKey(dateKey)] ? streak + 1 : 1
-//    computed against the RESULT's dateKey, never against "now" — an offline completion
+//    computed against the RESULT's dateKey, never against "now". An offline completion
 //    synced late must not break the chain.
-// 3. recomputeStreakFromHistory() runs on hydrate — self-healing after corrupt writes.
+// 3. recomputeStreakFromHistory() runs on hydrate, self-healing after corrupt writes.
 // 4. Persist under its own AsyncStorage key namespace ('ll/session'), disjoint from the
 //    React Query persister ('ll/query').
 ```
 
 ---
 
-## 7. Daily puzzle delivery — `useDailyPuzzle`
+## 7. Daily puzzle delivery: `useDailyPuzzle`
 
 **Decision: deterministic client-side generation, no backend.** Same UTC `dateKey` →
 same seed → identical puzzle on every device, fully offline, zero infra. The `queryFn` is
 the seam: if curated puzzles are ever wanted, fetch a signed manifest there and fall back
-to generation — a non-breaking upgrade.
+to generation, which is a non-breaking upgrade.
 
 ```ts
 // features/puzzle/hooks/useDailyPuzzle.ts
@@ -518,7 +518,7 @@ export function useDailyPuzzle(dateKey: string = getUtcDateKey()) {
 - **Offline-first:** `PersistQueryClientProvider` + `@tanstack/query-async-storage-persister`
   over AsyncStorage, `maxAge: Infinity` for this key family.
 - **Rollover:** subscribe to `AppState` + a timer for UTC midnight. On a new `dateKey`,
-  do NOT yank the live board — show a "New puzzle available" prompt. Display a countdown
+  do NOT yank the live board. Show a "New puzzle available" prompt. Display a countdown
   to the next puzzle in the result sheet.
 - **Versioning:** `generatorVersion` is part of the seed hash and the query key. Never
   change generation logic without bumping it.
@@ -535,11 +535,11 @@ constraint-checked and solver-verified:
    (gold 10–50 in steps of 5), remaining tiles as lanes with random initial rotations;
    lock 2–5 lanes in correct orientation (weekday difficulty dial: more locked Mon/Tue,
    fewer Fri/Sat).
-2. **Solve** (`solve.ts`): enumerate all simple vault→market routes (DFS over the 4x4 —
+2. **Solve** (`solve.ts`): enumerate all simple vault→market routes (DFS over the 4x4,
    trivially small), score each with `scorePath`, take the max ⇒ `optimalGold`,
    `solutionPath`; `par` = Σ `cwDistance(initialRotation, requiredRotation)` over unlocked
    lanes on the optimal route.
-3. **Quality gate** (`verify.ts`) — reject and re-roll (bump a retry counter into the seed)
+3. **Quality gate** (`verify.ts`). Reject and re-roll (bump a retry counter into the seed)
    unless ALL hold:
    - at least one connected route exists; `optimalGold > 0`
    - at least 2 distinct connected routes with different scores (a real choice)
@@ -549,7 +549,7 @@ constraint-checked and solver-verified:
      at least Wed–Sun boards (the "greedy path is a trap" hook)
    - every coin tile is reachable by some connected route (nothing looks broken)
    - retry cap 50; if exhausted, fall back to the nearest previous passing seed (defined,
-     deterministic fallback — never throw at runtime).
+     deterministic fallback, never throwing at runtime).
 4. **CI gate (mandatory):** a script (`npm run verify:calendar`) generates and verifies the
    next 365 dateKeys. It runs on every PR touching `utils/generator/` or `utils/*.ts` and
    fails the build on any rejection-cap hit or gate violation. This is the guarantee that
@@ -582,7 +582,7 @@ Wire/storage schema (also the fixture format for tests):
 > band. The generator + solver remain the source of truth: CI must re-verify these
 > fixtures with `solve.ts`, and solver output overrides any hand-computed number here.
 
-### Sample 1 — `ll-2026-09-01` "Opening Day" (easy Monday)
+### Sample 1: `ll-2026-09-01` "Opening Day" (easy Monday)
 
 Layout (row-major; V=vault, M=market, F=fountain wall, P=pickpocket, numbers=coin gold):
 
@@ -594,13 +594,13 @@ V   .   20  .
 ```
 
 - Vault exit E. Fountain at 9, pickpocket at 6. Coins: 20g @ 2, 40g @ 7, 30g @ 13.
-- **Optimal:** `0→1→2→3→7→11→15` — gross 60, fee 25 (5 lanes), pickpocket 6 is adjacent to
+- **Optimal:** `0→1→2→3→7→11→15`. Gross 60, fee 25 for 5 lanes, pickpocket 6 is adjacent to
   path tiles 2 and 7 ⇒ tax 15. **Net 20. Par 5** (initial rotations one CW turn off on
   1, 2, 3, 7, 11).
-- **Decoy:** `0→4→8→12→13→14→15` — gross 30, fee 25, no tax ⇒ net 5. Connects (1★ floor)
+- **Decoy:** `0→4→8→12→13→14→15`. Gross 30, fee 25, no tax ⇒ net 5. Connects (1★ floor)
   but teaches that the pickpocket tax can still be worth eating.
 
-### Sample 2 — `ll-2026-09-02` "The Long Way Round" (medium)
+### Sample 2: `ll-2026-09-02` "The Long Way Round" (medium)
 
 ```
 V   .   .   P
@@ -610,13 +610,13 @@ P   .   .   M
 ```
 
 - Vault exit S. Fountain at 6. Pickpockets at 3 and 12. Coins: 10g @ 4, 50g @ 9, 25g @ 11.
-- **Optimal:** `0→4→5→9→10→11→15` — gross 85, fee 25, no pickpocket adjacency ⇒ **net 60.
+- **Optimal:** `0→4→5→9→10→11→15`. Gross 85, fee 25, no pickpocket adjacency ⇒ **net 60.
   Par 5.** Locked anchor: lane 14 locked pointing E (decoy bait).
-- **Decoy:** `0→4→8→9→10→11→15` — same gross 85, fee 25, but tile 8 is adjacent to
+- **Decoy:** `0→4→8→9→10→11→15`. Same gross 85, fee 25, but tile 8 is adjacent to
   pickpocket 12 ⇒ tax 15, net 45. The lesson: two routes with identical coins differ only
-  by adjacency — deduce, don't guess.
+  by adjacency. Deduce, don't guess.
 
-### Sample 3 — `ll-2026-09-03` "Rush Hour" (hard)
+### Sample 3: `ll-2026-09-03` "Rush Hour" (hard)
 
 ```
 V   .   .   20
@@ -627,17 +627,17 @@ P   .   F   .
 
 - Vault exit E. Fountains at 5 and 10 (diagonal double wall). Pickpocket at 8.
   Coins: 20g @ 3, 30g @ 6, 40g @ 7.
-- **Optimal:** `0→1→2→6→7→11→15` — gross 70, fee 25, no tax ⇒ **net 45. Par 6.**
-  Locked bait: lane 4 locked pointing S — a dead branch into the pickpocket row that
+- **Optimal:** `0→1→2→6→7→11→15`. Gross 70, fee 25, no tax ⇒ **net 45. Par 6.**
+  Locked bait: lane 4 locked pointing S, a dead branch into the pickpocket row that
   punishes tapping before reading the board.
-- **Decoy:** `0→1→2→3→7→11→15` — gross 60, fee 25 ⇒ net 35 (a clean 2★).
+- **Decoy:** `0→1→2→3→7→11→15`. Gross 60, fee 25 ⇒ net 35, a clean 2★.
 
 ---
 
 ## 10. UX requirements
 
 - **Live feedback:** connected path prefix glows gold from the Vault; gold counter and
-  projected net update on every tap. This is the Wordle-green-square drip — non-negotiable.
+  projected net update on every tap. This is the Wordle-green-square drip, and it is non-negotiable.
 - **Submit bar:** disabled until connected; shows projected net ("Bank 45g?"). Submitting
   triggers coin fly-to-counter animation, then the result sheet: score %, stars, title,
   taps vs par, optimal-route reveal replay, countdown to next daily, Share button.
@@ -654,7 +654,7 @@ P   .   F   .
 
 ## 11. Acceptance criteria & test plan
 
-**Unit (Vitest/Jest, pure utils — target 100% on `utils/`):**
+**Unit (Vitest/Jest, pure utils, target 100% on `utils/`):**
 - `computePath`: connected, off-grid, wall hit, pickpocket hit, cycle, market entry from
   each direction, vault-adjacent market.
 - `scorePath`: fee math, multi-pickpocket adjacency (taxed once each), pickpocket adjacent
