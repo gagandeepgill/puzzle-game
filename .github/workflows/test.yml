@@ -1,11 +1,12 @@
 name: Typecheck and test
 
+# Netlify builds and publishes the site; this is the gate that runs on pull
+# requests, where Netlify's own build only produces a preview. Deleting the
+# Pages workflow took its service-worker check with it, so that lives here now.
 on:
   push:
     branches: [main]
-    paths: ['src/**', 'package.json', 'tsconfig.json', '.github/workflows/test.yml']
   pull_request:
-    paths: ['src/**', 'package.json', 'tsconfig.json', '.github/workflows/test.yml']
 
 jobs:
   check:
@@ -18,6 +19,9 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # Build here too. Netlify runs the same command, but a PR that breaks the
+      # build should fail on the PR rather than on the merge.
+      - run: npm run build
 
       # The engine must stay free of any renderer, or the same code can't serve
       # web, native and a server-side replay verifier.
@@ -27,3 +31,22 @@ jobs:
             echo "::error::src/game must not import a renderer or touch the DOM"
             exit 1
           fi
+
+      # A page missing from SHELL still works online and silently fails to open
+      # offline, which is the kind of bug nobody reports.
+      - name: Check the service worker precaches every page
+        run: |
+          missing=0
+          for f in demo/*.html; do
+            name=$(basename "$f")
+            if ! grep -q "'$name'" demo/sw.js; then
+              echo "::error file=demo/sw.js::$name is not precached in SHELL"
+              missing=1
+            fi
+          done
+          # The React entry is built, not committed, so it is checked by name.
+          if ! grep -q "'app/index.html'" demo/sw.js; then
+            echo "::error file=demo/sw.js::app/index.html is not precached in SHELL"
+            missing=1
+          fi
+          exit $missing
