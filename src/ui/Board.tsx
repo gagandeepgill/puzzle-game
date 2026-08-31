@@ -82,7 +82,11 @@ const Cell = memo(function Cell({
         // Shaded by what the part would actually be worth here, from the same
         // simulation the drop runs. Flat cells stay dim rather than going red:
         // most cells are flat, and a board of warnings reads as noise.
-        placeable && heat === 'best' ? 'bg-brass/30 border-brass shadow-[0_0_0_2px_rgba(217,164,65,.55)]' : '',
+        // ring, not a second shadow: Tailwind composes ring with shadow via
+        // separate CSS variables, but two arbitrary shadow-[...] classes
+        // overwrite each other — so a cell that is both the best placement and
+        // fork-reached would have lost one of the two indicators.
+        placeable && heat === 'best' ? 'bg-brass/30 border-brass ring-2 ring-brass' : '',
         placeable && heat === 'strong' ? 'bg-brass/[0.17]' : '',
         placeable && heat === 'fair' ? 'bg-brass/[0.07]' : '',
         placeable && heat === 'flat' ? 'opacity-55' : '',
