@@ -7,7 +7,7 @@ description: 'How this repo builds Wordle-style daily puzzles — UTC date keys,
 
 Both games use the same spine: the calendar date *is* the seed, so everyone in the world
 gets the same puzzle without a backend. Reference implementation: the daily block at the
-top of `demo/payload.html`.
+top of `site/payload.html`.
 
 ## The date is the identity
 

@@ -47,7 +47,7 @@ only 0.41 above the 4.5:1 requirement. So:
 
 ## Rules that keep it coherent
 
-- **Uppercase labels get letter-spacing.** `.k`, `.tag`, `.demo-chip` and the perfect-day
+- **Uppercase labels get letter-spacing.** `.k`, `.tag` and the perfect-day
   badge all use `letter-spacing: .06–.14em`. Uppercase without tracking looks broken.
 - **Headlines get `line-height: 1.15`; body gets `1.5–1.6`.** The modal headline and
   wordmark are tight; banners and rules text are loose. Nothing sits between.

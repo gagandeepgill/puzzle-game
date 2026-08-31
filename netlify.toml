@@ -1,12 +1,12 @@
-# Netlify publishes demo/ as the site root.
+# Netlify publishes site/ as the site root.
 #
-# demo/app/ is the React build and is gitignored, so it does not exist in a
+# site/app/ is the React build and is gitignored, so it does not exist in a
 # fresh checkout — this file used to say "there is nothing to build", which
 # stopped being true when the port landed. Without the build step Netlify
 # would serve the hub and the two single-file games, and the hub's Payload
 # link would 404.
 [build]
-  publish = "demo"
+  publish = "site"
   # Tests gate the deploy, matching the Pages workflow. Publishing a build
   # that fails its own suite is worse than not publishing.
   command = "npm test && npm run build"
