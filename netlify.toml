@@ -1,12 +1,12 @@
-# Netlify publishes site/ as the site root.
+# Netlify publishes dist/ as the site root.
 #
-# site/app/ is the React build and is gitignored, so it does not exist in a
-# fresh checkout — this file used to say "there is nothing to build", which
-# stopped being true when the port landed. Without the build step Netlify
-# would serve the hub and the two single-file games, and the hub's Payload
-# link would 404.
+# dist/ does not exist in a fresh checkout — it is the build output, and it is
+# where the hand-authored half of the site (public/) and Payload (app/, built
+# from src/) are assembled into one tree. This file used to say "there is
+# nothing to build", which stopped being true when the port landed. Without the
+# build step Netlify would have nothing to publish at all.
 [build]
-  publish = "site"
+  publish = "dist"
   # Tests gate the deploy, matching the Pages workflow. Publishing a build
   # that fails its own suite is worse than not publishing.
   command = "npm test && npm run build"
@@ -36,7 +36,7 @@
 
 # Vite fingerprints these, so a changed file is a changed URL.
 [[headers]]
-  for = "/app/assets/*"
+  for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 

@@ -3,7 +3,7 @@
  * Minimal static server for local PWA testing. Zero dependencies.
  *
  * Service workers and the install prompt only work over http/https, never
- * file://, so `open site/index.html` is not enough once you are testing the
+ * file://, so `open public/index.html` is not enough once you are testing the
  * installable app. Everything else about the games still works from a file.
  *
  *   node tools/serve.js [port]     → http://localhost:8000
@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(here, '..', 'site');
+const ROOT = path.join(here, '..', 'dist');
 const PORT = Number(process.argv[2]) || 8000;
 
 // A missing entry here is not cosmetic: a stylesheet served as
@@ -39,7 +39,7 @@ http.createServer((req, res) => {
   let rel = decodeURIComponent(url.pathname);
   if (rel.endsWith('/')) rel += 'index.html';
 
-  // Contain everything under site/ — no traversal out of the web root.
+  // Contain everything under public/ — no traversal out of the web root.
   const file = path.join(ROOT, rel);
   if (!file.startsWith(ROOT)) {
     res.writeHead(403).end('Forbidden');
