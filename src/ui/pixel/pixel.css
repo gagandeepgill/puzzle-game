@@ -102,15 +102,131 @@
   line-height: 1;
 }
 
-/* Part activation. Two frames of scale with no easing, because a pixel sprite
-   that eases reads as a smooth object pretending to be pixels. `steps()` is
-   what keeps it mechanical. */
+/**
+ * Part activation.
+ *
+ * Each part moves the way its mechanic reads: Weight and Anvil take an impact,
+ * Coil and Resonator pulse, the Tuning Fork vibrates, the Prism flashes and
+ * splits, the Echo Bell rings outward, and the Spring is the only one that
+ * gets a real bounce, because it is the only one that mechanically bounces.
+ *
+ * Every part activation is 100-200ms, which is the band the direction gives
+ * for interactions. The Echo Bell's ring is 320ms because it is an effect
+ * rather than the activation itself, and effects sit in the 300-700ms band.
+ * There are no idle animations at all; every keyframe here fires once, on the
+ * frame the engine says that part fired.
+ *
+ * Containment matters more than it looks. The sprite is 47% of the cell, so
+ * the largest scale here (1.3) reaches 61% and the widest ring 78%, both well
+ * inside the cell's own box. Nothing can reach a neighbour or the HUD.
+ */
+
+/* The default, for parts with no specific character yet. */
 @keyframes px-activate {
   0% { transform: scale(1); }
-  50% { transform: scale(1.25); }
+  50% { transform: scale(1.2); }
   100% { transform: scale(1); }
 }
-.px-activate { animation: px-activate 0.18s steps(3) 1; }
+.px-activate { animation: px-activate 0.16s steps(3) 1; }
+
+/* Weight and Anvil: a small downward impact, Anvil harder. Translate only, so
+   the sprite never grows toward a neighbour. */
+@keyframes px-impact-soft {
+  0% { transform: translateY(0); }
+  35% { transform: translateY(9%) scaleY(0.92); }
+  70% { transform: translateY(-3%); }
+  100% { transform: translateY(0); }
+}
+@keyframes px-impact-hard {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(0, 13%) scaleY(0.88); }
+  45% { transform: translate(-5%, -3%); }
+  65% { transform: translate(4%, 1%); }
+  85% { transform: translate(-2%, 0); }
+  100% { transform: translate(0, 0); }
+}
+.px-activate[data-part='weight'] { animation: px-impact-soft 0.14s steps(4) 1; }
+.px-activate[data-part='anvil'] { animation: px-impact-hard 0.2s steps(5) 1; }
+
+/* Coil and Resonator: a pulse. Coil is the tighter, electrical one. */
+@keyframes px-pulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  40% { transform: scale(1.18); filter: brightness(1.7); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+.px-activate[data-part='coil'] { animation: px-pulse 0.18s steps(3) 1; }
+.px-activate[data-part='reso'] { animation: px-pulse 0.2s steps(4) 1; }
+
+/* Tuning Fork: vibration. Horizontal only and sub-pixel-ish, which is what
+   separates a vibration from a shake. */
+@keyframes px-vibrate {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6%); }
+  40% { transform: translateX(6%); }
+  60% { transform: translateX(-4%); }
+  80% { transform: translateX(3%); }
+}
+.px-activate[data-part='fork'] { animation: px-vibrate 0.18s steps(5) 1; }
+
+/* Prism: a flash that splits. The sprite brightens and widens briefly, which
+   reads as one thing becoming two without needing particle elements. */
+@keyframes px-split {
+  0% { transform: scaleX(1); filter: brightness(1); }
+  30% { transform: scaleX(1.3); filter: brightness(2.2); }
+  60% { transform: scaleX(0.9); filter: brightness(1.4); }
+  100% { transform: scaleX(1); filter: brightness(1); }
+}
+.px-activate[data-part='prism'] { animation: px-split 0.2s steps(4) 1; }
+
+/* Spring: the one part that earns a real bounce, with overshoot. */
+@keyframes px-bounce {
+  0% { transform: translateY(0) scaleY(1); }
+  20% { transform: translateY(12%) scaleY(0.82); }
+  55% { transform: translateY(-26%) scaleY(1.12); }
+  80% { transform: translateY(4%) scaleY(0.96); }
+  100% { transform: translateY(0) scaleY(1); }
+}
+.px-activate[data-part='spring'] { animation: px-bounce 0.2s steps(5) 1; }
+
+/* Copper Wire: a quick electrical brighten, no movement. It fires often, and
+   a moving cue that fires often becomes noise. */
+@keyframes px-zap {
+  0%, 100% { filter: brightness(1); }
+  30% { filter: brightness(2.4); }
+  60% { filter: brightness(1.3); }
+}
+.px-activate[data-part='wire'] { animation: px-zap 0.1s steps(3) 1; }
+
+/* Gilded Gate: a single decisive flash. */
+@keyframes px-gate {
+  0% { filter: brightness(1); transform: scale(1); }
+  40% { filter: brightness(2); transform: scale(1.12); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+.px-activate[data-part='gate'] { animation: px-gate 0.16s steps(3) 1; }
+
+/* Echo Bell: ring motion. A pseudo-element ring expands and fades from the
+   sprite's own box, capped at 1.65x so it stays inside the cell. */
+@keyframes px-ring {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.65); opacity: 0; }
+}
+@keyframes px-bell-nudge {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-7deg); }
+  65% { transform: rotate(5deg); }
+}
+.px-activate[data-part='bell'] { animation: px-bell-nudge 0.2s steps(4) 1; }
+.px-ring-host { position: relative; }
+.px-ring-host.px-ringing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--px-gold);
+  border-radius: 50%;
+  animation: px-ring 0.32s steps(5) 1;
+  pointer-events: none;
+}
 
 /* The supplied 4-frame sheets, 128x32 each. Driven by background-position in
    whole 32px steps so no frame is ever shown half-scrolled. Available for a

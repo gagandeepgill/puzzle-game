@@ -100,9 +100,28 @@ const EMPTY_PLAYBACK: Playback = {
  * rather than a scrolling list.
  *
  * True sqrt(n) gravity is too fast to read by the third cell, so this is a
- * decay curve tuned for legibility: 86, 73, 64, 57, 52, 48, 46.
+ * decay curve tuned for legibility: 86, 73, 64, 57, 52, 49, 46.
  */
 const fallMs = (step: number) => Math.round(40 + 46 * Math.pow(0.72, Math.max(0, step - 1)));
+
+/**
+ * The pixel skin's pacing.
+ *
+ * Its animation direction asks for 120-180ms per board step. The classic curve
+ * runs 86 down to 49, so the two genuinely disagree rather than one being a
+ * refinement of the other. Scoping it to the skin honours both: classic keeps
+ * the timing tuned and measured in #53, and pixel gets the pacing its own
+ * direction specifies.
+ *
+ * Same shape, different band. It still accelerates and still resets to the top
+ * of the curve when a part fires, because that rhythm is what reads as a
+ * contraption; only the range moves. 175, 158, 144, 133, 125, 118.
+ */
+const fallMsPixel = (step: number) => Math.round(105 + 70 * Math.pow(0.78, Math.max(0, step - 1)));
+
+/** Which pacing a skin uses. Presentation, so it lives with the skins. */
+export type Pace = 'classic' | 'pixel';
+const paceFn = (pace: Pace) => (pace === 'pixel' ? fallMsPixel : fallMs);
 
 /** Colour by what the label means, not by which part produced it. */
 function toneFor(text: string): string {
@@ -112,7 +131,12 @@ function toneFor(text: string): string {
   return 'text-bad';
 }
 
-export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }) {
+export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; pace?: Pace }) {
+  // Read through a ref so changing skin mid-run does not rebuild the drop
+  // callback, and so a drop already in flight finishes at the pacing it began
+  // with rather than changing speed halfway down.
+  const paceRef = useRef<Pace>(initial.pace ?? 'classic');
+  paceRef.current = initial.pace ?? 'classic';
   // Options live in state, not only in a ref. The banner, the streak line and
   // the "locked in" lookup all read dateKey, and a ref cannot tell them it
   // changed — a session left open across UTC midnight kept showing yesterday's
@@ -232,6 +256,9 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
 
     const result: DropResult = dropInto(state, col);
     const instant = prefersReducedMotion();
+    // Captured once per drop, so a skin switch mid-fall cannot change the
+    // speed of a marble already on its way down.
+    const step = paceFn(paceRef.current);
     let running = 0;
     let seq = 0;
     let triggers = 0;
@@ -368,7 +395,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
       // A frame where something fired holds longer, so the part that scored is
       // readable before the next one does, and the fall restarts from slow.
       if (fired > 0) { fallStep = 0; await paint(130); }
-      else { fallStep += 1; await paint(fallMs(fallStep)); }
+      else { fallStep += 1; await paint(step(fallStep)); }
     }
 
     // A restart landed while this drop was animating, so its score belongs to
