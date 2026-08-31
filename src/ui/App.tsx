@@ -49,10 +49,24 @@ export function App() {
   // rebuilt when they change. Cell is memoised against that.
   const dispatchRef = useRef(run.dispatch);
   dispatchRef.current = run.dispatch;
+  // Read through a ref so the board is not a dependency of the handler, which
+  // would rebuild it on every placement and defeat Cell's memo.
+  const boardRef = useRef(state.board);
+  boardRef.current = state.board;
 
   const onCellPress = useCallback((cell: CellIndex) => {
     if (moving) {
-      if (moveFrom === null) { setMoveFrom(cell); return; }
+      if (moveFrom === null) {
+        // Only a cell with something in it can be picked up.
+        if (boardRef.current[cell] != null) setMoveFrom(cell);
+        return;
+      }
+      // Tapping the part again puts it back down.
+      if (cell === moveFrom) { setMoveFrom(null); return; }
+      // The reducer refuses an occupied target, so clearing the move here
+      // regardless would silently cancel it and make the player start over
+      // with no idea why.
+      if (boardRef.current[cell] != null) return;
       dispatchRef.current({ type: 'movePart', from: moveFrom, to: cell });
       setMoving(false);
       setMoveFrom(null);
