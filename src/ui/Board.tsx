@@ -4,6 +4,7 @@ import { PARTS } from '../game/content.js';
 import { isForked } from '../game/simulate.js';
 import { COLS, ROWS, cellAt, cellIndex, colOf, rowOf } from '../game/types.js';
 import type { Board as BoardModel, CellIndex, PartKey } from '../game/types.js';
+import type { HeatTier } from '../game/preview.js';
 import type { FloatLabel, MarbleView } from './usePayloadRun.js';
 
 /** Matches `gap-1.5` on the grid below. The overlay is positioned by
@@ -31,6 +32,13 @@ interface CellProps {
   readonly col: number;
   readonly forked: boolean;
   readonly placeable: boolean;
+  /** How much this cell would improve the machine, if the player is holding a
+   *  part. Null when nothing is selected. */
+  readonly heat: HeatTier | null;
+  /** A Tuning Fork already reaches here, so whatever lands would be doubled. */
+  readonly wouldFork: boolean;
+  /** Position in the previewed fall path, 1-based. 0 when not on it. */
+  readonly step: number;
   readonly movable: boolean;
   readonly firing: boolean;
   readonly onPress: (cell: CellIndex) => void;
@@ -41,15 +49,23 @@ interface CellProps {
  * twenty-five cells. Identity is the cell index, which never changes.
  */
 const Cell = memo(function Cell({
-  index, part, row, col, forked, placeable, movable, firing, onPress,
+  index, part, row, col, forked, placeable, heat, wouldFork, step, movable, firing, onPress,
 }: CellProps) {
   const where = `Row ${row + 1}, column ${col + 1}`;
   const affordance = movable
     ? part ? ', press to pick this part up' : ', press to move the part here'
     : placeable ? ', press to install the selected part' : '';
+  // The preview has to be in the name too. A heat colour a screen reader
+  // cannot see would make the board less usable, not more.
+  const heatWord = heat === 'best' ? '. Best placement'
+    : heat === 'strong' ? '. Strong placement'
+    : heat === 'fair' ? '. Slight gain'
+    : heat === 'flat' ? '. No gain here' : '';
+  const forkWord = wouldFork ? '. A Tuning Fork reaches here, so this part would be doubled' : '';
+  const stepWord = step > 0 ? `. Step ${step} of the marble's path` : '';
   const label = part
-    ? `${where}: ${PARTS[part].name}. ${PARTS[part].rule}${forked ? ' Doubled by an adjacent Tuning Fork.' : ''}${affordance}`
-    : `${where}: empty${affordance}`;
+    ? `${where}: ${PARTS[part].name}. ${PARTS[part].rule}${forked ? ' Doubled by an adjacent Tuning Fork.' : ''}${stepWord}${affordance}`
+    : `${where}: empty${heatWord}${forkWord}${stepWord}${affordance}`;
 
   return (
     <button
@@ -62,12 +78,28 @@ const Cell = memo(function Cell({
         part
           ? 'bg-card border border-edge'
           : 'bg-[#191c22] border border-dashed border-edge-soft',
-        placeable ? 'border-[1.5px] border-dashed border-brass bg-brass/[0.06] cursor-pointer' : '',
+        placeable ? 'border-[1.5px] border-dashed border-brass cursor-pointer' : '',
+        // Shaded by what the part would actually be worth here, from the same
+        // simulation the drop runs. Flat cells stay dim rather than going red:
+        // most cells are flat, and a board of warnings reads as noise.
+        // ring, not a second shadow: Tailwind composes ring with shadow via
+        // separate CSS variables, but two arbitrary shadow-[...] classes
+        // overwrite each other — so a cell that is both the best placement and
+        // fork-reached would have lost one of the two indicators.
+        placeable && heat === 'best' ? 'bg-brass/30 border-brass ring-2 ring-brass' : '',
+        placeable && heat === 'strong' ? 'bg-brass/[0.17]' : '',
+        placeable && heat === 'fair' ? 'bg-brass/[0.07]' : '',
+        placeable && heat === 'flat' ? 'opacity-55' : '',
+        wouldFork ? 'shadow-[inset_0_0_0_1.5px_rgba(111,211,217,.55)]' : '',
+        step > 0 ? 'ring-1 ring-glow/70' : '',
         movable ? 'border-[1.5px] border-dashed border-glow bg-glow/[0.08] cursor-pointer' : '',
         forked ? 'shadow-[inset_0_0_0_1.5px_rgba(111,211,217,.5)]' : '',
         firing ? 'animate-fire' : '',
       ].join(' ')}
     >
+      {step > 0 && !part && (
+        <span aria-hidden className="text-[10px] font-bold text-glow/80 tabular-nums">{step}</span>
+      )}
       {part && (
         <>
           <span aria-hidden className="text-[19px] leading-[1.1]">{PARTS[part].glyph}</span>
@@ -99,11 +131,18 @@ interface BoardProps {
   readonly labels: readonly FloatLabel[];
   /** Cells the player may pick up, while Loose Screws is being used. */
   readonly movable: ReadonlySet<CellIndex>;
+  /** Per-cell rating for the part being placed. Empty when none is selected. */
+  readonly heat: ReadonlyMap<CellIndex, HeatTier>;
+  /** Cells an existing Tuning Fork already reaches. */
+  readonly forkReach: ReadonlySet<CellIndex>;
+  /** Cells the marble would enter, in order, for the previewed column. */
+  readonly path: readonly CellIndex[];
   readonly onCellPress: (cell: CellIndex) => void;
 }
 
 export function Board({
-  board, placeable, firingCells, firingSeq, marbles, labels, movable, onCellPress,
+  board, placeable, firingCells, firingSeq, marbles, labels, movable,
+  heat, forkReach, path, onCellPress,
 }: BoardProps) {
   const cells = [];
   for (let r = 0; r < ROWS; r++) {
@@ -120,6 +159,9 @@ export function Board({
           col={c}
           forked={part ? isForked(board, index) : false}
           placeable={placeable && part === null}
+          heat={placeable && part === null ? heat.get(index) ?? null : null}
+          wouldFork={placeable && part === null && forkReach.has(index)}
+          step={path.indexOf(index) + 1}
           movable={movable.has(index)}
           firing={firing}
           onPress={onCellPress}
