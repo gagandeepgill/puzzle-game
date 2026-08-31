@@ -1,14 +1,18 @@
 # Payload Arcade
 
-A small arcade of browser games, shipped as an installable PWA. Each game is a single self-contained HTML file. No framework, no build step, no backend.
+A small arcade of browser games, shipped as an installable PWA. No backend, no accounts, nothing stored off your device.
+
+Payload is React and TypeScript with a Vite build, in `src/`, and builds to `demo/app/`. Ledger Lane is still a single self-contained HTML file, as is the hub. The older single-file build of Payload is kept at `demo/payload.html` as the reference the parity tests diff against.
 
 ```bash
+npm ci
+npm run build                # builds src/ into demo/app/
 node tools/serve.js          # http://localhost:8000
 ```
 
-Open [`demo/index.html`](demo/index.html) directly for quick edits. Use the server when testing anything installable, since service workers and the install prompt need http and don't run from `file://`.
+`npm run dev` gives you Vite with hot reload for Payload. Use `tools/serve.js` when testing anything installable: it serves `demo/` at the site root, which is the layout the deployed site has, and service workers and the install prompt need http rather than `file://`.
 
-Deploying: `demo/` is published as-is. The [GitHub Pages workflow](.github/workflows/deploy.yml) does it on every push to `main`. Enable Pages once, with Source set to GitHub Actions. [`netlify.toml`](netlify.toml) is there as an alternative. Once installed the arcade plays fully offline, both games and fonts included.
+Deploying: Netlify builds from `main` and publishes `demo/` as the site root. The settings live in [`netlify.toml`](netlify.toml) — `npm test && npm run build`, publish `demo`. The build step is not optional: `demo/app/` is gitignored, so a checkout without it serves a hub whose Payload link 404s. Once installed the arcade plays fully offline, both games and fonts included.
 
 Platform strategy and the path to the App Store are in [`docs/PLATFORM.md`](docs/PLATFORM.md).
 

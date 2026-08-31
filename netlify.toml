@@ -1,11 +1,22 @@
-# Alternative to the GitHub Pages workflow — point Netlify at this repo and it
-# publishes demo/ as-is. There is nothing to build.
+# Netlify publishes demo/ as the site root.
+#
+# demo/app/ is the React build and is gitignored, so it does not exist in a
+# fresh checkout — this file used to say "there is nothing to build", which
+# stopped being true when the port landed. Without the build step Netlify
+# would serve the hub and the two single-file games, and the hub's Payload
+# link would 404.
 [build]
   publish = "demo"
-  command = ""
+  # Tests gate the deploy, matching the Pages workflow. Publishing a build
+  # that fails its own suite is worse than not publishing.
+  command = "npm test && npm run build"
 
-# The service worker must never be served stale, or players get pinned to an old
-# version of the app shell until they clear site data.
+[build.environment]
+  # Match the version CI builds with. Netlify's default floats.
+  NODE_VERSION = "20"
+
+# The service worker must never be served stale, or players get pinned to an
+# old app shell until they clear site data.
 [[headers]]
   for = "/sw.js"
   [headers.values]
@@ -15,6 +26,19 @@
   for = "/manifest.webmanifest"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# The React entry point is not content-addressed and names the hashed bundles,
+# so caching it would pin players to a stale pair of asset URLs.
+[[headers]]
+  for = "/app/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Vite fingerprints these, so a changed file is a changed URL.
+[[headers]]
+  for = "/app/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
 
 # Everything else is content-addressed by the service worker's cache version,
 # so it can be cached hard.
