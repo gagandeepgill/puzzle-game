@@ -35,6 +35,28 @@
     --t-payout: 1.875rem;   /* 30.0px — modal stat values */
   }
 
+  /**
+   * Tall phones. 12.5px body copy is under the 16px the UX guidance wants,
+   * and the reason has always been the vertical budget — but that reason was
+   * measured on a 375x812 iPhone X and never re-checked. A 440x932 phone has
+   * 120 more rows of pixels.
+   *
+   * Gated on height, not width, because height is the constraint. The board
+   * formula's subtrahend rises with it: bigger chrome text means a taller
+   * header, HUD and draft rail above the board, so the space left for the
+   * board shrinks by the same amount the type grew.
+   */
+  @media (max-width: 767px) and (min-height: 880px) {
+    :root {
+      --t-micro: 0.65625rem;  /* 10.5px */
+      --t-label: 0.6875rem;   /* 11.0px */
+      --t-meta: 0.78125rem;   /* 12.5px */
+      --t-body: 0.84375rem;   /* 13.5px */
+      --t-lead: 0.9375rem;    /* 15.0px */
+      --t-stat: 1.3125rem;    /* 21.0px */
+    }
+  }
+
   /* Tablet and up. The board no longer owns the whole viewport, so the
      vertical budget that forced the phone sizes is gone. */
   @media (min-width: 768px) {
@@ -178,11 +200,35 @@
  * a 19px glyph in an 84px cell reads as sparse and unfinished.
  */
 @layer components {
+  /**
+   * The phone. This used to be three frozen numbers — `--cell: 55.6px` and a
+   * 320px cap — tuned on a 375x812 iPhone X and then applied to every phone
+   * ever made. Measured: the board's bottom edge landed at exactly 796px on
+   * 375x812, 390x844, 402x874 and 440x932, leaving 16px of unused height on
+   * the smallest and 136px on the largest. A 440-wide phone was rendering an
+   * iPhone X board and throwing away 120px of width with it.
+   *
+   * Same rule as the wider tiers now: take the slack, capped by whichever of
+   * width or height runs out first. 478 is the layout above and below the
+   * board panel added up — the header, HUD and draft rail, the drop row, the
+   * skip row and the safe-area padding — and it is calibrated so 812px still
+   * yields 55.6px cells. The reference device does not move; every phone
+   * larger than it stops being punished for it.
+   */
   .ck-machine {
-    --cell: 55.6px;
-    --glyph: 26px;
-    --badge: 9.5px;
-    max-width: 320px;
+    --cell: clamp(44px, min((100vw - 62px) / 5, (100dvh - 478px) / 6), 76px);
+    --glyph: calc(var(--cell) * 0.47);
+    --badge: clamp(9.5px, calc(var(--cell) * 0.17), 13px);
+    max-width: calc(var(--cell) * 5 + 42px);
+  }
+
+  /* The tall-phone type tier above adds height to everything stacked over the
+     board, so the board's share drops by that much. Measured, not guessed:
+     494 is what keeps six rows on screen once the chrome grew. */
+  @media (max-width: 767px) and (min-height: 880px) {
+    .ck-machine {
+      --cell: clamp(44px, min((100vw - 62px) / 5, (100dvh - 494px) / 6), 76px);
+    }
   }
 
   @media (min-width: 768px) {
