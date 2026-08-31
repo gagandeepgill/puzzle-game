@@ -13,7 +13,7 @@ permanently, both games and fonts included.
 
 `CACHE_VERSION` at the top of `sw.js` is the only thing that invalidates a
 cache. Bump it on every deploy that changes a precached file. Nothing enforces
-this — CI does not check it, and forgetting means returning visitors keep the
+this. CI does not check it, and forgetting means returning visitors keep the
 old shell until something else evicts it.
 
 It is at `v3`. It has moved twice, so the habit exists; it is not automatic.
@@ -43,7 +43,7 @@ progress and loses it.
 The consequence is the half that was missing until it was fixed. A waiting
 worker only takes over once **every** tab on the origin has closed. An
 installed PWA on a phone is suspended, not closed, so "close every tab" can
-mean never — a player could sit on a months-old build with nothing on screen
+mean never. A player could sit on a months-old build with nothing on screen
 to say so.
 
 So the flow is: detect the waiting worker, tell the player, let them choose.
@@ -65,7 +65,7 @@ Three rules that are easy to get wrong and are covered by tests:
    registration and Chrome has fired it more than once.
 
 The bar mounts on its own React root rather than inside `App`, because `App`
-gets `inert` while the result modal is open — which would make the prompt
+gets `inert` while the result modal is open. That would make the prompt
 unreachable exactly when a run has just ended and a player is most able to
 take an update.
 
@@ -97,15 +97,15 @@ debug the cache instead of the code.
 **The in-app browser pane cannot register a service worker at all.** Verified:
 a valid same-origin script served 200 with `text/javascript` fails with "An
 unknown error occurred when fetching the script", and a `blob:` worker is
-refused too. That console error is the environment, not a fault in the app —
-do not chase it there. The update flow's logic is unit-tested against fakes for
+refused too. That console error is the environment, not a fault in the app.
+Do not chase it there. The update flow's logic is unit-tested against fakes for
 this reason; the rest needs a real browser and two deploys.
 
 ## Hosting
 
 Netlify. `netlify.toml` sets `Cache-Control: public, max-age=0,
 must-revalidate` on `/sw.js`, which is what lets a new worker be discovered at
-all — a service worker script served from cache cannot announce its own
+all. A service worker script served from cache cannot announce its own
 replacement. Any host swap has to carry that header rule or updates stop
 reaching anyone, and the failure is silent: everything keeps working, on the
 old build, forever.

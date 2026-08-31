@@ -10,8 +10,8 @@
  * old build with nothing on screen to say so.
  *
  * So: detect the waiting worker, tell the player, and let them choose when.
- * The choice is theirs precisely because the original decision was about not
- * taking it from them.
+ * The choice is theirs because the original decision was about not taking it
+ * from them.
  *
  * The logic lives here rather than in a component for the same reason
  * `watchCockpit` does — it is event plumbing that cannot be driven from a

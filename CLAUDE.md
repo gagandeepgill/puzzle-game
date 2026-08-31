@@ -45,7 +45,7 @@ wrong place.
 
 ```bash
 npm ci
-npm test           # 92 tests
+npm test           # 124 tests
 npm run typecheck
 npm run build      # public/ + app/ -> dist/
 node tools/serve.js   # serves dist/ at http://localhost:8000
