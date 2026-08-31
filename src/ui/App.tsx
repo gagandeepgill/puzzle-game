@@ -24,6 +24,16 @@ export function App() {
   const [moving, setMoving] = useState(false);
   const [resetArmed, setResetArmed] = useState(false);
   const [mute, setMute] = useState(() => isMuted());
+  /**
+   * The parts reference is the highest-value thing to promote on a wide
+   * screen: the board draws each part as a glyph and a badge, and until now
+   * the only way to learn what one did mid-run was to scroll past the board
+   * and open a disclosure. It stays collapsed on a phone, where the vertical
+   * budget is the constraint.
+   */
+  const [refOpen, setRefOpen] = useState(
+    () => typeof matchMedia === 'function' && matchMedia('(min-width: 1140px)').matches,
+  );
   /** Column whose fall path is being previewed, from hover or keyboard focus. */
   const [peekColumn, setPeekColumn] = useState<number | null>(null);
 
@@ -139,7 +149,7 @@ export function App() {
     // chrome between the page and the notch or the home indicator.
     <main
       id="app-root"
-      className="w-full max-w-[430px] mx-auto flex flex-col gap-2.5"
+      className="ck w-full mx-auto"
       style={{
         paddingLeft: 'max(10px, env(safe-area-inset-left))',
         paddingRight: 'max(10px, env(safe-area-inset-right))',
@@ -147,6 +157,7 @@ export function App() {
         paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
       }}
     >
+      <div className="ck-header flex flex-col gap-2.5">
       <header className="flex items-baseline justify-between">
         <h1 className="font-display font-bold text-[27px]">
           Pay<span className="text-brass">load</span>
@@ -222,6 +233,9 @@ export function App() {
         </div>
       )}
 
+      </div>
+
+      <div className="ck-hud flex flex-col gap-2.5">
       <div className="bg-panel border border-edge rounded-xl px-3 py-2">
         <div className="flex justify-between items-baseline text-[12.5px] text-steel tabular-nums">
           <span>Round <b className="font-display text-[19px] text-ink">{state.round + 1} / {state.difficulty.rounds}</b></span>
@@ -257,15 +271,18 @@ export function App() {
             stay visible after their draft panel closes. Gravity Well in
             particular is otherwise invisible. */}
         {state.blueprints.size > 0 && (
-          <ul aria-label="Blueprints in effect" className="flex flex-wrap gap-1 mt-1.5">
+          <ul aria-label="Blueprints in effect" className="flex flex-wrap gap-1 mt-1.5 cockpit:flex-col">
             {[...state.blueprints].map((key) => (
               <li
                 key={key}
-                title={BLUEPRINTS[key].rule}
-                className="text-[10.5px] font-semibold text-glow border border-glow/50 bg-glow/[0.07] rounded-full px-2 py-0.5"
+                aria-label={`${BLUEPRINTS[key].name}. ${BLUEPRINTS[key].rule}`}
+                className="text-[10.5px] font-semibold text-glow border border-glow/50 bg-glow/[0.07] rounded-full px-2 py-0.5 cockpit:rounded-lg cockpit:w-full cockpit:px-2.5 cockpit:py-1.5"
               >
                 <Icon name={BLUEPRINTS[key].glyph as IconName} size={13} className="inline-block -mt-px mr-1 align-text-bottom" />
                 {BLUEPRINTS[key].name}
+                <span aria-hidden className="hidden cockpit:block text-[10.5px] font-normal text-steel leading-snug mt-0.5">
+                  {BLUEPRINTS[key].rule}
+                </span>
               </li>
             ))}
           </ul>
@@ -275,10 +292,58 @@ export function App() {
       {/* Written once per drop, after it resolves. Deriving it from render-time
           state announced partial totals against a round that had already been
           reset by clearing the quota. */}
+      <div className="hidden cockpit:flex flex-col gap-2 bg-panel border border-edge rounded-xl px-3 py-2.5">
+        <h2 className="text-[10px] font-bold uppercase tracking-[.08em] text-steel">
+          {state.mode === 'daily' ? 'Today' : 'Free play'}
+        </h2>
+        {state.mode === 'daily' ? (
+          <>
+            <p className="text-[12.5px] text-ink leading-snug">
+              <b className="font-display text-[17px]">Day #{run.day}</b>
+              {state.variant && (
+                <span className="block text-[12px] text-steel mt-0.5">
+                  <Icon
+                    name={state.variant.icon as IconName}
+                    size={13}
+                    className="inline-block mr-1 align-text-bottom text-brass"
+                  />
+                  <b className="text-ink">{state.variant.name}.</b> {state.variant.desc}
+                </span>
+              )}
+            </p>
+            {run.streakLive && (
+              <p className="text-[12px] text-glow font-semibold">
+                {run.streak.count}-day streak
+              </p>
+            )}
+            {run.todaysRecord && (
+              <p className="text-[11.5px] text-steel leading-snug">
+                Locked in:{' '}
+                {run.todaysRecord.won
+                  ? 'cleared'
+                  : `stalled at round ${run.todaysRecord.rounds + 1}`}
+                , banked {run.todaysRecord.total}. Replays won't change it.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-[12px] text-steel leading-snug">
+            <b className="text-ink">{state.difficulty.name}</b>, {state.difficulty.rounds} rounds.
+            Unseeded: every run reshuffles.
+          </p>
+        )}
+        <div role="group" aria-label="Difficulty" className="flex gap-1.5 pt-0.5">
+          <Tab on={state.difficulty.key === 'easy'} onClick={() => setDifficulty('easy')}>Easy</Tab>
+          <Tab on={state.difficulty.key === 'hard'} onClick={() => setDifficulty('hard')}>Hard</Tab>
+        </div>
+      </div>
+      </div>
+
       <p role="status" aria-live="polite" className="sr-only">
         {playback.announcement}
       </p>
 
+      <div className="ck-rail-a flex flex-col gap-2.5">
       {/* Compact on purpose. At the original sizes this panel ran 228px tall,
           which pushed the board 59% down a 375x812 phone and let it overflow
           by 70px — you could not see the machine you were drafting for. */}
@@ -340,7 +405,10 @@ export function App() {
           sits over its own column. The board panel's own padding used to
           offset the grid by 8px, leaving the arrows subtly out of line.
           Capping the width is also what gets all six rows onto a phone. */}
-      <div className="relative w-full max-w-[320px] mx-auto flex flex-col gap-2">
+      </div>
+
+      <div className="ck-board ck-machine flex flex-col gap-2 w-full mx-auto">
+      <div className="relative w-full flex flex-col gap-2">
         {/* 9px = the board panel's 8px padding plus its 1px border. */}
         <div className="grid grid-cols-5 gap-1.5 px-[9px]">
           {Array.from({ length: COLS }, (_, c) => {
@@ -436,6 +504,9 @@ export function App() {
         )}
       </div>
 
+      </div>
+
+      <div className="ck-rail-b flex flex-col gap-2.5">
       {playback.breakdown.length > 0 && (
         <div className="bg-panel border border-edge rounded-xl px-3 py-2.5">
           <h2 className="text-[10px] font-bold tracking-[.09em] uppercase text-brass mb-1.5">
@@ -473,12 +544,17 @@ export function App() {
       {/* Separate from How to play so it can be opened without scrolling past
           the loop explanation every time. Collapsed by default, so it costs
           nothing on a phone until it is wanted. */}
-      <details className="bg-panel border border-edge rounded-xl px-3 py-2">
+      <details
+        open={refOpen}
+        onToggle={(e) => setRefOpen((e.currentTarget as HTMLDetailsElement).open)}
+        className="bg-panel border border-edge rounded-xl px-3 py-2"
+      >
         <summary className="text-[12.5px] font-semibold text-steel cursor-pointer">
           Parts, blueprints and jams
         </summary>
         <Compendium />
       </details>
+      </div>
 
       {state.phase.kind === 'runOver' && !modalDismissed && (
         <ResultModal

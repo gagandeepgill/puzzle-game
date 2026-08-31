@@ -24,3 +24,113 @@
     }
   }
 }
+
+/**
+ * The cockpit layout.
+ *
+ * One grid whose areas change at breakpoints, never a runtime fork on a
+ * width check. A `isDesktop ? <Desktop/> : <Mobile/>` split would mean two
+ * component trees to maintain, and docs/PLATFORM.md's Expo port would inherit
+ * both; breakpoint variants port to NativeWind more or less intact.
+ *
+ * DOM order is unchanged from the mobile build on purpose, so the tab order
+ * stays header, settings, HUD, draft, board, reference. The rails are placed
+ * with grid-area, which moves them visually without moving them for a
+ * keyboard.
+ *
+ * Sizes come from the content, not from device folklore. The three-column
+ * form needs 280 + 470 + 320 plus gutters and padding, which lands at 1140.
+ */
+@layer components {
+  .ck {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    max-width: 430px;
+  }
+
+  /* Tablet: the board keeps the width and one rail carries everything that is
+     reference or choice. Below this the mobile build is untouched. */
+  @media (min-width: 768px) {
+    .ck {
+      display: grid;
+      max-width: 1040px;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-rows: auto auto auto 1fr;
+      grid-template-areas:
+        "header header"
+        "hud    rail-a"
+        "board  rail-a"
+        "board  rail-b";
+      align-items: start;
+      column-gap: 1.25rem;
+    }
+  }
+
+  /* Three columns. Left is what you read, right is what you act on and look
+     up, centre is the machine. The draft has to be on the right: selecting a
+     card lights a heat map across all 30 cells, and a card 900px from the cell
+     you are about to click breaks that link. */
+  @media (min-width: 1140px) {
+    .ck {
+      /* Rails are fixed and the board absorbs the slack, which is what Lichess
+         does and why a wide monitor still looks deliberate. */
+      max-width: 1520px;
+      grid-template-columns: 280px minmax(0, 1fr) 320px;
+      grid-template-rows: auto auto 1fr;
+      grid-template-areas:
+        "header header header"
+        "hud    board  rail-a"
+        "hud    board  rail-b";
+    }
+  }
+
+  .ck-header { grid-area: header; }
+  .ck-hud { grid-area: hud; }
+  .ck-board { grid-area: board; }
+  .ck-rail-a { grid-area: rail-a; }
+  .ck-rail-b { grid-area: rail-b; }
+
+  /* The rails scroll inside themselves so the page never does. A board sized
+     to the viewport height is a broken promise the moment the page scrolls. */
+  @media (min-width: 768px) {
+    .ck-hud, .ck-rail-a, .ck-rail-b { align-self: start; }
+    .ck-rail-b { overflow-y: auto; max-height: calc(100dvh - 22rem); }
+  }
+}
+
+/**
+ * Board sizing.
+ *
+ * Derived from viewport height and capped by width, which is the rule Lichess
+ * uses: the rails are fixed, the board takes the slack, and height is what
+ * actually constrains a 5x6 grid. The floor keeps a 44px touch target on a
+ * tablet; the ceiling stops a 2560 monitor turning 30 cells into dinner plates.
+ *
+ * The glyph and badge are derived from the cell rather than hardcoded, because
+ * a 19px glyph in an 84px cell reads as sparse and unfinished.
+ */
+@layer components {
+  .ck-machine {
+    --cell: 55.6px;
+    --glyph: 26px;
+    --badge: 9.5px;
+    max-width: 320px;
+  }
+
+  @media (min-width: 768px) {
+    .ck-machine {
+      --cell: clamp(56px, min((100dvh - 300px) / 6, (100vw - 460px) / 5), 84px);
+      --glyph: calc(var(--cell) * 0.44);
+      --badge: clamp(9.5px, calc(var(--cell) * 0.155), 13px);
+      /* five cells, four 6px gaps, plus the panel's 8px padding and 1px border */
+      max-width: calc(var(--cell) * 5 + 42px);
+    }
+  }
+
+  @media (min-width: 1140px) {
+    .ck-machine {
+      --cell: clamp(56px, min((100dvh - 260px) / 6, (100vw - 700px) / 5), 84px);
+    }
+  }
+}
