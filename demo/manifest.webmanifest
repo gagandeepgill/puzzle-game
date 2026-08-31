@@ -20,7 +20,7 @@
       "name": "Today's Payload",
       "short_name": "Payload",
       "description": "Play today's seeded engine-builder run",
-      "url": "payload.html",
+      "url": "app/",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
