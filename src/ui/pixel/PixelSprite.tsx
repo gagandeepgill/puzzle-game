@@ -50,6 +50,10 @@ export function PixelPart({ part, size, active = false }: PartProps) {
       draggable={false}
       width={32}
       height={32}
+      /* The part key drives which activation effect plays. CSS selects on it
+         rather than the component branching, so adding an effect is one
+         keyframe block and no TypeScript. */
+      data-part={part}
       className={`px-sprite${active ? ' px-activate' : ''}`}
       style={{ width: size ?? 'var(--glyph)', height: size ?? 'var(--glyph)' }}
     />

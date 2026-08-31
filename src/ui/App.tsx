@@ -40,7 +40,17 @@ const PRESSABLE = [
 const RAISED = `bg-raised border border-edge shadow-raised hover:border-steel ${PRESSABLE}`;
 
 export function App() {
-  const run = usePayloadRun({ mode: 'daily', difficulty: 'easy' });
+  /** Presentation only. Persisted, and read once on mount like the mute
+   *  preference; nothing about the run depends on it. Declared above the run
+   *  hook because the hook takes the skin's pacing, and reading storage on
+   *  every render to get it would be a localStorage hit per frame. */
+  const [skin, setSkin] = useState<GameSkin>(loadSkin);
+  const pixel = skin === 'pixel';
+  const run = usePayloadRun({
+    mode: 'daily',
+    difficulty: 'easy',
+    pace: pixel ? 'pixel' : 'classic',
+  });
   const { state, playback, busy } = run;
   const [sheetOpen, setSheetOpen] = useState(false);
   const [modalDismissed, setModalDismissed] = useState(false);
@@ -49,10 +59,6 @@ export function App() {
   const [moving, setMoving] = useState(false);
   const [resetArmed, setResetArmed] = useState(false);
   const [mute, setMute] = useState(() => isMuted());
-  /** Presentation only. Persisted, and read once on mount like the mute
-   *  preference; nothing about the run depends on it. */
-  const [skin, setSkin] = useState<GameSkin>(loadSkin);
-  const pixel = skin === 'pixel';
   // The sound language follows the skin. Kept in an effect rather than in
   // the click handler so it is also right on the first render after a
   // reload, when the skin comes back from storage.
