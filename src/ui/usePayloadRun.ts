@@ -38,6 +38,16 @@ export interface FloatLabel {
   readonly tone: string;
 }
 
+/** One drop, as the round log lists it. */
+export interface LoggedDrop {
+  /** 0-based, rendered 1-based. */
+  readonly column: number;
+  readonly total: number;
+  /** Running round score after this drop, which is the number the quota is
+   *  measured against and the reason the log is worth keeping. */
+  readonly runningScore: number;
+}
+
 export interface Playback {
   /** Cells firing this frame. Plural because marbles now advance together,
    *  so a bell drop can trigger several parts at once. */
@@ -137,6 +147,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     rngRef.current = seeded.rng;
     setState(seeded.state);
     setPlayback(EMPTY_PLAYBACK);
+    setRoundLog([]);
     busyRef.current = false;
     setBusy(false);
   }, []);
@@ -340,6 +351,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
         `Drop scored ${result.total}. Round score ${roundAfter} of ${quotaNow}. ` +
         `${dropsAfter} drop${dropsAfter === 1 ? '' : 's'} left.`,
     });
+    setRoundLog((log) => [...log, { column: col, total: result.total, runningScore: roundAfter }]);
     dispatch({ type: 'applyDrop', result });
     busyRef.current = false;
     setBusy(false);
@@ -354,12 +366,22 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
    * short banner; the arpeggio is its audible half.
    */
   const [cleared, setCleared] = useState(0);
+  /**
+   * The drops taken so far this round.
+   *
+   * The breakdown panel only ever shows the last drop, so the shape of a round
+   * — a weak opener, then the same machine paying more as parts compound — was
+   * invisible. That curve is the thing an engine-builder is about.
+   */
+  const [roundLog, setRoundLog] = useState<readonly LoggedDrop[]>([]);
   const prevRef = useRef({ round: state.round, over: false });
 
   useEffect(() => {
     const prev = prevRef.current;
     const over = state.phase.kind === 'runOver';
-    if (state.round > prev.round) { sfx.roundWon(); setCleared(state.round); }
+    // A new round is a new machine to read, so the log starts empty. This runs
+    // after the drop that cleared the quota has already appended to it.
+    if (state.round > prev.round) { sfx.roundWon(); setCleared(state.round); setRoundLog([]); }
     if (over && !prev.over) {
       if (state.phase.kind === 'runOver' && state.phase.won) sfx.roundWon();
       else sfx.runLost();
@@ -445,6 +467,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     recordIsThisRun,
     todaysRecord,
     cleared,
+    roundLog,
     streak,
     streakLive: streakIsLive(streak, opts.dateKey),
     dateKey: opts.dateKey,

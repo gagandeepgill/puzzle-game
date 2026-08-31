@@ -337,6 +337,38 @@ export function App() {
           <Tab on={state.difficulty.key === 'hard'} onClick={() => setDifficulty('hard')}>Hard</Tab>
         </div>
       </div>
+
+      {run.roundLog.length > 0 && (
+        <div className="hidden cockpit:flex flex-col gap-1.5 bg-panel border border-edge rounded-xl px-3 py-2.5">
+          <h2 className="text-[10px] font-bold uppercase tracking-[.08em] text-steel">
+            This round
+          </h2>
+          <ol className="flex flex-col gap-1">
+            {run.roundLog.map((d, i) => (
+              <li
+                key={i}
+                className="flex items-baseline justify-between text-[12px] tabular-nums"
+              >
+                <span className="text-steel">
+                  Drop {i + 1}
+                  <span className="text-steel/70"> · col {d.column + 1}</span>
+                </span>
+                <span>
+                  <b className="text-ok font-bold">+{d.total}</b>
+                  <span className="text-steel/70"> → </span>
+                  <b className="text-ink">{d.runningScore}</b>
+                </span>
+              </li>
+            ))}
+          </ol>
+          {/* The gap left to close is the decision the next drop is about. */}
+          <p className="text-[11px] text-steel border-t border-edge/40 pt-1.5">
+            {state.roundScore >= run.quota
+              ? 'Quota met.'
+              : `${run.quota - state.roundScore} to go, ${state.dropsLeft} drop${state.dropsLeft === 1 ? '' : 's'} left.`}
+          </p>
+        </div>
+      )}
       </div>
 
       <p role="status" aria-live="polite" className="sr-only">
