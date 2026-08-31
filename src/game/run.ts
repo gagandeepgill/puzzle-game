@@ -17,13 +17,47 @@ import type {
   Mode, PartKey, RunState, Rules,
 } from './types.js';
 
-export interface StartOptions {
+/**
+ * A discriminated union, not a flat interface with an optional date.
+ *
+ * The daily's whole contract is that the date is its identity. When dateKey
+ * was optional, `startRun({ mode: 'daily', difficulty: 'easy' })` compiled,
+ * fell back to '', and threw "VARIANTS must not be empty" from deep inside
+ * the content table — an error naming the wrong thing entirely. Now it does
+ * not compile.
+ */
+export type StartOptions =
+  | {
+      readonly mode: 'daily';
+      readonly difficulty: DifficultyKey;
+      readonly dateKey: string;
+      /** Injectable for tests; defaults to the daily seed. */
+      readonly rng?: Rng;
+    }
+  | {
+      readonly mode: 'free';
+      readonly difficulty: DifficultyKey;
+      /** Free play is unseeded, so there is no date to carry. */
+      readonly dateKey?: undefined;
+      readonly rng?: Rng;
+    };
+
+/** What a caller carries around: mode and difficulty are always known, and a
+ *  date is always available even in free play, where it is simply unused. */
+export interface RunOptions {
   readonly mode: Mode;
   readonly difficulty: DifficultyKey;
-  /** Required for daily runs so the seed is reproducible. */
-  readonly dateKey?: string;
-  /** Injectable for tests; defaults to the daily seed or Math.random. */
-  readonly rng?: Rng;
+  readonly dateKey: string;
+}
+
+/** Narrows RunOptions into the union above. Callers that flip between modes
+ *  hold a RunOptions and pass it through here rather than hand-building a
+ *  shape the compiler then has to reject. */
+export function startOptions(o: RunOptions, rng?: Rng): StartOptions {
+  const base = { difficulty: o.difficulty, ...(rng ? { rng } : {}) };
+  return o.mode === 'daily'
+    ? { mode: 'daily', dateKey: o.dateKey, ...base }
+    : { mode: 'free', ...base };
 }
 
 export type Action =

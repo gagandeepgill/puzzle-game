@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  dropInto, dropsForRound, quotaFor, reduce, rollOffers, rulesFor, startRun,
+  dropInto, dropsForRound, quotaFor, reduce, rollOffers, rulesFor,
+  startOptions, startRun,
 } from '../run.js';
+import type { RunOptions } from '../run.js';
 import { SCALER_KEYS } from '../content.js';
 import { cellAt, column } from '../types.js';
 import type { PartKey, RunState } from '../types.js';
@@ -12,8 +14,11 @@ function seq(values: readonly number[]): () => number {
   return () => values[i++ % values.length] ?? 0.5;
 }
 
-const start = (over: Partial<Parameters<typeof startRun>[0]> = {}) =>
-  startRun({ mode: 'free', difficulty: 'easy', rng: seq([0.1, 0.6, 0.3, 0.8]), ...over });
+const start = (over: Partial<RunOptions> = {}) =>
+  startRun(startOptions(
+    { mode: 'free', difficulty: 'easy', dateKey: '2026-08-31', ...over },
+    seq([0.1, 0.6, 0.3, 0.8]),
+  ));
 
 describe('startRun', () => {
   it('installs the difficulty starting board', () => {
@@ -182,6 +187,36 @@ describe('blueprints and jams', () => {
     // hard round index 2 is the Short Shift jam
     expect(dropsForRound(withOvertime, 0)).toBe(4);
     expect(dropsForRound(withOvertime, 2)).toBe(2);
+  });
+
+  it('lets a variant override the difficulty drop budget', () => {
+    // Tight Purse cuts Easy from 4 drops to 2. Nothing else covered this, so
+    // inverting the ?? in dropsForRound broke no test.
+    const s = startRun(startOptions({ mode: 'daily', difficulty: 'easy', dateKey: '2026-09-02' }));
+    expect(s.state.variant?.name).toBe('Tight Purse');
+    expect(s.state.variant?.drops).toBe(2);
+    expect(dropsForRound(s.state, 0)).toBe(2);
+    // and overtime still stacks on top of the override
+    expect(dropsForRound({ ...s.state, blueprints: new Set(['overtime']) }, 0)).toBe(3);
+  });
+
+  it('derives every rule the simulation reads, not just the base value', () => {
+    const { state } = start();
+    expect(rulesFor(state).gravity).toBe(false);
+    expect(rulesFor({ ...state, blueprints: new Set(['gravity']) }).gravity).toBe(true);
+    // Springs default to one use, and a variant may grant more.
+    expect(rulesFor(state).springUses).toBe(1);
+    const loose = startRun(startOptions({ mode: 'daily', difficulty: 'easy', dateKey: '2026-09-01' }));
+    expect(loose.state.variant?.name).toBe('Perpetual Motion');
+    expect(rulesFor(loose.state).springUses).toBe(2);
+  });
+
+  it('refuses to move a part without the Loose Screws blueprint', () => {
+    // The blueprint check is the only thing stopping every run relocating
+    // parts for free, and nothing covered its false branch.
+    const { state, rng } = start();
+    const s: RunState = { ...state, phase: { kind: 'playing' } };
+    expect(reduce(s, { type: 'movePart', from: cellAt(2, 2), to: cellAt(0, 0) }, rng)).toBe(s);
   });
 
   it('loose screws relocates one part per round and refuses a second', () => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { RunState } from '../game/types.js';
 
@@ -22,14 +22,30 @@ export function ResultModal({
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<Element | null>(null);
+  // Read through a ref so the effect below can hold empty deps. Depending on
+  // the prop meant an inline arrow from the caller re-ran the whole effect on
+  // every render, toggling `inert` off and back on each time.
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+
+  /**
+   * Captured in a layout effect, and deliberately not in the effect below.
+   * React commits `autoFocus` during the layout phase, which runs before
+   * passive effects — so reading activeElement there returns this dialog's
+   * own Play-again button, and "restore focus" restores it to itself.
+   *
+   * Empty deps: capture the opener once, not on every render.
+   */
+  useLayoutEffect(() => {
+    openerRef.current = document.activeElement;
+  }, []);
 
   useEffect(() => {
-    openerRef.current = document.activeElement;
     const app = document.getElementById('app-root');
     if (app) app.inert = true;
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onDismiss(); return; }
+      if (e.key === 'Escape') { dismissRef.current(); return; }
       if (e.key !== 'Tab' || !dialogRef.current) return;
       const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>('button')]
         .filter((b) => b.offsetParent !== null);
@@ -48,7 +64,7 @@ export function ResultModal({
       // dropped at the top of the document.
       if (openerRef.current instanceof HTMLElement) openerRef.current.focus();
     };
-  }, [onDismiss]);
+  }, []);
 
   const other = state.difficulty.key === 'easy' ? 'Hard · 8 rounds' : 'Easy · 4 rounds';
 
