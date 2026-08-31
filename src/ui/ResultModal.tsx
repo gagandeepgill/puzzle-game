@@ -9,6 +9,8 @@ interface Props {
   readonly won: boolean;
   /** The stored daily result. Null in free play, or before it is written. */
   readonly record: DailyRecord | null;
+  /** False when the record predates this run, i.e. the player is replaying. */
+  readonly recordIsThisRun: boolean;
   readonly streak: Streak;
   readonly quota: number;
   readonly onPlayAgain: () => void;
@@ -24,7 +26,8 @@ interface Props {
  * aria-modal is a claim; inert plus a Tab trap is the behaviour.
  */
 export function ResultModal({
-  state, won, record, streak, quota, onPlayAgain, onSwitchDifficulty, onDismiss,
+  state, won, record, recordIsThisRun, streak, quota, onPlayAgain,
+  onSwitchDifficulty, onDismiss,
 }: Props) {
   const [copied, setCopied] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -111,6 +114,10 @@ export function ResultModal({
             : `Round ${state.round + 1} demanded ${quota}; the machine paid ${state.roundScore}.`}
         </p>
 
+        {/* Labelled, because on a replay these two blocks disagree and read
+            as a bug. The stats are the run just played; the block below is
+            the first attempt, which is the one that counts and gets posted. */}
+        {record && !recordIsThisRun && <Caption>This run</Caption>}
         <div className="flex gap-2">
           <Stat value={`${won ? state.difficulty.rounds : state.round}/${state.difficulty.rounds}`} label="rounds" />
           <Stat value={String(state.total)} label="banked" />
@@ -121,6 +128,14 @@ export function ResultModal({
             what the player is sharing even if they replay afterwards. */}
         {record && (
           <div className="bg-card border border-edge rounded-[11px] p-2.5 flex flex-col gap-2">
+            <Caption>
+              {recordIsThisRun ? "Today's result" : "Today's result — your first attempt"}
+            </Caption>
+            {!recordIsThisRun && (
+              <p className="text-[11px] text-steel leading-snug -mt-1">
+                You already played today. Replays won't change what is locked in.
+              </p>
+            )}
             <pre className="text-[11.5px] text-steel font-sans whitespace-pre-wrap leading-snug">
               {shareText(record, state.variant, streak)}
             </pre>
@@ -141,11 +156,6 @@ export function ResultModal({
               {copied ? '✓ Copied' : 'Copy result'}
             </button>
           </div>
-        )}
-        {record && !won && state.mode === 'daily' && (
-          <p className="text-[11.5px] text-steel -mt-1">
-            Locked in for today. Replays won't change it.
-          </p>
         )}
 
         <button
@@ -169,6 +179,12 @@ export function ResultModal({
       </div>
     </div>,
     document.body,
+  );
+}
+
+function Caption({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] font-bold uppercase tracking-[.08em] text-steel">{children}</p>
   );
 }
 

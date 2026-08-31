@@ -403,6 +403,7 @@ export function App() {
           state={state}
           won={state.phase.won}
           record={run.record}
+          recordIsThisRun={run.recordIsThisRun}
           streak={run.streak}
           quota={run.quota}
           onPlayAgain={() => { setModalDismissed(false); run.restart(); }}
