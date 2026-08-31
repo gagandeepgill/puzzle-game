@@ -180,6 +180,10 @@
     <button class="modetab" id="mode-daily">🗓 Daily</button>
     <button class="modetab" id="mode-free">∞ Free Play</button>
   </div>
+  <div class="modes">
+    <button class="modetab" id="diff-easy">🌤 Easy · 4</button>
+    <button class="modetab" id="diff-hard">🔥 Hard · 8</button>
+  </div>
   <p class="daily-banner" id="dailybanner" hidden></p>
 
   <p class="how"><strong>Build a scoring machine.</strong> Place drafted parts on the grid, then drop marbles down a column — every part they touch mutates their value. Adds feed multipliers, prisms clone marbles, springs re-trigger what's above. Beat the quota; it climbs steeply. Multiplication or death.</p>
@@ -241,8 +245,6 @@
 (() => {
 'use strict';
 const COLS = 5, ROWS = 6;
-const QUOTAS = [10, 22, 48, 95, 190, 340, 600, 1000];
-const BASE_DROPS = 3;
 const MARBLE_CAP = 16;
 
 /* ---------- daily seed (Wordle-style: same run for everyone, each UTC day) ---------- */
@@ -285,31 +287,58 @@ const TILES = {
   gate:   { g: '🚪', n: 'Gilded Gate', mini: '≥10:×3',r: 'Value ≥ 10 → ×3. Below 10, the marble is confiscated.' },
   bell:   { g: '🔔', n: 'Echo Bell',   mini: '+marble',r: 'Every drop also releases a bonus marble down this column.' },
 };
-const DRAFT_POOLS = [
-  ['weight', 'coil', 'wire', 'weight'],
-  ['coil', 'prism', 'weight', 'anvil', 'wire'],
-  ['prism', 'spring', 'reso', 'coil', 'gate'],
-  ['fork', 'prism', 'coil', 'bell', 'reso'],
-  ['fork', 'bell', 'reso', 'gate', 'spring', 'prism'],
-  ['fork', 'prism', 'coil', 'spring', 'bell'],
-  ['fork', 'reso', 'gate', 'prism', 'bell', 'spring'],
-  ['fork', 'prism', 'reso', 'coil', 'gate', 'bell'],
-];
+/* Two structurally distinct runs — Easy is NOT Hard's first four rounds.
+   They differ in length, drops, starting machine, jams, blueprint cadence,
+   draft pools and seed salt, so no round is shared between them. */
+const DIFFS = {
+  easy: {
+    key: 'easy', tab: '🌤 Easy · 4', name: 'Short Shift', rounds: 4,
+    blurb: 'Four rounds, four drops, and a Coil pre-installed. Steep per-round jumps — build fast.',
+    quotas: [12, 30, 68, 145],
+    drops: 4,
+    start: [['weight', 2, 2], ['weight', 4, 2], ['coil', 5, 2]],
+    jams: { 2: { key: 'noBells', text: '⚠ JAM — Power Cut: Echo Bells stay silent this round.' } },
+    blueprintAfter: [1],
+    pools: [
+      ['coil', 'weight', 'wire', 'prism'],
+      ['prism', 'coil', 'reso', 'weight', 'spring'],
+      ['fork', 'prism', 'coil', 'bell', 'reso'],
+      ['fork', 'reso', 'gate', 'prism', 'bell', 'spring'],
+    ],
+  },
+  hard: {
+    key: 'hard', tab: '🔥 Hard · 8', name: 'Long Haul', rounds: 8,
+    blurb: 'Eight rounds, three drops, a cold start and two jams. Additive parts early — earn your multipliers.',
+    quotas: [10, 22, 48, 95, 190, 340, 600, 1000],
+    drops: 3,
+    start: [['weight', 2, 2], ['weight', 4, 2]],
+    jams: {
+      2: { key: 'shortShift', text: '⚠ JAM — Short Shift: the foreman allows only 2 drops this round.' },
+      5: { key: 'slippery', text: '⚠ JAM — Slippery marbles: each marble skids past the FIRST part it touches.' },
+    },
+    blueprintAfter: [1, 3, 5],
+    pools: [
+      ['weight', 'coil', 'wire', 'weight'],
+      ['coil', 'prism', 'weight', 'anvil', 'wire'],
+      ['prism', 'spring', 'reso', 'coil', 'gate'],
+      ['fork', 'prism', 'coil', 'bell', 'reso'],
+      ['fork', 'bell', 'reso', 'gate', 'spring', 'prism'],
+      ['fork', 'prism', 'coil', 'spring', 'bell'],
+      ['fork', 'reso', 'gate', 'prism', 'bell', 'spring'],
+      ['fork', 'prism', 'reso', 'coil', 'gate', 'bell'],
+    ],
+  },
+};
 const BLUEPRINTS = {
   lead:     { g: '🪙', n: 'Lead Marbles', r: 'All marbles start at value 2 instead of 1.' },
   overtime: { g: '⏱️', n: 'Overtime',     r: '+1 drop every round, for the rest of the run.' },
   gravity:  { g: '🌌', n: 'Gravity Well', r: 'Marbles gain +1 for every row they fall.' },
   screws:   { g: '🔧', n: 'Loose Screws', r: 'Once per round, relocate one installed part.' },
 };
-const JAMS = {
-  2: { text: '⚠ JAM — Short Shift: the foreman allows only 2 drops this round.' },
-  5: { text: '⚠ JAM — Slippery marbles: each marble skids past the FIRST part it touches.' },
-};
-
 const S = {
-  mode: 'daily', variant: null, rng: Math.random, runId: 0,
+  mode: 'daily', diff: DIFFS.easy, variant: null, rng: Math.random, runId: 0,
   round: 0, board: Array(COLS * ROWS).fill(null),
-  roundScore: 0, total: 0, bestDrop: 0, dropsLeft: BASE_DROPS,
+  roundScore: 0, total: 0, bestDrop: 0, dropsLeft: 0,
   phase: 'draft', sel: null, offers: [], busy: false,
   draftKind: 'part', pendingBlueprint: false,
   blueprints: new Set(), screwUsed: false, moveSrc: null,
@@ -317,14 +346,15 @@ const S = {
 
 const $ = (id) => document.getElementById(id);
 const idx = (r, c) => r * COLS + c;
-const quotaFor = (i) => Math.round(QUOTAS[i] * (S.variant ? S.variant.qmul : 1));
+const rounds = () => S.diff.rounds;
+const jamFor = (i) => S.diff.jams[i] || null;
+const quotaFor = (i) => Math.round(S.diff.quotas[i] * (S.variant ? S.variant.qmul : 1));
 const baseValue = () => (S.blueprints.has('lead') ? 2 : 1) + (S.variant?.baseBonus ?? 0);
 const springLimit = () => S.variant?.springUses ?? 1;
 const dropsForRound = () => {
-  const jamShort = S.round === 2;
-  const base = S.variant?.drops ?? BASE_DROPS;
+  const base = S.variant?.drops ?? S.diff.drops;
   const d = base + (S.blueprints.has('overtime') ? 1 : 0);
-  return jamShort ? Math.min(d, 2) : d;
+  return jamFor(S.round)?.key === 'shortShift' ? Math.min(d, 2) : d;
 };
 
 /* ---------- audio ---------- */
@@ -418,14 +448,14 @@ function renderBlueprints() {
   });
 }
 function hud() {
-  $('roundlbl').textContent = `Round ${S.round + 1} / ${QUOTAS.length}`;
+  $('roundlbl').textContent = `Round ${S.round + 1} / ${rounds()}`;
   $('score').textContent = S.roundScore;
   $('quota').textContent = quotaFor(S.round);
   $('bar').style.width = Math.min(100, 100 * S.roundScore / quotaFor(S.round)) + '%';
   $('dropsleft').textContent = S.dropsLeft;
   $('total').textContent = S.total;
-  const jam = $('jam');
-  if (JAMS[S.round]) { jam.textContent = JAMS[S.round].text; jam.classList.add('show'); }
+  const jam = $('jam'), j = jamFor(S.round);
+  if (j) { jam.textContent = j.text; jam.classList.add('show'); }
   else jam.classList.remove('show');
 }
 
@@ -438,7 +468,7 @@ function startDraft(title, kind) {
   box.innerHTML = '';
   $('draft').classList.toggle('blueprint', kind === 'blueprint');
   if (kind === 'part') {
-    const pool = DRAFT_POOLS[Math.min(S.round, DRAFT_POOLS.length - 1)];
+    const pool = S.diff.pools[Math.min(S.round, S.diff.pools.length - 1)];
     const opts = [...pool].sort(() => S.rng() - 0.5).slice(0, 3);
     const SCALERS = ['coil', 'prism', 'reso', 'fork', 'spring', 'bell'];
     if (!opts.some((t) => SCALERS.includes(t))) {
@@ -537,7 +567,7 @@ async function runMarble(m, queue, stats) {
   await sleep(60);
 
   const gravity = S.blueprints.has('gravity');
-  const slippery = S.round === 5;
+  const slippery = jamFor(S.round)?.key === 'slippery';
   let r = m.row ?? 0, c = m.col, steps = 0;
   while (r < ROWS && steps++ < 120) {
     const p = cellPos(r, c);
@@ -619,7 +649,8 @@ async function drop(col) {
   hud();
 
   const queue = [{ v: baseValue(), col, row: 0, touched: 0, reso: false, slipped: false, springs: new Map() }];
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+  const bellsOff = jamFor(S.round)?.key === 'noBells';
+  if (!bellsOff) for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
     if (S.board[idx(r, c)] === 'bell' && queue.length < MARBLE_CAP) {
       queue.push({ v: baseValue(), col: c, row: 0, touched: 0, reso: false, slipped: false, springs: new Map() });
     }
@@ -687,9 +718,9 @@ async function roundWon() {
   banner.remove();
   const wonRound = S.round;
   S.round += 1;
-  if (S.round >= QUOTAS.length) {
+  if (S.round >= rounds()) {
     S.phase = 'over';
-    $('wintext').textContent = `All ${QUOTAS.length} quotas beaten. Total banked: ${S.total} · best single drop: ${S.bestDrop}.`;
+    $('wintext').textContent = `All ${rounds()} ${S.diff.name} quotas beaten. Total banked: ${S.total} · best single drop: ${S.bestDrop}.`;
     finishRun(true);
     $('wincard').classList.add('show');
     renderDrops(); renderMoveBtn();
@@ -699,7 +730,7 @@ async function roundWon() {
   S.dropsLeft = dropsForRound();
   S.screwUsed = false;
   $('droptick').hidden = true;
-  S.pendingBlueprint = [1, 3, 5].includes(wonRound);
+  S.pendingBlueprint = S.diff.blueprintAfter.includes(wonRound);
   startDraft(`Quota beaten! Draft a part for round ${S.round + 1}`, 'part');
 }
 function runLost() {
@@ -714,27 +745,32 @@ function runLost() {
 /* ---------- daily record, streak & share ---------- */
 function loadJSON(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
 function saveJSON(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+// Easy and Hard are tracked as separate daily results.
+const dailyKey = () => `payload.daily.${S.diff.key}.v1`;
 function todaysRecord() {
-  const rec = loadJSON('payload.daily.v1');
+  const rec = loadJSON(dailyKey());
   return rec && rec.dateKey === dateKey ? rec : null;
 }
 function recordDaily(won) {
   const existing = todaysRecord();
   if (existing) return existing;                       // first attempt counts
   let st = loadJSON('payload.streak.v1') || { streak: 0, last: null };
-  const yesterday = new Date(Date.parse(dateKey) - 864e5).toISOString().slice(0, 10);
-  st = { streak: st.last === yesterday ? (st.streak || 0) + 1 : 1, last: dateKey };
-  const rec = { dateKey, cleared: won ? QUOTAS.length : S.round, total: S.total, best: S.bestDrop, streak: st.streak };
-  saveJSON('payload.daily.v1', rec);
-  saveJSON('payload.streak.v1', st);
+  if (st.last !== dateKey) {
+    const yesterday = new Date(Date.parse(dateKey) - 864e5).toISOString().slice(0, 10);
+    st = { streak: st.last === yesterday ? (st.streak || 0) + 1 : 1, last: dateKey };
+    saveJSON('payload.streak.v1', st);
+  }
+  const rec = { dateKey, diff: S.diff.key, rounds: rounds(),
+    cleared: won ? rounds() : S.round, total: S.total, best: S.bestDrop, streak: st.streak };
+  saveJSON(dailyKey(), rec);
   return rec;
 }
 function shareTextFor(rec) {
   const v = S.variant;
-  const result = rec.cleared >= QUOTAS.length
-    ? `🏆 all ${QUOTAS.length} quotas`
-    : `💥 seized at round ${rec.cleared + 1}/${QUOTAS.length}`;
-  return `Payload Daily #${dayNumber} ${v.icon} ${v.name}\n` +
+  const result = rec.cleared >= rec.rounds
+    ? `🏆 all ${rec.rounds} quotas`
+    : `💥 seized at round ${rec.cleared + 1}/${rec.rounds}`;
+  return `Payload Daily #${dayNumber} ${v.icon} ${v.name} · ${S.diff.key === 'easy' ? '🌤 Easy' : '🔥 Hard'}\n` +
     `${result} · banked ${rec.total} · best drop ${rec.best}` +
     (rec.streak >= 2 ? `\n🔥 ${rec.streak}-day streak` : '');
 }
@@ -766,29 +802,34 @@ $('copy-lose').onclick = () => copyShare('lose');
 /* ---------- run setup & modes ---------- */
 function renderDailyBanner() {
   const b = $('dailybanner');
-  if (S.mode !== 'daily') { b.hidden = true; return; }
+  if (S.mode !== 'daily') {
+    b.innerHTML = `<b>Free Play — ${S.diff.name} (${rounds()} rounds).</b> ${S.diff.blurb} Unseeded: every run reshuffles.`;
+    b.hidden = false;
+    return;
+  }
   const v = S.variant, rec = todaysRecord();
   const st = loadJSON('payload.streak.v1');
-  b.innerHTML = `<b>Day #${dayNumber} — ${v.icon} ${v.name}.</b> ${v.desc} ` +
+  b.innerHTML = `<b>Day #${dayNumber} — ${v.icon} ${v.name} · ${S.diff.name} (${rounds()} rounds).</b> ${v.desc} ` +
     `Everyone gets this same run today.` +
-    (rec ? ` <span class="done">Today's result is locked in: ${rec.cleared >= QUOTAS.length ? 'all quotas beaten' : 'round ' + (rec.cleared + 1)}, banked ${rec.total}. Replays won't change it.</span>` : '') +
+    (rec ? ` <span class="done">Locked in: ${rec.cleared >= rec.rounds ? 'all quotas beaten' : 'round ' + (rec.cleared + 1)}, banked ${rec.total}. Replays won't change it.</span>` : '') +
     (st && st.streak >= 2 && st.last === dateKey ? ` 🔥 ${st.streak}-day streak.` : '');
   b.hidden = false;
 }
-function startRun(mode) {
+function startRun(mode, diffKey) {
   S.mode = mode;
+  S.diff = DIFFS[diffKey || S.diff.key];
   S.runId += 1;
   if (mode === 'daily') {
     S.variant = VARIANTS[(dayNumber - 1) % VARIANTS.length];
-    S.rng = mulberry32(hashDateKey(dateKey));
+    // Salt by difficulty so Easy and Hard never draft the same sequence.
+    S.rng = mulberry32(hashDateKey(dateKey + ':' + S.diff.key));
   } else {
     S.variant = null;
     S.rng = Math.random;
   }
   S.round = 0;
   S.board = Array(COLS * ROWS).fill(null);
-  S.board[2 * COLS + 2] = 'weight';
-  S.board[4 * COLS + 2] = 'weight';
+  S.diff.start.forEach(([t, r, c]) => { S.board[idx(r, c)] = t; });
   S.roundScore = 0; S.total = 0; S.bestDrop = 0;
   S.dropsLeft = dropsForRound();
   S.blueprints = new Set(); S.screwUsed = false; S.moveSrc = null;
@@ -798,12 +839,17 @@ function startRun(mode) {
   $('droptick').hidden = true;
   $('mode-daily').classList.toggle('active', mode === 'daily');
   $('mode-free').classList.toggle('active', mode === 'free');
+  $('diff-easy').classList.toggle('active', S.diff.key === 'easy');
+  $('diff-hard').classList.toggle('active', S.diff.key === 'hard');
   renderDailyBanner(); renderBlueprints();
   renderGrid(); renderDrops(); renderMoveBtn(); hud();
-  startDraft(mode === 'daily' ? `Daily #${dayNumber} — draft your first part` : 'Draft your first part', 'part');
+  const lead = mode === 'daily' ? `Daily #${dayNumber} · ${S.diff.name}` : S.diff.name;
+  startDraft(`${lead} — draft your first part`, 'part');
 }
 $('mode-daily').onclick = () => startRun('daily');
 $('mode-free').onclick = () => startRun('free');
+$('diff-easy').onclick = () => startRun(S.mode, 'easy');
+$('diff-hard').onclick = () => startRun(S.mode, 'hard');
 $('again-win').onclick = () => startRun(S.mode);
 $('again-lose').onclick = () => startRun(S.mode);
 
@@ -827,7 +873,7 @@ $('resetbtn').onclick = () => {
 };
 
 /* boot */
-startRun('daily');
+startRun('daily', 'easy');
 })();
 </script>
 </body>
