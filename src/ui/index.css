@@ -2,11 +2,158 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * The type scale.
+ *
+ * Eight roles, three tiers. `tailwind.config.js` maps each role to one of
+ * these variables and pairs it with a line height, so a component says
+ * `text-meta` and the viewport decides what that measures.
+ *
+ * On `:root` rather than on `.ck`, because the result modal is portalled to
+ * document.body and would otherwise fall outside the scale entirely.
+ *
+ * In rem, not px. Every size in this app used to be px, which meant a player
+ * who raised their browser's default font size got nothing: setting root
+ * font-size to 32px changed the page by zero pixels. That was verified rather
+ * than assumed, and it is a WCAG 1.4.4 failure, not a nicety.
+ *
+ * The mobile tier reproduces the sizes the phone layout was tuned at, so the
+ * 375x812 result that got all six rows above the fold is unchanged. Only the
+ * wider tiers grow. The step is about 1.09 per tier for reading sizes and
+ * less for the small caps, because a 10px label going to 13px stops being a
+ * label; large text needs proportionally less growth than small text does.
+ */
+@layer base {
+  :root {
+    --t-micro: 0.625rem;    /* 10.0px — part badges, path steps */
+    --t-label: 0.625rem;    /* 10.0px — uppercase section captions */
+    --t-meta: 0.71875rem;   /* 11.5px — part rules, secondary lines */
+    --t-body: 0.78125rem;   /* 12.5px — copy, buttons, HUD labels */
+    --t-lead: 0.84375rem;   /* 13.5px — emphasised copy, card titles */
+    --t-stat: 1.1875rem;    /* 19.0px — HUD numbers */
+    --t-head: 1.6875rem;    /* 27.0px — wordmark, modal headline */
+    --t-payout: 1.875rem;   /* 30.0px — modal stat values */
+  }
+
+  /**
+   * Tall phones. 12.5px body copy is under the 16px the UX guidance wants,
+   * and the reason has always been the vertical budget — but that reason was
+   * measured on a 375x812 iPhone X and never re-checked. A 440x932 phone has
+   * 120 more rows of pixels.
+   *
+   * Gated on height, not width, because height is the constraint. The board
+   * formula's subtrahend rises with it: bigger chrome text means a taller
+   * header, HUD and draft rail above the board, so the space left for the
+   * board shrinks by the same amount the type grew.
+   */
+  @media (max-width: 767px) and (min-height: 880px) {
+    :root {
+      --t-micro: 0.65625rem;  /* 10.5px */
+      --t-label: 0.6875rem;   /* 11.0px */
+      --t-meta: 0.78125rem;   /* 12.5px */
+      --t-body: 0.84375rem;   /* 13.5px */
+      --t-lead: 0.9375rem;    /* 15.0px */
+      --t-stat: 1.3125rem;    /* 21.0px */
+    }
+  }
+
+  /* Tablet and up. The board no longer owns the whole viewport, so the
+     vertical budget that forced the phone sizes is gone. */
+  @media (min-width: 768px) {
+    :root {
+      --t-micro: 0.65625rem;  /* 10.5px */
+      --t-label: 0.6875rem;   /* 11.0px */
+      --t-meta: 0.78125rem;   /* 12.5px */
+      --t-body: 0.84375rem;   /* 13.5px */
+      --t-lead: 0.9375rem;    /* 15.0px */
+      --t-stat: 1.3125rem;    /* 21.0px */
+      --t-head: 1.75rem;      /* 28.0px */
+    }
+  }
+
+  /* The cockpit. Body copy reaches 15px and lead 16.5px, which is where the
+     rails' 300 and 348px widths still give a 40-plus character line. */
+  @media (min-width: 1180px) {
+    :root {
+      --t-micro: 0.6875rem;   /* 11.0px */
+      --t-label: 0.71875rem;  /* 11.5px */
+      --t-meta: 0.84375rem;   /* 13.5px */
+      --t-body: 0.9375rem;    /* 15.0px */
+      --t-lead: 1.03125rem;   /* 16.5px */
+      --t-stat: 1.5rem;       /* 24.0px */
+      --t-head: 1.875rem;     /* 30.0px */
+      --t-payout: 2rem;       /* 32.0px */
+    }
+  }
+}
+
 @layer base {
   html { -webkit-text-size-adjust: 100%; }
   body {
     @apply bg-ground text-ink font-sans;
     min-height: 100dvh;
+  }
+
+  /**
+   * The ground plane.
+   *
+   * Two layers of very low-alpha colour drifting behind the app, so a wide
+   * monitor is a room the machine sits in rather than a black void with a
+   * grid in the middle.
+   *
+   * The reason this is safe, and the reason it is here rather than anywhere
+   * else: every surface that carries text is opaque. `bg-panel-lit`,
+   * `bg-raised`, `bg-machined` and the `bg-ground` empty cells all paint over
+   * this completely, so no measured contrast ratio in the app changes by a
+   * single point. What shows through is page gutter and the gaps between
+   * panels, where there is nothing to read. Into the Breach's rule is to
+   * sacrifice the cool idea for clarity every time; this is the version of
+   * the idea that does not have to be sacrificed, because it never touches
+   * the thing being read.
+   *
+   * Both layers animate `transform` only, which the compositor runs off the
+   * main thread. That matters: the drop animation dwells 41ms on its fastest
+   * frame, and decoration that repainted on the main thread would eat that
+   * budget. Two periods, coprime enough that the pattern does not visibly
+   * repeat.
+   *
+   * `inset: -30%` gives the scale and translate room to move without ever
+   * pulling an edge into view.
+   *
+   * Reduced motion is already handled: the rule below freezes every animation
+   * in the app, which leaves these as two still gradients rather than nothing.
+   */
+  body::before,
+  body::after {
+    content: '';
+    position: fixed;
+    inset: -30%;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  body::before {
+    background:
+      radial-gradient(38% 34% at 22% 18%, rgba(217, 164, 65, .10), transparent 70%),
+      radial-gradient(34% 30% at 78% 76%, rgba(111, 211, 217, .08), transparent 70%);
+    animation: drift-a 71s ease-in-out infinite alternate;
+  }
+
+  body::after {
+    background:
+      radial-gradient(30% 40% at 86% 30%, rgba(212, 132, 84, .07), transparent 72%),
+      radial-gradient(44% 36% at 12% 82%, rgba(217, 164, 65, .05), transparent 74%);
+    animation: drift-b 53s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift-a {
+    from { transform: translate3d(-3%, -2%, 0) scale(1); }
+    to { transform: translate3d(4%, 3%, 0) scale(1.12); }
+  }
+
+  @keyframes drift-b {
+    from { transform: translate3d(3%, 2%, 0) scale(1.08); }
+    to { transform: translate3d(-4%, -3%, 0) scale(1); }
   }
   button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   /* Every button, not just board cells. In standalone mode there is no
@@ -39,7 +186,7 @@
  * keyboard.
  *
  * Sizes come from the content, not from device folklore. The three-column
- * form needs 280 + 470 + 320 plus gutters and padding, which lands at 1140.
+ * form needs 300 + 470 + 348 plus gutters and padding, which lands at 1180.
  */
 @layer components {
   .ck {
@@ -55,7 +202,7 @@
     .ck {
       display: grid;
       max-width: 1040px;
-      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-columns: minmax(0, 1fr) 348px;
       grid-template-rows: auto auto auto 1fr;
       grid-template-areas:
         "header header"
@@ -71,12 +218,12 @@
      up, centre is the machine. The draft has to be on the right: selecting a
      card lights a heat map across all 30 cells, and a card 900px from the cell
      you are about to click breaks that link. */
-  @media (min-width: 1140px) {
+  @media (min-width: 1180px) {
     .ck {
       /* Rails are fixed and the board absorbs the slack, which is what Lichess
          does and why a wide monitor still looks deliberate. */
-      max-width: 1520px;
-      grid-template-columns: 280px minmax(0, 1fr) 320px;
+      max-width: 1560px;
+      grid-template-columns: 300px minmax(0, 1fr) 348px;
       grid-template-rows: auto auto 1fr;
       grid-template-areas:
         "header header header"
@@ -107,30 +254,61 @@
  * actually constrains a 5x6 grid. The floor keeps a 44px touch target on a
  * tablet; the ceiling stops a 2560 monitor turning 30 cells into dinner plates.
  *
+ * The width subtrahends are the layout, added up, not round numbers: at the
+ * cockpit tier it is 20px of page padding, 648px of rails, 40px of column
+ * gaps and 42px of board-panel chrome, so 750.
+ *
  * The glyph and badge are derived from the cell rather than hardcoded, because
  * a 19px glyph in an 84px cell reads as sparse and unfinished.
  */
 @layer components {
+  /**
+   * The phone. This used to be three frozen numbers — `--cell: 55.6px` and a
+   * 320px cap — tuned on a 375x812 iPhone X and then applied to every phone
+   * ever made. Measured: the board's bottom edge landed at exactly 796px on
+   * 375x812, 390x844, 402x874 and 440x932, leaving 16px of unused height on
+   * the smallest and 136px on the largest. A 440-wide phone was rendering an
+   * iPhone X board and throwing away 120px of width with it.
+   *
+   * Same rule as the wider tiers now: take the slack, capped by whichever of
+   * width or height runs out first. 478 is the layout above and below the
+   * board panel added up — the header, HUD and draft rail, the drop row, the
+   * skip row and the safe-area padding — and it is calibrated so 812px still
+   * yields 55.6px cells. The reference device does not move; every phone
+   * larger than it stops being punished for it.
+   */
   .ck-machine {
-    --cell: 55.6px;
-    --glyph: 26px;
-    --badge: 9.5px;
-    max-width: 320px;
+    --cell: clamp(44px, min((100vw - 62px) / 5, (100dvh - 478px) / 6), 76px);
+    --glyph: calc(var(--cell) * 0.47);
+    --badge: clamp(9.5px, calc(var(--cell) * 0.17), 13px);
+    max-width: calc(var(--cell) * 5 + 42px);
+  }
+
+  /* The tall-phone type tier above adds height to everything stacked over the
+     board, so the board's share drops by that much. Measured, not guessed:
+     494 is what keeps six rows on screen once the chrome grew. */
+  @media (max-width: 767px) and (min-height: 880px) {
+    .ck-machine {
+      --cell: clamp(44px, min((100vw - 62px) / 5, (100dvh - 494px) / 6), 76px);
+    }
   }
 
   @media (min-width: 768px) {
     .ck-machine {
-      --cell: clamp(56px, min((100dvh - 300px) / 6, (100vw - 460px) / 5), 84px);
+      --cell: clamp(56px, min((100dvh - 300px) / 6, (100vw - 488px) / 5), 84px);
       --glyph: calc(var(--cell) * 0.44);
-      --badge: clamp(9.5px, calc(var(--cell) * 0.155), 13px);
+      --badge: clamp(9.5px, calc(var(--cell) * 0.155), 14px);
       /* five cells, four 6px gaps, plus the panel's 8px padding and 1px border */
       max-width: calc(var(--cell) * 5 + 42px);
     }
   }
 
-  @media (min-width: 1140px) {
+  @media (min-width: 1180px) {
     .ck-machine {
-      --cell: clamp(56px, min((100dvh - 260px) / 6, (100vw - 700px) / 5), 84px);
+      /* Ceiling raised from 84: at 1560px the board column is 812px wide, so
+         width stops binding and the cells were sitting at the old cap with
+         room to spare. 90 keeps the 6-row board inside a 1080p viewport. */
+      --cell: clamp(56px, min((100dvh - 260px) / 6, (100vw - 750px) / 5), 90px);
     }
   }
 }
