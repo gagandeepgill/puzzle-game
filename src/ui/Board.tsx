@@ -88,7 +88,7 @@ const Cell = memo(function Cell({
 interface BoardProps {
   readonly board: BoardModel;
   readonly placeable: boolean;
-  readonly firingCell: CellIndex | null;
+  readonly firingCells: readonly CellIndex[];
   /** Increments on every flash. Part of the firing cell's key so a Spring
    *  landing on the same cell twice replays the animation; toggling a class
    *  back on within one paint does not restart a CSS animation. */
@@ -103,14 +103,14 @@ interface BoardProps {
 }
 
 export function Board({
-  board, placeable, firingCell, firingSeq, marbles, labels, movable, onCellPress,
+  board, placeable, firingCells, firingSeq, marbles, labels, movable, onCellPress,
 }: BoardProps) {
   const cells = [];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const index = cellAt(r, c);
       const part = board[index] ?? null;
-      const firing = firingCell === index;
+      const firing = firingCells.includes(index);
       cells.push(
         <Cell
           key={firing ? `${index}-${firingSeq}` : index}
