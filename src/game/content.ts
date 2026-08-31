@@ -1,5 +1,5 @@
 /**
- * Content tables. Ported verbatim from demo/payload.html so the engine scores
+ * Content tables. Ported verbatim from site/payload.html so the engine scores
  * identically to the shipped build — the tests depend on that.
  */
 import type {
