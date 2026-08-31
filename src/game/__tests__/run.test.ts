@@ -103,27 +103,67 @@ describe('round flow', () => {
 
   it('wins after clearing the final round', () => {
     const { state, rng } = start();
-    let s = reduce(state, { type: 'skipDraft' }, rng);
+    let s = state;
     for (let i = 0; i < 4; i++) {
-      s = reduce(s, { type: 'applyDrop', result: { total: 9999, events: [], marbles: 1 } }, rng);
-      if (s.phase.kind === 'drafting' || s.phase.kind === 'blueprint') {
-        s = reduce(s, s.phase.kind === 'blueprint'
-          ? { type: 'takeBlueprint', key: s.phase.offers[0] ?? 'lead' }
-          : { type: 'skipDraft' }, rng);
+      // Each round: resolve the draft, then any blueprint it hands off to.
+      if (s.phase.kind === 'drafting') s = reduce(s, { type: 'skipDraft' }, rng);
+      if (s.phase.kind === 'blueprint') {
+        const key = s.phase.offers[0];
+        if (key) s = reduce(s, { type: 'takeBlueprint', key }, rng);
       }
+      s = reduce(s, { type: 'applyDrop', result: { total: 9999, events: [], marbles: 1 } }, rng);
     }
     expect(s.phase).toEqual({ kind: 'runOver', won: true });
   });
 
-  it('offers a blueprint after the rounds the difficulty names', () => {
+  it('runs the part draft first on a blueprint round, then the blueprint', () => {
     const { state, rng } = start();
-    const playing = reduce(state, { type: 'skipDraft' }, rng);
-    // easy grants a blueprint after round index 1, so clearing round 0 drafts a part
-    const afterR0 = reduce(playing, { type: 'applyDrop', result: { total: 9999, events: [], marbles: 1 } }, rng);
-    expect(afterR0.phase.kind).toBe('drafting');
-    const r1 = reduce(afterR0, { type: 'skipDraft' }, rng);
-    const afterR1 = reduce(r1, { type: 'applyDrop', result: { total: 9999, events: [], marbles: 1 } }, rng);
-    expect(afterR1.phase.kind).toBe('blueprint');
+    const clear = (s: RunState) =>
+      reduce(s, { type: 'applyDrop', result: { total: 9999, events: [], marbles: 1 } }, rng);
+
+    // Easy owes a blueprint after round index 1.
+    const r1 = reduce(clear(reduce(state, { type: 'skipDraft' }, rng)), { type: 'skipDraft' }, rng);
+    const afterR1 = clear(r1);
+
+    // Round 2 opens with a part draft, not the blueprint.
+    expect(afterR1.phase.kind).toBe('drafting');
+    expect(afterR1.pendingBlueprint).toBe(true);
+
+    // Resolving that draft hands off to the blueprint.
+    const afterDraft = reduce(afterR1, { type: 'skipDraft' }, rng);
+    expect(afterDraft.phase.kind).toBe('blueprint');
+    expect(afterDraft.pendingBlueprint).toBe(false);
+
+    // And taking one returns to play.
+    if (afterDraft.phase.kind !== 'blueprint') throw new Error('expected blueprint');
+    const key = afterDraft.phase.offers[0];
+    if (!key) throw new Error('expected an offer');
+    expect(reduce(afterDraft, { type: 'takeBlueprint', key }, rng).phase.kind).toBe('playing');
+  });
+
+  it('never skips a part draft, so Easy gets one every round', () => {
+    const { state, rng } = start();
+    let s = state;
+    let drafts = 0;
+    for (let round = 0; round < 4; round++) {
+      if (s.phase.kind !== 'drafting') throw new Error(`round ${round} did not open with a draft`);
+      drafts++;
+      s = reduce(s, { type: 'skipDraft' }, rng);
+      if (s.phase.kind === 'blueprint') {
+        const key = s.phase.offers[0];
+        if (!key) throw new Error('expected an offer');
+        s = reduce(s, { type: 'takeBlueprint', key }, rng);
+      }
+      s = reduce(s, { type: 'applyDrop', result: { total: 9999, events: [], marbles: 1 } }, rng);
+    }
+    expect(drafts).toBe(4);
+    expect(s.phase).toEqual({ kind: 'runOver', won: true });
+  });
+
+  it('refuses a blueprint that was not offered', () => {
+    const { state, rng } = start();
+    const s: RunState = { ...state, phase: { kind: 'blueprint', offers: ['lead'] } };
+    expect(reduce(s, { type: 'takeBlueprint', key: 'gravity' }, rng)).toBe(s);
   });
 });
 
@@ -131,14 +171,14 @@ describe('blueprints and jams', () => {
   it('overtime adds a drop immediately', () => {
     const { state, rng } = start();
     const before = state.dropsLeft;
-    let s: RunState = { ...state, phase: { kind: 'blueprint', offers: ['overtime'] } };
+    let s: RunState = { ...state, phase: { kind: 'blueprint', offers: ['overtime'] }, pendingBlueprint: false };
     s = reduce(s, { type: 'takeBlueprint', key: 'overtime' }, rng);
     expect(s.dropsLeft).toBe(before + 1);
   });
 
   it('short shift caps drops at 2 even with overtime', () => {
     const { state } = start({ difficulty: 'hard' });
-    const withOvertime: RunState = { ...state, blueprints: new Set(['overtime']) };
+    const withOvertime: RunState = { ...state, blueprints: new Set(['overtime'] as const) };
     // hard round index 2 is the Short Shift jam
     expect(dropsForRound(withOvertime, 0)).toBe(4);
     expect(dropsForRound(withOvertime, 2)).toBe(2);
@@ -146,7 +186,7 @@ describe('blueprints and jams', () => {
 
   it('loose screws relocates one part per round and refuses a second', () => {
     const { state, rng } = start();
-    const s: RunState = { ...state, blueprints: new Set(['screws']) };
+    const s: RunState = { ...state, blueprints: new Set(['screws']), phase: { kind: 'playing' } };
     const moved = reduce(s, { type: 'movePart', from: cellAt(2, 2), to: cellAt(0, 0) }, rng);
     expect(moved.board[cellAt(0, 0)]).toBe('weight');
     expect(moved.board[cellAt(2, 2)]).toBeNull();

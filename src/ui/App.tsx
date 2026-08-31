@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Board } from './Board.js';
+import { ResultModal } from './ResultModal.js';
 import { usePayloadRun } from './usePayloadRun.js';
 import { PARTS, BLUEPRINTS } from '../game/content.js';
 import { COLS, column } from '../game/types.js';
@@ -9,21 +10,23 @@ export function App() {
   const run = usePayloadRun({ mode: 'daily', difficulty: 'easy' });
   const { state, playback, busy } = run;
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [modalDismissed, setModalDismissed] = useState(false);
 
   const drafting = state.phase.kind === 'drafting';
   const placeable = drafting && state.phase.selected !== null;
 
-  const onCellPress = (cell: CellIndex) => {
-    if (drafting && state.phase.selected !== null) {
-      run.dispatch({ type: 'placeSelected', cell });
-    }
+  const onCellPress = useCallback((cell: CellIndex) => {
+    run.dispatch({ type: 'placeSelected', cell });
+  }, [run.dispatch]);
+
+  const setMode = (mode: Mode) => { setModalDismissed(false); run.restart({ mode }); };
+  const setDifficulty = (difficulty: DifficultyKey) => {
+    setModalDismissed(false);
+    run.restart({ difficulty });
   };
 
-  const setMode = (mode: Mode) => run.restart({ mode });
-  const setDifficulty = (difficulty: DifficultyKey) => run.restart({ difficulty });
-
   return (
-    <main className="w-full max-w-[430px] mx-auto flex flex-col gap-2.5 px-2.5 pt-3.5 pb-6">
+    <main id="app-root" className="w-full max-w-[430px] mx-auto flex flex-col gap-2.5 px-2.5 pt-3.5 pb-6">
       <header className="flex items-baseline justify-between">
         <h1 className="font-display font-bold text-[27px]">
           Pay<span className="text-brass">load</span>
@@ -32,6 +35,7 @@ export function App() {
           <button
             type="button"
             aria-expanded={sheetOpen}
+            aria-controls="settings-sheet"
             onClick={() => setSheetOpen((o) => !o)}
             className="text-[12.5px] font-semibold text-ink bg-panel border border-edge rounded-[9px] px-3 min-h-[34px]"
           >
@@ -41,7 +45,7 @@ export function App() {
       </header>
 
       {sheetOpen && (
-        <div className="bg-panel border border-edge rounded-xl p-2.5 flex flex-col gap-2">
+        <div id="settings-sheet" className="bg-panel border border-edge rounded-xl p-2.5 flex flex-col gap-2">
           <div role="group" aria-label="Mode" className="flex gap-1.5">
             <Tab on={state.mode === 'daily'} onClick={() => setMode('daily')}>Daily</Tab>
             <Tab on={state.mode === 'free'} onClick={() => setMode('free')}>Free Play</Tab>
@@ -77,10 +81,11 @@ export function App() {
         {run.jam && <p className="mt-2 text-[12.5px] font-bold text-bad">{run.jam.text}</p>}
       </div>
 
+      {/* Written once per drop, after it resolves. Deriving it from render-time
+          state announced partial totals against a round that had already been
+          reset by clearing the quota. */}
       <p role="status" aria-live="polite" className="sr-only">
-        {playback.breakdown.length > 0
-          ? `Drop scored ${playback.tick}. Round score ${state.roundScore} of ${run.quota}. ${state.dropsLeft} drops left.`
-          : ''}
+        {playback.announcement}
       </p>
 
       {drafting && (
@@ -156,11 +161,12 @@ export function App() {
         board={state.board}
         placeable={placeable}
         firingCell={playback.firingCell}
+        firingSeq={playback.firingSeq}
         onCellPress={onCellPress}
       />
 
       <div className="flex justify-between items-center min-h-[22px] gap-2">
-        {busy && (
+        {busy && !run.reducedMotion && (
           <button
             type="button"
             onClick={run.skip}
@@ -182,32 +188,29 @@ export function App() {
         </div>
       )}
 
-      {state.phase.kind === 'runOver' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="over-title"
-            className="w-full max-w-[380px] bg-panel border border-brass rounded-[18px] p-5 flex flex-col gap-3 animate-pop"
-          >
-            <h2 id="over-title" className="font-display text-[25px]">
-              {state.phase.won ? 'The Grand Payout' : 'The machine seized'}
-            </h2>
-            <div className="flex gap-2">
-              <Stat value={`${state.round + (state.phase.won ? 1 : 0)}/${state.difficulty.rounds}`} label="rounds" />
-              <Stat value={String(state.total)} label="banked" />
-              <Stat value={String(state.bestDrop)} label="best drop" />
-            </div>
-            <button
-              type="button"
-              autoFocus
-              onClick={() => run.restart({})}
-              className="bg-brass text-[#241a05] font-bold rounded-[11px] py-3 min-h-[46px]"
-            >
-              Play again
-            </button>
-          </div>
-        </div>
+      {state.phase.kind === 'runOver' && !modalDismissed && (
+        <ResultModal
+          state={state}
+          won={state.phase.won}
+          onPlayAgain={() => { setModalDismissed(false); run.restart(); }}
+          onSwitchDifficulty={() => {
+            setModalDismissed(false);
+            run.restart({ difficulty: state.difficulty.key === 'easy' ? 'hard' : 'easy' });
+          }}
+          onDismiss={() => setModalDismissed(true)}
+        />
+      )}
+
+      {/* Dismissing the dialog leaves the final board readable, so the way back
+          has to stay on screen. */}
+      {state.phase.kind === 'runOver' && modalDismissed && (
+        <button
+          type="button"
+          onClick={() => { setModalDismissed(false); run.restart(); }}
+          className="fixed left-1/2 -translate-x-1/2 bottom-4 z-40 bg-brass text-[#241a05] font-bold rounded-full px-6 py-3 shadow-lg"
+        >
+          ↻ Play again
+        </button>
       )}
     </main>
   );
@@ -227,14 +230,5 @@ function Tab({ on, onClick, children }: {
     >
       {children}
     </button>
-  );
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="flex-1 bg-card border border-edge rounded-[11px] py-2.5 flex flex-col items-center gap-0.5">
-      <span className="font-display text-[21px] font-bold text-brass tabular-nums">{value}</span>
-      <span className="text-[10px] text-steel uppercase tracking-[.07em]">{label}</span>
-    </div>
   );
 }

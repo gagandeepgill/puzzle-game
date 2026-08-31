@@ -10,7 +10,7 @@ import { dailyRng, dayNumber, variantForDay } from './rng.js';
 import type { Rng } from './rng.js';
 import { simulateDrop } from './simulate.js';
 import {
-  COLS, ROWS, assertNever, cellAt, cellIndex,
+  BLUEPRINT_KEYS, COLS, ROWS, assertNever, cellAt, cellIndex,
 } from './types.js';
 import type {
   BlueprintKey, Board, CellIndex, Column, DifficultyKey, DropResult,
@@ -70,8 +70,26 @@ export function rulesFor(s: RunState): Rules {
  * Three offers, always containing at least one scaling part. A run that can't
  * win because the draft never offered a multiplier is unfair, not hard.
  */
+/**
+ * Fisher-Yates, driven by explicit rng() draws.
+ *
+ * `sort(() => rng() - 0.5)` is not portable: the number and order of comparator
+ * calls is implementation-defined, so V8, JSC and SpiderMonkey can produce
+ * different results from the same seed. That breaks the daily's promise that
+ * everyone gets the same run.
+ */
+function shuffle<T>(items: readonly T[], rng: Rng): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const a = out[i], b = out[j];
+    if (a !== undefined && b !== undefined) { out[i] = b; out[j] = a; }
+  }
+  return out;
+}
+
 export function rollOffers(pool: readonly PartKey[], rng: Rng): readonly PartKey[] {
-  const shuffled = [...pool].sort(() => rng() - 0.5).slice(0, 3);
+  const shuffled = shuffle(pool, rng).slice(0, 3);
   if (!shuffled.some((p) => SCALER_KEYS.includes(p))) {
     const scalers = pool.filter((p) => SCALER_KEYS.includes(p));
     const pick = scalers[Math.floor(rng() * scalers.length)] ?? 'coil';
@@ -86,8 +104,8 @@ function poolFor(s: RunState): readonly PartKey[] {
 }
 
 function rollBlueprints(held: ReadonlySet<BlueprintKey>, rng: Rng): readonly BlueprintKey[] {
-  const available = (Object.keys(BLUEPRINTS) as BlueprintKey[]).filter((k) => !held.has(k));
-  return [...available].sort(() => rng() - 0.5).slice(0, 3);
+  const available = BLUEPRINT_KEYS.filter((k) => !held.has(k));
+  return shuffle(available, rng).slice(0, 3);
 }
 
 /* ---------- starting a run ---------- */
@@ -115,6 +133,7 @@ export function startRun(opts: StartOptions): { state: RunState; rng: Rng } {
     blueprints: new Set(),
     phase: { kind: 'drafting', offers: [], selected: null },
     screwUsed: false,
+    pendingBlueprint: false,
   };
 
   const state: RunState = {
@@ -141,16 +160,17 @@ export function reduce(s: RunState, action: Action, rng: Rng): RunState {
       if (!part) return s;
       const board = [...s.board];
       board[action.cell] = part;
-      return { ...s, board, phase: { kind: 'playing' } };
+      return { ...s, board, phase: nextAfterDraft(s, rng), pendingBlueprint: false };
     }
 
     case 'skipDraft': {
       if (s.phase.kind !== 'drafting') return s;
-      return { ...s, phase: { kind: 'playing' } };
+      return { ...s, phase: nextAfterDraft(s, rng), pendingBlueprint: false };
     }
 
     case 'takeBlueprint': {
       if (s.phase.kind !== 'blueprint') return s;
+      if (!s.phase.offers.includes(action.key)) return s;
       const blueprints = new Set(s.blueprints);
       blueprints.add(action.key);
       const next = { ...s, blueprints };
@@ -159,6 +179,7 @@ export function reduce(s: RunState, action: Action, rng: Rng): RunState {
     }
 
     case 'movePart': {
+      if (s.phase.kind !== 'playing') return s;
       if (s.screwUsed || !s.blueprints.has('screws')) return s;
       if (s.board[action.from] == null || s.board[action.to] != null) return s;
       const board = [...s.board];
@@ -190,6 +211,14 @@ export function reduce(s: RunState, action: Action, rng: Rng): RunState {
   }
 }
 
+/** After a part draft resolves, hand off to a blueprint if one is owed.
+ *  The shipped game runs part draft first, then blueprint. */
+function nextAfterDraft(s: RunState, rng: Rng): RunState['phase'] {
+  return s.pendingBlueprint
+    ? { kind: 'blueprint', offers: rollBlueprints(s.blueprints, rng) }
+    : { kind: 'playing' };
+}
+
 function advanceRound(s: RunState, rng: Rng): RunState {
   const nextRound = s.round + 1;
   if (nextRound >= s.difficulty.rounds) {
@@ -202,12 +231,14 @@ function advanceRound(s: RunState, rng: Rng): RunState {
     roundScore: 0,
     screwUsed: false,
   };
-  const withDrops: RunState = { ...base, dropsLeft: dropsForRound(base, nextRound) };
+  const withDrops: RunState = {
+    ...base,
+    dropsLeft: dropsForRound(base, nextRound),
+    // Every round starts with a part draft. On blueprint rounds the blueprint
+    // follows it, rather than replacing it.
+    pendingBlueprint: s.difficulty.blueprintAfter.includes(s.round),
+  };
 
-  // A blueprint is offered after specific rounds; the part draft follows it.
-  if (s.difficulty.blueprintAfter.includes(s.round)) {
-    return { ...withDrops, phase: { kind: 'blueprint', offers: rollBlueprints(s.blueprints, rng) } };
-  }
   return {
     ...withDrops,
     phase: { kind: 'drafting', offers: rollOffers(poolFor(withDrops), rng), selected: null },

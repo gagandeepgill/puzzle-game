@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   dropInto, dropsForRound, jamFor, quotaFor, reduce, startRun,
 } from '../game/run.js';
+import type { Rng } from '../game/rng.js';
 import type { Action, StartOptions } from '../game/run.js';
 import { utcDateKey } from '../game/rng.js';
 import type {
@@ -16,10 +17,17 @@ const prefersReducedMotion = () =>
 export interface Playback {
   /** Cell currently firing, for the flash. */
   readonly firingCell: CellIndex | null;
+  /** Bumped on every flash so a Spring re-triggering the same cell restarts
+   *  the animation, which a class toggle alone cannot do. */
+  readonly firingSeq: number;
   /** Running total during playback, so the HUD ticks up. */
   readonly tick: number;
   /** Human-readable trace of the last drop, which persists after it ends. */
   readonly breakdown: readonly string[];
+  /** Written once per drop, after it resolves, with final figures. Kept
+   *  separate from `tick` so the live region never announces a partial total
+   *  against stale round state. */
+  readonly announcement: string;
 }
 
 /**
@@ -29,43 +37,51 @@ export interface Playback {
  * split is what lets the skip control collapse the timing without touching
  * the maths, and what will let a replay verifier re-derive a score server-side.
  */
+const EMPTY_PLAYBACK: Playback = {
+  firingCell: null, firingSeq: 0, tick: 0, breakdown: [], announcement: '',
+};
+
 export function usePayloadRun(initial: StartOptions) {
-  const [opts, setOpts] = useState<StartOptions>({
+  const optsRef = useRef<StartOptions>({
     ...initial,
     dateKey: initial.dateKey ?? utcDateKey(),
   });
-  const seed = useMemo(() => startRun(opts), [opts]);
-  const rngRef = useRef(seed.rng);
-  const [state, setState] = useState<RunState>(seed.state);
-  const [playback, setPlayback] = useState<Playback>({
-    firingCell: null, tick: 0, breakdown: [],
+  // startRun calls Math.random in free play, so it must not run during render.
+  // Seeding once in a lazy initialiser and again only in restart keeps render
+  // pure and stops StrictMode's double invoke from re-rolling the board.
+  const rngRef = useRef<Rng>(() => 0);
+  const [state, setState] = useState<RunState>(() => {
+    const seeded = startRun(optsRef.current);
+    rngRef.current = seeded.rng;
+    return seeded.state;
   });
+  const [playback, setPlayback] = useState<Playback>(EMPTY_PLAYBACK);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const skipRef = useRef(false);
-
-  // Restart when the options change identity.
-  const optsKey = `${opts.mode}:${opts.difficulty}:${opts.dateKey ?? ''}`;
-  const lastKey = useRef(optsKey);
-  if (lastKey.current !== optsKey) {
-    lastKey.current = optsKey;
-    rngRef.current = seed.rng;
-    setState(seed.state);
-    setPlayback({ firingCell: null, tick: 0, breakdown: [] });
-    setBusy(false);
-  }
 
   const dispatch = useCallback((action: Action) => {
     setState((s) => reduce(s, action, rngRef.current));
   }, []);
 
-  const restart = useCallback((next: Partial<StartOptions>) => {
-    setOpts((o): StartOptions => ({
-      mode: next.mode ?? o.mode,
-      difficulty: next.difficulty ?? o.difficulty,
-      // Keep the current day unless a caller names one; never write undefined
-      // over it, which exactOptionalPropertyTypes correctly rejects.
-      dateKey: next.dateKey ?? o.dateKey ?? utcDateKey(),
-    }));
+  /**
+   * Restarting always re-seeds, even with identical options. The previous
+   * version compared a derived key, so "Play again" on the same mode, day and
+   * difficulty produced no state change at all and the modal stayed up.
+   */
+  const restart = useCallback((next: Partial<StartOptions> = {}) => {
+    const opts: StartOptions = {
+      mode: next.mode ?? optsRef.current.mode,
+      difficulty: next.difficulty ?? optsRef.current.difficulty,
+      dateKey: next.dateKey ?? optsRef.current.dateKey ?? utcDateKey(),
+    };
+    optsRef.current = opts;
+    const seeded = startRun(opts);
+    rngRef.current = seeded.rng;
+    setState(seeded.state);
+    setPlayback(EMPTY_PLAYBACK);
+    busyRef.current = false;
+    setBusy(false);
   }, []);
 
   const skip = useCallback(() => { skipRef.current = true; }, []);
@@ -90,7 +106,12 @@ export function usePayloadRun(initial: StartOptions) {
         open.get(e.marble)?.push(e.label, String(e.after));
       }
       if (e.kind === 'confiscated') {
-        open.get(e.marble)?.push('confiscated');
+        const parts = open.get(e.marble);
+        if (parts) {
+          parts.push('confiscated (0)');
+          lines.push(parts.join(' → '));
+          open.delete(e.marble);
+        }
       }
       if (e.kind === 'banked') {
         const parts = open.get(e.marble);
@@ -106,34 +127,52 @@ export function usePayloadRun(initial: StartOptions) {
   };
 
   const drop = useCallback(async (col: Column) => {
-    if (busy || state.phase.kind !== 'playing' || state.dropsLeft <= 0) return;
+    if (busyRef.current || state.phase.kind !== 'playing' || state.dropsLeft <= 0) return;
+    busyRef.current = true;
     setBusy(true);
     skipRef.current = false;
 
     const result: DropResult = dropInto(state, col);
     const instant = prefersReducedMotion();
     let running = 0;
+    let seq = 0;
 
     for (const event of result.events) {
       if (!instant && !skipRef.current) {
-        if (event.kind === 'enter') {
-          setPlayback((p) => ({ ...p, firingCell: event.cell }));
-          await sleep(90);
-        } else if (event.kind === 'trigger') {
+        // Flash only on an actual trigger. Flashing every `enter` lit empty
+        // cells the marble merely passed through.
+        if (event.kind === 'trigger') {
+          seq += 1;
+          const at = event.cell;
+          const n = seq;
+          setPlayback((p) => ({ ...p, firingCell: at, firingSeq: n }));
           await sleep(130);   // one part at a time, paced for comprehension
+        } else if (event.kind === 'enter') {
+          await sleep(50);
         }
       }
-      if (event.kind === 'banked') {
-        running += event.value;
-        setPlayback((p) => ({ ...p, tick: running }));
-      }
+      if (event.kind === 'banked') running += event.value;
     }
 
-    setPlayback({ firingCell: null, tick: result.total, breakdown: traceFrom(result.events) });
+    // Figures for the announcement come from before the reducer runs, because
+    // clearing a quota resets roundScore and would make the sentence wrong.
+    const quotaNow = quotaFor(state, state.round);
+    const roundAfter = state.roundScore + result.total;
+    const dropsAfter = state.dropsLeft - 1;
+    setPlayback({
+      firingCell: null,
+      firingSeq: seq,
+      tick: result.total,
+      breakdown: traceFrom(result.events),
+      announcement:
+        `Drop scored ${result.total}. Round score ${roundAfter} of ${quotaNow}. ` +
+        `${dropsAfter} drop${dropsAfter === 1 ? '' : 's'} left.`,
+    });
     dispatch({ type: 'applyDrop', result });
+    busyRef.current = false;
     setBusy(false);
     skipRef.current = false;
-  }, [busy, state, dispatch]);
+  }, [state, dispatch]);
 
   return {
     state,
@@ -146,5 +185,6 @@ export function usePayloadRun(initial: StartOptions) {
     quota: quotaFor(state, state.round),
     jam: jamFor(state, state.round),
     dropsThisRound: dropsForRound(state, state.round),
+    reducedMotion: prefersReducedMotion(),
   };
 }

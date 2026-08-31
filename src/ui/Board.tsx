@@ -64,25 +64,30 @@ interface BoardProps {
   readonly board: BoardModel;
   readonly placeable: boolean;
   readonly firingCell: CellIndex | null;
+  /** Increments on every flash. Part of the firing cell's key so a Spring
+   *  landing on the same cell twice replays the animation; toggling a class
+   *  back on within one paint does not restart a CSS animation. */
+  readonly firingSeq: number;
   readonly onCellPress: (cell: CellIndex) => void;
 }
 
-export function Board({ board, placeable, firingCell, onCellPress }: BoardProps) {
+export function Board({ board, placeable, firingCell, firingSeq, onCellPress }: BoardProps) {
   const cells = [];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const index = cellAt(r, c);
       const part = board[index] ?? null;
+      const firing = firingCell === index;
       cells.push(
         <Cell
-          key={index}
+          key={firing ? `${index}-${firingSeq}` : index}
           index={index}
           part={part}
           row={r}
           col={c}
           forked={part ? isForked(board, index) : false}
           placeable={placeable && part === null}
-          firing={firingCell === index}
+          firing={firing}
           onPress={onCellPress}
         />,
       );
