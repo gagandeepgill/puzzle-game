@@ -91,8 +91,11 @@ function applyPart(
       // Splitting is handled by the caller, which owns the queue.
       return { label: 'SPLIT' };
     case 'spring':
-      // Bouncing is handled by the caller, which owns row position.
-      return { label: '↑↑' };
+      // Reached only once the spring is spent — a live one bounces in the
+      // caller, which owns row position, and emits its own '↑↑' there.
+      // Labelling this one would put a bounce in the breakdown that the
+      // marble's value shows never happened.
+      return { label: '' };
     case 'fork':
     case 'bell':
       // Passive. Fork doubles its neighbours; Bell spawns at drop start.

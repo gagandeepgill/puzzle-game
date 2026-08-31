@@ -157,6 +157,10 @@ export interface RunState {
   readonly blueprints: ReadonlySet<BlueprintKey>;
   readonly phase: Phase;
   readonly screwUsed: boolean;
+  /** A blueprint is owed after the current part draft resolves. The vanilla
+   *  build runs part draft first, then blueprint; skipping the part draft on
+   *  blueprint rounds costs Easy 1 of 3 drafts and Hard 3 of 7. */
+  readonly pendingBlueprint: boolean;
 }
 
 /** Fails to compile if a union member is left unhandled. */

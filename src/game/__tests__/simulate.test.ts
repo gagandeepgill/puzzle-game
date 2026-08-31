@@ -149,3 +149,85 @@ describe('simulateDrop', () => {
     expect(r.events.length).toBeLessThan(500);
   });
 });
+
+/**
+ * The renderer, the breakdown panel and any future replay verifier all read
+ * the event log rather than the total. parity.test.ts compares totals only,
+ * so a log that omitted events passed it — that is exactly how the breakdown
+ * came to drop Gravity Well's +1 per row and misreport every line.
+ */
+describe('the event log explains the total on its own', () => {
+  const boards: readonly Board[] = [
+    place(['weight', 2, 2], ['coil', 4, 2]),
+    place(['prism', 1, 2], ['weight', 3, 2], ['weight', 3, 3]),
+    place(['spring', 4, 2], ['weight', 1, 2], ['reso', 5, 2]),
+    place(['gate', 3, 2], ['weight', 1, 2]),
+    place(['bell', 0, 0], ['bell', 0, 4], ['coil', 3, 2]),
+    place(['fork', 2, 1], ['weight', 2, 2], ['anvil', 4, 2]),
+  ];
+
+  const rulesets: readonly Rules[] = [
+    RULES,
+    { ...RULES, gravity: true },
+    { ...RULES, jam: 'slippery' },
+    { ...RULES, springUses: 2, gravity: true },
+  ];
+
+  it('banks exactly the total, and every marble ends banked or seized', () => {
+    for (const board of boards) {
+      for (const rules of rulesets) {
+        const r = simulateDrop(board, column(2), rules);
+        const banked = r.events
+          .filter((e) => e.kind === 'banked')
+          .reduce((sum, e) => sum + (e.kind === 'banked' ? e.value : 0), 0);
+        expect(banked).toBe(r.total);
+
+        // Each marble that entered the board leaves it exactly once. A marble
+        // that never resolves would hang in the overlay forever.
+        const entered = new Set(r.events.filter((e) => e.kind === 'enter').map((e) => e.marble));
+        const left = r.events.filter((e) => e.kind === 'banked' || e.kind === 'confiscated');
+        expect(new Set(left.map((e) => e.marble))).toEqual(entered);
+        expect(left).toHaveLength(entered.size);
+      }
+    }
+  });
+
+  it('records every value change, so the log reconstructs each final value', () => {
+    for (const board of boards) {
+      for (const rules of rulesets) {
+        const r = simulateDrop(board, column(2), rules);
+        // Replay the log the way the breakdown does, and check the value it
+        // arrives at matches what the marble actually banked.
+        const value = new Map<number, number>();
+        for (const e of r.events) {
+          if (e.kind === 'enter' && !value.has(e.marble)) value.set(e.marble, e.value);
+          if (e.kind === 'gravity') value.set(e.marble, e.value);
+          if (e.kind === 'trigger') value.set(e.marble, e.after);
+          if (e.kind === 'banked') expect(value.get(e.marble)).toBe(e.value);
+        }
+      }
+    }
+  });
+
+  it('emits one gravity event per cell entered, and none without the blueprint', () => {
+    const board = place(['weight', 2, 2]);
+    const on = simulateDrop(board, column(2), { ...RULES, gravity: true });
+    const off = simulateDrop(board, column(2), RULES);
+    expect(off.events.filter((e) => e.kind === 'gravity')).toHaveLength(0);
+    expect(on.events.filter((e) => e.kind === 'gravity'))
+      .toHaveLength(on.events.filter((e) => e.kind === 'enter').length);
+    // Six rows of +1 on top of a base 1 that the weight then lifts by 3.
+    expect(on.total).toBe(off.total + ROWS);
+  });
+
+  it('does not label a spring that had no bounce left', () => {
+    // A spent spring used to emit '↑↑' with before === after, putting a
+    // bounce in the breakdown that the marble's own value shows never
+    // happened. It should still be reachable, just silent.
+    const board = place(['spring', 4, 2]);
+    const r = simulateDrop(board, column(2), RULES);
+    const bounces = r.events.filter((e) => e.kind === 'bounce');
+    const springLabels = r.events.filter((e) => e.kind === 'trigger' && e.label === '↑↑');
+    expect(springLabels).toHaveLength(bounces.length);
+  });
+});
