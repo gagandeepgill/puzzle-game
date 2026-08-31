@@ -65,7 +65,10 @@ export type JamKey = 'shortShift' | 'slippery' | 'noBells';
 
 export interface JamDef {
   readonly key: JamKey;
-  readonly text: string;
+  readonly name: string;
+  /** What it does, stated once. The HUD banner and the compendium both
+   *  compose from this rather than carrying their own copy. */
+  readonly rule: string;
 }
 
 /** A daily rule twist. Rotates by day number. */

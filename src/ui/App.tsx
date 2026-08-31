@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from './Board.js';
 import { ResultModal } from './ResultModal.js';
+import { Compendium } from './Compendium.js';
 import { usePayloadRun } from './usePayloadRun.js';
 import { isMuted, setMuted } from './audio.js';
 import { PARTS, BLUEPRINTS } from '../game/content.js';
@@ -244,7 +245,11 @@ export function App() {
           <span>Drops left <b className="text-brass font-bold text-[13px]">{state.dropsLeft}</b></span>
           <span>Banked <b className="text-ink font-bold text-[13px]">{state.total}</b></span>
         </div>
-        {run.jam && <p className="mt-1.5 text-[12px] font-bold text-bad">{run.jam.text}</p>}
+        {run.jam && (
+          <p className="mt-1.5 text-[12px] font-bold text-bad">
+            ⚠ JAM — {run.jam.name}: {run.jam.rule}
+          </p>
+        )}
 
         {/* Blueprints are permanent and change the arithmetic, so they have to
             stay visible after their draft panel closes. Gravity Well in
@@ -460,6 +465,16 @@ export function App() {
             opposite, and last one round.
           </p>
         </div>
+      </details>
+
+      {/* Separate from How to play so it can be opened without scrolling past
+          the loop explanation every time. Collapsed by default, so it costs
+          nothing on a phone until it is wanted. */}
+      <details className="bg-panel border border-edge rounded-xl px-3 py-2">
+        <summary className="text-[12.5px] font-semibold text-steel cursor-pointer">
+          Parts, blueprints and jams
+        </summary>
+        <Compendium />
       </details>
 
       {state.phase.kind === 'runOver' && !modalDismissed && (
