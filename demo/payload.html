@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Payload</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap">
 </head>
@@ -22,13 +22,16 @@
     --ok: #8cbb7d;
   }
   * { box-sizing: border-box; margin: 0; }
+  button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   body {
     background: var(--ground); color: var(--ink);
     font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh; display: flex; justify-content: center;
-    padding: 22px 12px 40px; overflow-x: hidden;
+    min-height: 100dvh; display: flex; justify-content: center;
+    padding: 14px calc(10px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+    overflow-x: hidden; -webkit-text-size-adjust: 100%;
   }
-  .app { width: 100%; max-width: 430px; display: flex; flex-direction: column; gap: 13px; }
+  .app { width: 100%; max-width: 430px; display: flex; flex-direction: column; gap: 10px; }
+  @media (min-width: 560px) { body { padding-top: 24px; } .app { gap: 13px; } }
 
   header { display: flex; align-items: baseline; justify-content: space-between; }
   .wordmark { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 27px; }
@@ -39,6 +42,10 @@
   .quota-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--steel); }
   .quota-row b { font-family: 'Fraunces', Georgia, serif; font-size: 21px; color: var(--ink); font-variant-numeric: tabular-nums; }
   .quota-row .q b { color: var(--brass); }
+  .drop-tick { font-family: 'Fraunces', Georgia, serif; font-size: 17px; font-weight: 700;
+    color: var(--glow); font-variant-numeric: tabular-nums; }
+  .drop-tick.pop { animation: tickpop .28s; }
+  @keyframes tickpop { 40% { transform: scale(1.3); } }
   .bar { height: 7px; background: var(--card); border-radius: 5px; margin-top: 7px; overflow: hidden; }
   .bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--copper), var(--brass)); border-radius: 5px; transition: width .35s ease; }
   .jam { margin-top: 7px; font-size: 12.5px; font-weight: 700; color: var(--bad); display: none; }
@@ -46,9 +53,9 @@
 
   .drops { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
   .dropbtn {
-    font: inherit; font-weight: 700; cursor: pointer; font-size: 15px;
+    font: inherit; font-weight: 700; cursor: pointer; font-size: 17px;
     background: var(--card); color: var(--brass); border: 1px solid var(--edge);
-    border-radius: 9px; padding: 7px 0;
+    border-radius: 9px; padding: 10px 0; min-height: 44px;
   }
   .dropbtn:hover:not(:disabled) { border-color: var(--brass); }
   .dropbtn:disabled { opacity: .35; cursor: not-allowed; }
@@ -123,23 +130,91 @@
   .skipbtn { font: inherit; font-size: 12.5px; font-weight: 600; color: var(--steel);
     background: none; border: 1px solid var(--edge); border-radius: 8px; padding: 5px 11px; cursor: pointer; }
 
-  .endcard { border-radius: 13px; padding: 18px; display: none; flex-direction: column; gap: 10px; }
-  .endcard.show { display: flex; animation: rise .4s cubic-bezier(.2,.9,.3,1); }
-  .endcard.win { background: rgba(140,187,125,.1); border: 1px solid var(--ok); }
-  .endcard.lose { background: rgba(207,106,88,.1); border: 1px solid var(--bad); }
-  @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
-  .endcard h2 { font-family: 'Fraunces', Georgia, serif; font-size: 24px; }
-  .endcard p { color: var(--steel); font-size: 13.5px; line-height: 1.5; }
+  /* ---- end-of-run modal: sits over the board, never needs scrolling ---- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+    background: rgba(9, 11, 14, .72); backdrop-filter: blur(4px);
+    animation: fadein .2s ease-out;
+  }
+  .overlay[hidden] { display: none; }
+  @keyframes fadein { from { opacity: 0; } }
+  .modal {
+    position: relative; width: 100%; max-width: 380px; max-height: 88dvh; overflow-y: auto;
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 18px;
+    padding: 22px 18px 18px; display: flex; flex-direction: column; gap: 11px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.6);
+    animation: pop .32s cubic-bezier(.2,.9,.3,1.1);
+  }
+  .modal.win { border-color: var(--ok); }
+  .modal.lose { border-color: var(--bad); }
+  @keyframes pop { from { opacity: 0; transform: translateY(16px) scale(.94); } }
+  .modal-x {
+    position: absolute; top: 10px; right: 10px; width: 34px; height: 34px;
+    font: inherit; font-size: 14px; cursor: pointer; color: var(--steel);
+    background: none; border: 1px solid var(--edge); border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-x:hover { color: var(--ink); }
+  .modal-icon { font-size: 40px; line-height: 1; }
+  .modal h2 { font-family: 'Fraunces', Georgia, serif; font-size: 25px; line-height: 1.15; }
+  .modal-text { color: var(--steel); font-size: 13.5px; line-height: 1.5; }
+  .modal-stats { display: flex; gap: 8px; }
+  .modal-stats div { flex: 1; background: var(--card); border: 1px solid var(--edge);
+    border-radius: 11px; padding: 9px 6px; display: flex; flex-direction: column; gap: 2px;
+    align-items: center; text-align: center; }
+  .modal-stats .v { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 700;
+    color: var(--brass); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .modal-stats .k { font-size: 10px; color: var(--steel); letter-spacing: .07em; text-transform: uppercase; }
+  .modal-actions { display: flex; gap: 9px; margin-top: 2px; }
+  .modal-actions .btn { flex: 1; }
+  .modal-switch { font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    color: var(--glow); background: none; border: 1px dashed rgba(111,211,217,.45);
+    border-radius: 10px; padding: 10px; }
+  .modal-switch[hidden] { display: none; }
+
+  .fab {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 40;
+    font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
+    background: var(--brass); color: #241a05; border: none; border-radius: 999px;
+    padding: 13px 24px; box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    animation: pop .3s cubic-bezier(.2,.9,.3,1.1);
+  }
+  .fab[hidden] { display: none; }
+
   .btn { font: inherit; font-weight: 700; font-size: 14.5px; cursor: pointer;
-    border-radius: 11px; padding: 11px 16px; border: 1px solid var(--brass);
-    background: var(--brass); color: #241a05; }
+    border-radius: 11px; padding: 13px 16px; border: 1px solid var(--brass);
+    background: var(--brass); color: #241a05; min-height: 46px; }
 
   .resetbtn { font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--steel);
     background: none; border: 1px solid var(--edge); border-radius: 8px; padding: 4px 10px; }
   .resetbtn:hover { color: var(--ink); }
   .resetbtn.arm { color: var(--bad); border-color: var(--bad); }
 
+  .modes { display: flex; gap: 6px; }
+  .modetab { flex: 1; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+    background: var(--panel); color: var(--steel); border: 1px solid var(--edge);
+    border-radius: 10px; padding: 8px 4px; }
+  .modetab.active { color: var(--brass); border-color: var(--brass); background: rgba(217,164,65,.07); }
+  .daily-banner { background: var(--panel); border: 1px solid var(--edge); border-left: 3px solid var(--glow);
+    border-radius: 10px; padding: 9px 12px; font-size: 12.5px; line-height: 1.5; color: var(--steel); }
+  .daily-banner b { color: var(--ink); }
+  .daily-banner .done { color: var(--glow); font-weight: 700; }
+  .share { background: var(--ground); border: 1px solid var(--edge); border-radius: 10px;
+    padding: 11px 13px; font-size: 13px; line-height: 1.6; white-space: pre-wrap;
+    color: var(--ink); font-variant-numeric: tabular-nums; }
+  .btn.ghost2 { background: none; color: var(--ink); border-color: var(--edge); }
+
   .how { color: var(--steel); font-size: 12.5px; line-height: 1.55; }
+  .how summary { cursor: pointer; font-weight: 700; color: var(--steel);
+    list-style: none; padding: 7px 0; min-height: 32px; display: flex; align-items: center; gap: 6px; }
+  .how summary::-webkit-details-marker { display: none; }
+  .how summary::before { content: '▸'; transition: transform .15s; }
+  .how[open] summary::before { transform: rotate(90deg); }
+  .how summary:hover { color: var(--ink); }
+  .how p { padding-bottom: 4px; }
   .how strong { color: var(--ink); }
   button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) {
@@ -158,11 +233,25 @@
     </div>
   </header>
 
-  <p class="how"><strong>Build a scoring machine.</strong> Place drafted parts on the grid, then drop marbles down a column — every part they touch mutates their value. Adds feed multipliers, prisms clone marbles, springs re-trigger what's above. Beat the quota; it climbs steeply. Multiplication or death.</p>
+  <div class="modes">
+    <button class="modetab" id="mode-daily">🗓 Daily</button>
+    <button class="modetab" id="mode-free">∞ Free Play</button>
+  </div>
+  <div class="modes">
+    <button class="modetab" id="diff-easy">🌤 Easy · 4</button>
+    <button class="modetab" id="diff-hard">🔥 Hard · 8</button>
+  </div>
+  <p class="daily-banner" id="dailybanner" hidden></p>
+
+  <details class="how">
+    <summary>How to play</summary>
+    <p><strong>Build a scoring machine.</strong> Place drafted parts on the grid, then drop marbles down a column — every part they touch mutates their value. Adds feed multipliers, prisms clone marbles, springs re-trigger what's above. Beat the quota; it climbs steeply. Multiplication or death.</p>
+  </details>
 
   <div class="quota-wrap">
     <div class="quota-row">
       <span>Round score <b id="score">0</b></span>
+      <span class="drop-tick" id="droptick" hidden>▼ +0</span>
       <span class="q">Quota <b id="quota">10</b></span>
     </div>
     <div class="bar"><i id="bar"></i></div>
@@ -192,15 +281,22 @@
   </div>
   <div class="bpchips" id="bpchips"></div>
 
-  <div class="endcard win" id="wincard">
-    <h2>🏆 The Grand Payout</h2>
-    <p id="wintext"></p>
-    <button class="btn" onclick="location.reload()">New machine</button>
-  </div>
-  <div class="endcard lose" id="losecard">
-    <h2>💥 The machine seized</h2>
-    <p id="losetext"></p>
-    <button class="btn" onclick="location.reload()">New run</button>
+  <button class="fab" id="fab" hidden>↻ Play again</button>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button class="modal-x" id="modal-close" aria-label="View the board">✕</button>
+    <div class="modal-icon" id="modal-icon">🏆</div>
+    <h2 id="modal-title">The Grand Payout</h2>
+    <p class="modal-text" id="modal-text"></p>
+    <div class="modal-stats" id="modal-stats"></div>
+    <div class="share" id="modal-share" hidden></div>
+    <div class="modal-actions">
+      <button class="btn" id="modal-again">Play again</button>
+      <button class="btn ghost2" id="modal-copy" hidden>Copy result</button>
+    </div>
+    <button class="modal-switch" id="modal-switch" hidden></button>
   </div>
 </div>
 
@@ -208,9 +304,35 @@
 (() => {
 'use strict';
 const COLS = 5, ROWS = 6;
-const QUOTAS = [10, 22, 48, 95, 190, 340, 600, 1000];
-const BASE_DROPS = 3;
 const MARBLE_CAP = 16;
+
+/* ---------- daily seed (Wordle-style: same run for everyone, each UTC day) ---------- */
+const EPOCH = '2026-08-31';
+const dateKey = new Date().toISOString().slice(0, 10);
+const dayNumber = Math.max(1, Math.round((Date.parse(dateKey) - Date.parse(EPOCH)) / 864e5) + 1);
+function hashDateKey(k) {
+  let h = 2166136261;
+  for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+function mulberry32(a) {
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/* The daily rotates through three rule variants, like Wordle rotates its word. */
+const VARIANTS = [
+  { icon: '⚒️', name: 'Heavyworks',       qmul: 1.5,  baseBonus: 2,
+    desc: 'Marbles start at value 3 — but quotas are half again as steep.' },
+  { icon: '🌀', name: 'Perpetual Motion', qmul: 1.2,  springUses: 2,
+    desc: 'Every Spring fires TWICE per marble. Quotas up 20%.' },
+  { icon: '💰', name: 'Tight Purse',      qmul: 0.65, drops: 2,
+    desc: 'Only 2 drops per round — quotas eased to match. Every drop must count.' },
+];
 
 const TILES = {
   weight: { g: '🔩', n: 'Weight',      mini: '+3',    r: 'Marble value +3.' },
@@ -224,44 +346,74 @@ const TILES = {
   gate:   { g: '🚪', n: 'Gilded Gate', mini: '≥10:×3',r: 'Value ≥ 10 → ×3. Below 10, the marble is confiscated.' },
   bell:   { g: '🔔', n: 'Echo Bell',   mini: '+marble',r: 'Every drop also releases a bonus marble down this column.' },
 };
-const DRAFT_POOLS = [
-  ['weight', 'coil', 'wire', 'weight'],
-  ['coil', 'prism', 'weight', 'anvil', 'wire'],
-  ['prism', 'spring', 'reso', 'coil', 'gate'],
-  ['fork', 'prism', 'coil', 'bell', 'reso'],
-  ['fork', 'bell', 'reso', 'gate', 'spring', 'prism'],
-  ['fork', 'prism', 'coil', 'spring', 'bell'],
-  ['fork', 'reso', 'gate', 'prism', 'bell', 'spring'],
-  ['fork', 'prism', 'reso', 'coil', 'gate', 'bell'],
-];
+/* Two structurally distinct runs — Easy is NOT Hard's first four rounds.
+   They differ in length, drops, starting machine, jams, blueprint cadence,
+   draft pools and seed salt, so no round is shared between them. */
+const DIFFS = {
+  easy: {
+    key: 'easy', tab: '🌤 Easy · 4', name: 'Short Shift', rounds: 4,
+    blurb: 'Four rounds, four drops, and a Coil pre-installed. Steep per-round jumps — build fast.',
+    quotas: [12, 30, 68, 145],
+    drops: 4,
+    start: [['weight', 2, 2], ['weight', 4, 2], ['coil', 5, 2]],
+    jams: { 2: { key: 'noBells', text: '⚠ JAM — Power Cut: Echo Bells stay silent this round.' } },
+    blueprintAfter: [1],
+    pools: [
+      ['coil', 'weight', 'wire', 'prism'],
+      ['prism', 'coil', 'reso', 'weight', 'spring'],
+      ['fork', 'prism', 'coil', 'bell', 'reso'],
+      ['fork', 'reso', 'gate', 'prism', 'bell', 'spring'],
+    ],
+  },
+  hard: {
+    key: 'hard', tab: '🔥 Hard · 8', name: 'Long Haul', rounds: 8,
+    blurb: 'Eight rounds, three drops, a cold start and two jams. Additive parts early — earn your multipliers.',
+    quotas: [10, 22, 48, 95, 190, 340, 600, 1000],
+    drops: 3,
+    start: [['weight', 2, 2], ['weight', 4, 2]],
+    jams: {
+      2: { key: 'shortShift', text: '⚠ JAM — Short Shift: the foreman allows only 2 drops this round.' },
+      5: { key: 'slippery', text: '⚠ JAM — Slippery marbles: each marble skids past the FIRST part it touches.' },
+    },
+    blueprintAfter: [1, 3, 5],
+    pools: [
+      ['weight', 'coil', 'wire', 'weight'],
+      ['coil', 'prism', 'weight', 'anvil', 'wire'],
+      ['prism', 'spring', 'reso', 'coil', 'gate'],
+      ['fork', 'prism', 'coil', 'bell', 'reso'],
+      ['fork', 'bell', 'reso', 'gate', 'spring', 'prism'],
+      ['fork', 'prism', 'coil', 'spring', 'bell'],
+      ['fork', 'reso', 'gate', 'prism', 'bell', 'spring'],
+      ['fork', 'prism', 'reso', 'coil', 'gate', 'bell'],
+    ],
+  },
+};
 const BLUEPRINTS = {
   lead:     { g: '🪙', n: 'Lead Marbles', r: 'All marbles start at value 2 instead of 1.' },
   overtime: { g: '⏱️', n: 'Overtime',     r: '+1 drop every round, for the rest of the run.' },
   gravity:  { g: '🌌', n: 'Gravity Well', r: 'Marbles gain +1 for every row they fall.' },
   screws:   { g: '🔧', n: 'Loose Screws', r: 'Once per round, relocate one installed part.' },
 };
-const JAMS = {
-  2: { text: '⚠ JAM — Short Shift: the foreman allows only 2 drops this round.' },
-  5: { text: '⚠ JAM — Slippery marbles: each marble skids past the FIRST part it touches.' },
-};
-
 const S = {
+  mode: 'daily', diff: DIFFS.easy, variant: null, rng: Math.random, runId: 0,
   round: 0, board: Array(COLS * ROWS).fill(null),
-  roundScore: 0, total: 0, bestDrop: 0, dropsLeft: BASE_DROPS,
+  roundScore: 0, total: 0, bestDrop: 0, dropsLeft: 0,
   phase: 'draft', sel: null, offers: [], busy: false,
   draftKind: 'part', pendingBlueprint: false,
   blueprints: new Set(), screwUsed: false, moveSrc: null,
 };
-S.board[2 * COLS + 2] = 'weight';
-S.board[4 * COLS + 2] = 'weight';
 
 const $ = (id) => document.getElementById(id);
 const idx = (r, c) => r * COLS + c;
-const baseValue = () => S.blueprints.has('lead') ? 2 : 1;
+const rounds = () => S.diff.rounds;
+const jamFor = (i) => S.diff.jams[i] || null;
+const quotaFor = (i) => Math.round(S.diff.quotas[i] * (S.variant ? S.variant.qmul : 1));
+const baseValue = () => (S.blueprints.has('lead') ? 2 : 1) + (S.variant?.baseBonus ?? 0);
+const springLimit = () => S.variant?.springUses ?? 1;
 const dropsForRound = () => {
-  const jamShort = S.round === 2;
-  const d = BASE_DROPS + (S.blueprints.has('overtime') ? 1 : 0);
-  return jamShort ? 2 : d;
+  const base = S.variant?.drops ?? S.diff.drops;
+  const d = base + (S.blueprints.has('overtime') ? 1 : 0);
+  return jamFor(S.round)?.key === 'shortShift' ? Math.min(d, 2) : d;
 };
 
 /* ---------- audio ---------- */
@@ -355,14 +507,14 @@ function renderBlueprints() {
   });
 }
 function hud() {
-  $('roundlbl').textContent = `Round ${S.round + 1} / ${QUOTAS.length}`;
+  $('roundlbl').textContent = `Round ${S.round + 1} / ${rounds()}`;
   $('score').textContent = S.roundScore;
-  $('quota').textContent = QUOTAS[S.round];
-  $('bar').style.width = Math.min(100, 100 * S.roundScore / QUOTAS[S.round]) + '%';
+  $('quota').textContent = quotaFor(S.round);
+  $('bar').style.width = Math.min(100, 100 * S.roundScore / quotaFor(S.round)) + '%';
   $('dropsleft').textContent = S.dropsLeft;
   $('total').textContent = S.total;
-  const jam = $('jam');
-  if (JAMS[S.round]) { jam.textContent = JAMS[S.round].text; jam.classList.add('show'); }
+  const jam = $('jam'), j = jamFor(S.round);
+  if (j) { jam.textContent = j.text; jam.classList.add('show'); }
   else jam.classList.remove('show');
 }
 
@@ -375,12 +527,12 @@ function startDraft(title, kind) {
   box.innerHTML = '';
   $('draft').classList.toggle('blueprint', kind === 'blueprint');
   if (kind === 'part') {
-    const pool = DRAFT_POOLS[Math.min(S.round, DRAFT_POOLS.length - 1)];
-    const opts = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+    const pool = S.diff.pools[Math.min(S.round, S.diff.pools.length - 1)];
+    const opts = [...pool].sort(() => S.rng() - 0.5).slice(0, 3);
     const SCALERS = ['coil', 'prism', 'reso', 'fork', 'spring', 'bell'];
     if (!opts.some((t) => SCALERS.includes(t))) {
       const inPool = pool.filter((t) => SCALERS.includes(t));
-      opts[0] = inPool.length ? inPool[Math.floor(Math.random() * inPool.length)] : 'coil';
+      opts[0] = inPool.length ? inPool[Math.floor(S.rng() * inPool.length)] : 'coil';
     }
     S.offers = opts;
     $('draft-hint').textContent = 'Pick a card, then tap an empty cell to install it.';
@@ -397,7 +549,7 @@ function startDraft(title, kind) {
     });
   } else {
     const avail = Object.keys(BLUEPRINTS).filter((b) => !S.blueprints.has(b));
-    const opts = avail.sort(() => Math.random() - 0.5).slice(0, 3);
+    const opts = avail.sort(() => S.rng() - 0.5).slice(0, 3);
     S.offers = opts;
     $('draft-hint').textContent = 'Blueprints are permanent run-wide rules.';
     opts.forEach((t) => {
@@ -464,15 +616,17 @@ const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 async function runMarble(m, queue, stats) {
   const el = document.createElement('div');
   el.className = 'marble';
-  const start = cellPos(0, m.col);
+  const startRow = m.row ?? 0;
+  // Split copies spawn AT the prism row, not the top — they never pass the tiles above.
+  const start = cellPos(Math.max(0, startRow - 1), m.col);
   el.style.left = start.left + 'px';
-  el.style.top = (start.top - 46) + 'px';
+  el.style.top = (start.top - (startRow === 0 ? 46 : 0)) + 'px';
   el.textContent = m.v;
   $('fx').appendChild(el);
   await sleep(60);
 
   const gravity = S.blueprints.has('gravity');
-  const slippery = S.round === 5;
+  const slippery = jamFor(S.round)?.key === 'slippery';
   let r = m.row ?? 0, c = m.col, steps = 0;
   while (r < ROWS && steps++ < 120) {
     const p = cellPos(r, c);
@@ -516,14 +670,15 @@ async function runMarble(m, queue, stats) {
         blip(880, .1, 'sine', .05);
         if (stats.marbles < MARBLE_CAP) {
           const nc = c + 1 < COLS ? c + 1 : c - 1;
-          queue.push({ v: m.v, col: nc, row: r + 1, touched: m.touched, reso: m.reso, slipped: m.slipped, springs: new Set(m.springs) });
+          queue.push({ v: m.v, col: nc, row: r + 1, touched: m.touched, reso: m.reso, slipped: m.slipped, springs: new Map(m.springs) });
           stats.marbles += 1;
         }
       }
       else if (t === 'spring') {
         const key = idx(r, c);
-        if (!m.springs.has(key)) {
-          m.springs.add(key);
+        const used = m.springs.get(key) || 0;
+        if (used < springLimit()) {
+          m.springs.set(key, used + 1);
           fxLabel(r, c, '↑↑', 'var(--glow)');
           blip(660, .09, 'sine', .05);
           r = Math.max(0, r - 2 - (doubled ? 2 : 0));
@@ -538,6 +693,7 @@ async function runMarble(m, queue, stats) {
   const p = cellPos(ROWS - 1, c);
   el.style.top = (p.top + 52) + 'px';
   el.style.opacity = '0';
+  if (m.v > 0) fxLabel(ROWS - 1, c, `+${m.v}`, 'var(--ok)');
   await sleep(120);
   el.remove();
   return m.v;
@@ -551,28 +707,52 @@ async function drop(col) {
   S.dropsLeft -= 1;
   hud();
 
-  const queue = [{ v: baseValue(), col, row: 0, touched: 0, reso: false, slipped: false, springs: new Set() }];
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+  const queue = [{ v: baseValue(), col, row: 0, touched: 0, reso: false, slipped: false, springs: new Map() }];
+  const bellsOff = jamFor(S.round)?.key === 'noBells';
+  if (!bellsOff) for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
     if (S.board[idx(r, c)] === 'bell' && queue.length < MARBLE_CAP) {
-      queue.push({ v: baseValue(), col: c, row: 0, touched: 0, reso: false, slipped: false, springs: new Set() });
+      queue.push({ v: baseValue(), col: c, row: 0, touched: 0, reso: false, slipped: false, springs: new Map() });
     }
   }
   const stats = { triggers: 0, marbles: queue.length };
+  const tick = $('droptick');
+  tick.hidden = false;
+  tick.textContent = '▼ +0';
   let banked = 0;
   while (queue.length) {
     const m = queue.shift();
-    banked += await runMarble(m, queue, stats);
+    const v = await runMarble(m, queue, stats);
+    banked += v;
+    if (v > 0) {
+      tick.textContent = `▼ +${banked}`;
+      tick.classList.remove('pop');
+      void tick.offsetWidth;
+      tick.classList.add('pop');
+    }
   }
+  const from = S.roundScore;
   S.roundScore += banked;
   S.total += banked;
   S.bestDrop = Math.max(S.bestDrop, banked);
   fxBank(banked);
+  await animateScore(from, S.roundScore);
   hud();
   S.busy = false;
 
-  if (S.roundScore >= QUOTAS[S.round]) return roundWon();
+  if (S.roundScore >= quotaFor(S.round)) return roundWon();
   if (S.dropsLeft <= 0) return runLost();
   renderDrops(); renderMoveBtn();
+}
+// Count the round score up visibly so the drop's haul is seen arriving.
+async function animateScore(from, to) {
+  const steps = 14, ms = 32;
+  for (let i = 1; i <= steps; i++) {
+    const v = Math.round(from + (to - from) * (i / steps));
+    $('score').textContent = v;
+    $('bar').style.width = Math.min(100, 100 * v / quotaFor(S.round)) + '%';
+    if (i % 3 === 0) blip(500 + i * 30, .04, 'sine', .02);
+    await sleep(ms);
+  }
 }
 function fxBank(v) {
   blip(v > 80 ? 990 : 780, .16, 'triangle', .06);
@@ -597,32 +777,178 @@ async function roundWon() {
   banner.remove();
   const wonRound = S.round;
   S.round += 1;
-  if (S.round >= QUOTAS.length) {
+  if (S.round >= rounds()) {
     S.phase = 'over';
-    $('wintext').textContent = `All ${QUOTAS.length} quotas beaten. Total banked: ${S.total} · best single drop: ${S.bestDrop}.`;
-    $('wincard').classList.add('show');
+    finishRun(true, `Every quota on the ${S.diff.name} line, beaten. The machine paid out to the last marble.`);
     renderDrops(); renderMoveBtn();
     return;
   }
   S.roundScore = 0;
   S.dropsLeft = dropsForRound();
   S.screwUsed = false;
-  S.pendingBlueprint = [1, 3, 5].includes(wonRound);
+  $('droptick').hidden = true;
+  S.pendingBlueprint = S.diff.blueprintAfter.includes(wonRound);
   startDraft(`Quota beaten! Draft a part for round ${S.round + 1}`, 'part');
 }
 function runLost() {
   S.phase = 'over';
   blip(160, .3, 'sawtooth', .06);
-  $('losetext').textContent = `Round ${S.round + 1} demanded ${QUOTAS[S.round]}; the machine paid ${S.roundScore}. Best drop this run: ${S.bestDrop}. Additive parts alone can't outrun the quota curve — find the multipliers, splitters and springs.`;
-  $('losecard').classList.add('show');
+  finishRun(false, `Round ${S.round + 1} demanded ${quotaFor(S.round)}; the machine paid ${S.roundScore}. Additive parts alone can't outrun the curve — find the multipliers, splitters and springs.`);
   renderDrops(); renderMoveBtn();
 }
+
+/* ---------- daily record, streak & share ---------- */
+function loadJSON(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
+function saveJSON(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+// Easy and Hard are tracked as separate daily results.
+const dailyKey = () => `payload.daily.${S.diff.key}.v1`;
+function todaysRecord() {
+  const rec = loadJSON(dailyKey());
+  return rec && rec.dateKey === dateKey ? rec : null;
+}
+function recordDaily(won) {
+  const existing = todaysRecord();
+  if (existing) return existing;                       // first attempt counts
+  let st = loadJSON('payload.streak.v1') || { streak: 0, last: null };
+  if (st.last !== dateKey) {
+    const yesterday = new Date(Date.parse(dateKey) - 864e5).toISOString().slice(0, 10);
+    st = { streak: st.last === yesterday ? (st.streak || 0) + 1 : 1, last: dateKey };
+    saveJSON('payload.streak.v1', st);
+  }
+  const rec = { dateKey, diff: S.diff.key, rounds: rounds(),
+    cleared: won ? rounds() : S.round, total: S.total, best: S.bestDrop, streak: st.streak };
+  saveJSON(dailyKey(), rec);
+  return rec;
+}
+function shareTextFor(rec) {
+  const v = S.variant;
+  const result = rec.cleared >= rec.rounds
+    ? `🏆 all ${rec.rounds} quotas`
+    : `💥 seized at round ${rec.cleared + 1}/${rec.rounds}`;
+  return `Payload Daily #${dayNumber} ${v.icon} ${v.name} · ${S.diff.key === 'easy' ? '🌤 Easy' : '🔥 Hard'}\n` +
+    `${result} · banked ${rec.total} · best drop ${rec.best}` +
+    (rec.streak >= 2 ? `\n🔥 ${rec.streak}-day streak` : '');
+}
+function finishRun(won, text) {
+  const cleared = won ? rounds() : S.round;
+  $('modal').className = 'modal ' + (won ? 'win' : 'lose');
+  $('modal-icon').textContent = won ? '🏆' : '💥';
+  $('modal-title').textContent = won ? 'The Grand Payout' : 'The machine seized';
+  $('modal-text').textContent = text;
+  $('modal-stats').innerHTML =
+    `<div><span class="v">${cleared}/${rounds()}</span><span class="k">rounds</span></div>` +
+    `<div><span class="v">${S.total}</span><span class="k">banked</span></div>` +
+    `<div><span class="v">${S.bestDrop}</span><span class="k">best drop</span></div>`;
+
+  const shareEl = $('modal-share'), copyBtn = $('modal-copy');
+  if (S.mode === 'daily') {
+    const already = todaysRecord();
+    const rec = recordDaily(won);
+    shareEl.textContent = shareTextFor(rec) + (already ? '\n(your first attempt today is the one on record)' : '');
+    shareEl.hidden = false; copyBtn.hidden = false;
+    renderDailyBanner();
+  } else {
+    shareEl.hidden = true; copyBtn.hidden = true;
+  }
+
+  // Contextual next step: nudge toward the other difficulty.
+  const sw = $('modal-switch');
+  const other = S.diff.key === 'easy' ? 'hard' : 'easy';
+  if (won || S.diff.key === 'hard') {
+    sw.textContent = won
+      ? `Ready for more? Try ${other === 'hard' ? '🔥 Hard · 8 rounds' : '🌤 Easy · 4 rounds'}`
+      : 'Try 🌤 Easy · 4 rounds instead';
+    sw.hidden = false;
+    sw.onclick = () => startRun(S.mode, other);
+  } else {
+    sw.hidden = true;
+  }
+
+  $('overlay').hidden = false;
+  $('fab').hidden = true;
+  $('modal-again').focus();
+}
+async function copyShare() {
+  const btn = $('modal-copy');
+  try {
+    await navigator.clipboard.writeText($('modal-share').textContent);
+    btn.textContent = 'Copied ✓';
+  } catch (e) { btn.textContent = 'Select the text'; }
+  setTimeout(() => { btn.textContent = 'Copy result'; }, 1800);
+}
+$('modal-copy').onclick = copyShare;
+$('modal-close').onclick = () => { $('overlay').hidden = true; $('fab').hidden = false; };
+$('fab').onclick = () => startRun(S.mode);
+$('overlay').addEventListener('click', (e) => {
+  if (e.target === $('overlay')) { $('overlay').hidden = true; $('fab').hidden = false; }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('overlay').hidden) { $('overlay').hidden = true; $('fab').hidden = false; }
+});
+
+/* ---------- run setup & modes ---------- */
+function renderDailyBanner() {
+  const b = $('dailybanner');
+  if (S.mode !== 'daily') {
+    b.innerHTML = `<b>Free Play — ${S.diff.name} (${rounds()} rounds).</b> ${S.diff.blurb} Unseeded: every run reshuffles.`;
+    b.hidden = false;
+    return;
+  }
+  const v = S.variant, rec = todaysRecord();
+  const st = loadJSON('payload.streak.v1');
+  b.innerHTML = `<b>Day #${dayNumber} — ${v.icon} ${v.name} · ${S.diff.name} (${rounds()} rounds).</b> ${v.desc} ` +
+    `Everyone gets this same run today.` +
+    (rec ? ` <span class="done">Locked in: ${rec.cleared >= rec.rounds ? 'all quotas beaten' : 'round ' + (rec.cleared + 1)}, banked ${rec.total}. Replays won't change it.</span>` : '') +
+    (st && st.streak >= 2 && st.last === dateKey ? ` 🔥 ${st.streak}-day streak.` : '');
+  b.hidden = false;
+}
+function startRun(mode, diffKey) {
+  S.mode = mode;
+  S.diff = DIFFS[diffKey || S.diff.key];
+  S.runId += 1;
+  if (mode === 'daily') {
+    S.variant = VARIANTS[(dayNumber - 1) % VARIANTS.length];
+    // Salt by difficulty so Easy and Hard never draft the same sequence.
+    S.rng = mulberry32(hashDateKey(dateKey + ':' + S.diff.key));
+  } else {
+    S.variant = null;
+    S.rng = Math.random;
+  }
+  S.round = 0;
+  S.board = Array(COLS * ROWS).fill(null);
+  S.diff.start.forEach(([t, r, c]) => { S.board[idx(r, c)] = t; });
+  S.roundScore = 0; S.total = 0; S.bestDrop = 0;
+  S.dropsLeft = dropsForRound();
+  S.blueprints = new Set(); S.screwUsed = false; S.moveSrc = null;
+  S.pendingBlueprint = false; S.busy = false;
+  $('overlay').hidden = true;
+  $('fab').hidden = true;
+  $('droptick').hidden = true;
+  $('mode-daily').classList.toggle('active', mode === 'daily');
+  $('mode-free').classList.toggle('active', mode === 'free');
+  $('diff-easy').classList.toggle('active', S.diff.key === 'easy');
+  $('diff-hard').classList.toggle('active', S.diff.key === 'hard');
+  renderDailyBanner(); renderBlueprints();
+  renderGrid(); renderDrops(); renderMoveBtn(); hud();
+  const lead = mode === 'daily' ? `Daily #${dayNumber} · ${S.diff.name}` : S.diff.name;
+  startDraft(`${lead} — draft your first part`, 'part');
+}
+$('mode-daily').onclick = () => startRun('daily');
+$('mode-free').onclick = () => startRun('free');
+$('diff-easy').onclick = () => startRun(S.mode, 'easy');
+$('diff-hard').onclick = () => startRun(S.mode, 'hard');
+$('modal-again').onclick = () => startRun(S.mode);
 
 /* reset (two-tap confirm) */
 let resetArmed = null;
 $('resetbtn').onclick = () => {
   const b = $('resetbtn');
-  if (resetArmed) { location.reload(); return; }
+  if (resetArmed) {
+    clearTimeout(resetArmed); resetArmed = null;
+    b.textContent = '↺ Reset'; b.classList.remove('arm');
+    startRun(S.mode);
+    return;
+  }
   b.textContent = 'Reset run?';
   b.classList.add('arm');
   resetArmed = setTimeout(() => {
@@ -633,8 +959,7 @@ $('resetbtn').onclick = () => {
 };
 
 /* boot */
-renderGrid(); renderDrops(); renderMoveBtn(); renderBlueprints(); hud();
-startDraft('Draft your first part', 'part');
+startRun('daily', 'easy');
 })();
 </script>
 </body>
