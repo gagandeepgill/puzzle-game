@@ -7,72 +7,82 @@ Agent skills for this repo. Claude Code loads these automatically; each one is a
 
 | Skill | Use it when |
 |---|---|
-| [verify-puzzle-game](verify-puzzle-game/SKILL.md) | Running, previewing, screenshotting or verifying a game. There is no build step or dev server; this covers browser-pane testing, bot-played balance runs, mobile checks, and the scratchpad→`public/`→artifact path. |
-| [payload-engine](payload-engine/SKILL.md) | Touching Payload's simulation, parts, blueprints, jams, difficulties or quotas — the architecture map plus the invariants that keep runs deterministic and fair. |
+| [verify-puzzle-game](verify-puzzle-game/SKILL.md) | Running, previewing, screenshotting or verifying a game. Covers which parts build and which are single files, browser-pane testing, bot-played balance runs, and clearing the service worker that otherwise hands back a stale build. |
+| [payload-engine](payload-engine/SKILL.md) | Touching Payload's simulation, parts, blueprints, jams, difficulties or quotas. The architecture map, plus the invariants that keep runs deterministic and fair. |
 | [daily-seeded-runs](daily-seeded-runs/SKILL.md) | Anything about daily puzzles: UTC date keys, deterministic seeding, rotating variants, streaks, share payloads. |
+| [puzzle-design](puzzle-design/SKILL.md) | Adding a part, tuning a quota curve, designing a boss twist, or judging whether a proposed mechanic is fun. |
+| [game-feel](game-feel/SKILL.md) | Adding or tuning animation, sound or score presentation, or when a moment that should feel good does not. |
+| [game-typography](game-typography/SKILL.md) | Adding or restyling text, numbers, labels or buttons, and the contrast floors that set the sizing. |
+| [typescript-game-state](typescript-game-state/SKILL.md) | Writing or changing the types: discriminated phases, branded ids, exhaustive part handling, keeping the engine free of any renderer. |
 
 ## Shared, from `ticket-master-app`
 
-Portable web-craft skills, copied unchanged so improvements can be diffed against their
-source.
+Portable web-craft skills, copied unchanged so improvements can be diffed against
+their source.
 
-**UI and design** — [baseline-ui](baseline-ui/SKILL.md),
+UI and design: [baseline-ui](baseline-ui/SKILL.md),
 [improve-ui](improve-ui/SKILL.md), [design-system](design-system/SKILL.md),
 [create-design-md](create-design-md/SKILL.md),
 [frontend-design-direction](frontend-design-direction/SKILL.md),
 [ui-skills-root](ui-skills-root/SKILL.md)
 
-**Accessibility** — [fixing-accessibility](fixing-accessibility/SKILL.md),
+Accessibility: [fixing-accessibility](fixing-accessibility/SKILL.md),
 [frontend-a11y](frontend-a11y/SKILL.md)
 
-**Performance and polish** —
-[fixing-motion-performance](fixing-motion-performance/SKILL.md) (the animation-heavy one
-that most applies to Payload's drop cascade),
+Performance and polish:
+[fixing-motion-performance](fixing-motion-performance/SKILL.md), which is the
+animation-heavy one that most applies to Payload's drop cascade, and
 [fixing-metadata](fixing-metadata/SKILL.md)
 
-**Testing** — [tdd-workflow](tdd-workflow/SKILL.md),
+Testing: [tdd-workflow](tdd-workflow/SKILL.md),
 [e2e-testing](e2e-testing/SKILL.md), [react-testing](react-testing/SKILL.md)
 
-**Security** — [security-review](security-review/SKILL.md)
+Security: [security-review](security-review/SKILL.md)
 
-**React / Next.js** — [react-patterns](react-patterns/SKILL.md),
+React and Next.js: [react-patterns](react-patterns/SKILL.md),
 [react-performance](react-performance/SKILL.md),
 [frontend-patterns](frontend-patterns/SKILL.md)
 
 ### Notes on fit
 
-The games here are vanilla single-file HTML — no framework, no build, no backend. The
-React/Next skills are therefore **dormant today**; they are carried because
-[`MASTER_PROMPT.md`](../../MASTER_PROMPT.md) specs Ledger Lane as a React Native app
-with Zustand and TanStack Query, and `react-patterns` (hooks discipline, state
-decisions) and `react-testing` transfer to that work. `frontend-patterns` and
-`react-performance` are Next.js-specific and will not apply unless a web app appears.
+This section used to say the games were vanilla single-file HTML with no
+framework, no build and no tests. That stopped being true when Payload was ported
+to React and TypeScript.
 
-Likewise the testing skills describe a Vitest/Jest/Playwright setup this repo does not
-have yet. The pure functions in both games — `computePath`, `scorePath`, `solve`,
-`runMarble`'s part maths — are the obvious first candidates if tests get added.
+Payload is React 19 with a Vite build and a pure rules engine in `src/game/`, so
+`react-patterns` and `react-testing` apply directly now rather than being carried
+for a future rewrite. `react-performance` and `frontend-patterns` are Next.js
+specific and still do not apply, since there is no Next.js target and
+[ADR-001](../../docs/adr/0001-styling.md) has not chosen one.
 
-Two Ticketmaster skills were deliberately **not** copied because they encode that app's
-infrastructure and would give wrong instructions here: `backend-work` (Netlify Functions
-and Blobs — this repo has no backend) and `verify-ticket-app` (its dev server and
-flows), which `verify-puzzle-game` replaces.
+The testing skills describe a Vitest setup the repo now has. Ledger Lane is still
+one self-contained HTML file with no tests; its `computePath`, `scorePath` and
+`solve` are the obvious first candidates if that changes.
+
+Two Ticketmaster skills were deliberately not copied, because they encode that
+app's infrastructure and would give wrong instructions here: `backend-work`, which
+is about Netlify Functions and Blobs that this repo does not use, and
+`verify-ticket-app`, which `verify-puzzle-game` replaces.
 
 `pet-pals-app` has no skills directory, so nothing was taken from it.
 
 ## Plugins
 
-Plugin marketplaces and the enabled set live in [`../settings.json`](../settings.json),
-ported from `ticket-master-app` (pet-pals has no plugin config): 9 marketplaces and 12
-plugins covering design, engineering, modern web guidance, PR review, security, and
-several UI/design-audit packs.
+Plugin marketplaces and the enabled set live in
+[`../settings.json`](../settings.json), ported from `ticket-master-app`, since
+pet-pals has no plugin config. Twelve marketplaces and twelve plugins covering
+design, engineering, modern web guidance, PR review, security, and several
+UI and design-audit packs.
 
-Two things from that config were deliberately left out:
+One thing from that config was deliberately left out. The `SessionStart` hook
+compares `origin/main` against `origin/production` to nag about promoting. This
+repo has no `production` branch, so the hook would either no-op or print
+misleading advice at every session start.
 
-- **`netlify-skills`** — this repo has no backend and nothing to deploy to Netlify. Add
-  it back if the arcade is ever hosted there.
-- **The `SessionStart` hook** — it compares `origin/main` against `origin/production` to
-  nag about promoting. This repo has no `production` branch, so the hook would either
-  no-op or print misleading advice on every session start.
+`netlify-skills` was also left out originally, on the grounds that there was
+nothing to deploy to Netlify. The arcade is hosted there now, so that reasoning
+no longer holds. Whether to add it is open, and tracked in #12.
 
-Permissions were re-scoped too: the Ticketmaster allowlist is npm/vitest/netlify-shaped,
-none of which exists here, so this repo allows read-only git plus `gh-axi`.
+Permissions were re-scoped as well. The Ticketmaster allowlist is shaped around
+its own npm, vitest and netlify commands, so this repo carries its own: read-only
+git plus `gh-axi`.

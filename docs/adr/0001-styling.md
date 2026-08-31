@@ -9,7 +9,7 @@
 
 ## What actually shipped
 
-The web build landed in #31 on plain Tailwind 3, not NativeWind — there is no
+The web build landed in #31 on plain Tailwind 3, not NativeWind. There is no
 React Native target yet, so the native half of this ADR is still ahead of the
 code. The dialect is what matters and it is the one chosen here: the class
 names in `src/ui/` are the NativeWind vocabulary, so they port unchanged if
@@ -17,7 +17,7 @@ and when Expo enters the picture.
 
 Two consequences below are already honoured. Design tokens live in
 `tailwind.config.js` rather than CSS custom properties. Animation is kept out
-of `className` — the marble is positioned by an inline `style` computed from
+of `className`. The marble is positioned by an inline `style` computed from
 cell geometry, because a class cannot carry an interpolated pixel value, which
 is exactly the limitation this ADR predicted.
 
