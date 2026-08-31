@@ -15,6 +15,7 @@ Agent skills for this repo. Claude Code loads these automatically; each one is a
 | [game-typography](game-typography/SKILL.md) | Adding or restyling text, numbers, labels or buttons, and the contrast floors that set the sizing. |
 | [typescript-game-state](typescript-game-state/SKILL.md) | Writing or changing the types: discriminated phases, branded ids, exhaustive part handling, keeping the engine free of any renderer. |
 | [pwa-shell](pwa-shell/SKILL.md) | Touching the service worker, the manifest, caching or offline behaviour. Covers the cache version bump, what can and cannot be precached, the deliberate no-skipWaiting decision and the update prompt that completes it, and the stale-build trap. |
+| [game-audio](game-audio/SKILL.md) | Adding or changing a sound, or tuning how a drop sounds. The blip vocabulary and what each cue means, the lazy AudioContext, the mute preference, the per-frame cap, and what skipping does to the timing. |
 
 ## Shared, from `ticket-master-app`
 
@@ -96,9 +97,9 @@ is about Netlify Functions and Blobs that this repo does not use, and
 #12 also asked for two new skills. `pwa-shell` is written, and against verified
 facts rather than the issue text: it said `CACHE_VERSION` sat at `v1` with no
 update flow, and that GitHub Pages was the deploy target. It is at `v3`, the
-target is Netlify, and the update flow now exists. `game-audio` is still
-outstanding and needs the same re-derivation, since the mute toggle the issue
-calls missing has shipped.
+target is Netlify, and the update flow now exists. `game-audio` needed the same
+correction: the issue calls the mute toggle missing, and it shipped. Both are
+written, so that half of #12 is closed.
 
 `pet-pals-app` has no skills directory, so nothing was taken from it.
 
