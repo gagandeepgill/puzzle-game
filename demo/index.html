@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledger Lane</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Outfit:wght@400;500;600;700&display=swap">
+</head>
+<body>
+<style>
+  :root {
+    --ground: #171a21;
+    --panel: #1e232d;
+    --tile: #242a35;
+    --tile-edge: #303848;
+    --tile-locked: #1b202a;
+    --gold: #e8b64c;
+    --gold-dim: #a8843c;
+    --gold-glow: rgba(232, 182, 76, 0.16);
+    --ink: #ece6d8;
+    --muted: #8b93a3;
+    --danger: #c9705e;
+    --ok: #85b878;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 28px 16px 48px;
+  }
+  .app { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 18px; }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; }
+  .wordmark {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 650;
+    font-size: 30px;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+  .wordmark .coin { color: var(--gold); }
+  .demo-chip {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+    color: var(--gold); border: 1px solid var(--gold-dim);
+    border-radius: 999px; padding: 3px 10px;
+  }
+
+  .days { display: flex; gap: 8px; }
+  .day-chip {
+    flex: 1; background: var(--panel); border: 1px solid var(--tile-edge);
+    color: var(--muted); border-radius: 10px; padding: 8px 4px;
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .day-chip:hover { color: var(--ink); }
+  .day-chip.active { color: var(--gold); border-color: var(--gold-dim); background: var(--gold-glow); }
+  .day-chip:focus-visible, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .brief { color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+  .brief strong { color: var(--ink); font-weight: 600; }
+
+  .puzzle-name { display: flex; justify-content: space-between; align-items: baseline; }
+  .puzzle-name h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 19px; }
+  .puzzle-name .par { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+  .board {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    background: var(--panel); border: 1px solid var(--tile-edge);
+    border-radius: var(--radius); padding: 10px;
+  }
+  .tile {
+    position: relative; aspect-ratio: 1; border-radius: 10px;
+    background: var(--tile); border: 1px solid var(--tile-edge);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; cursor: default; padding: 0;
+    transition: background .15s, border-color .15s, box-shadow .2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tile.lane { cursor: pointer; }
+  .tile.lane:active { background: var(--tile-edge); }
+  .tile.wall, .tile.locked-lane { background: var(--tile-locked); }
+  .tile.on-path { border-color: var(--gold-dim); box-shadow: 0 0 0 1px var(--gold-dim), 0 0 14px var(--gold-glow) inset; }
+  .tile.on-path .arrow { stroke: var(--gold); }
+  .tile.reveal { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok); }
+  .tile.shake { animation: shake .25s; }
+  @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+  .arrow-wrap { width: 60%; height: 60%; transition: transform .28s cubic-bezier(.2,.9,.35,1.2); }
+  .arrow { stroke: var(--muted); stroke-width: 7; fill: none; stroke-linecap: round; stroke-linejoin: round; width: 100%; height: 100%; }
+  .tile.locked-lane .arrow { stroke: #566074; }
+  .lock-glyph { position: absolute; top: 4px; right: 6px; font-size: 10px; opacity: .7; }
+  .gold-badge {
+    position: absolute; bottom: 3px; right: 4px;
+    font-size: 10.5px; font-weight: 700; color: var(--gold);
+    background: rgba(232,182,76,.12); border-radius: 6px; padding: 1px 5px;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .arrow-wrap { transition: none; }
+    .tile.shake { animation: none; }
+  }
+
+  .status {
+    display: flex; justify-content: space-between; align-items: center;
+    color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums;
+  }
+  .status .proj { color: var(--ink); font-weight: 600; }
+  .status .proj.neg { color: var(--danger); }
+
+  .actions { display: flex; gap: 10px; }
+  .btn {
+    font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
+    border-radius: 12px; padding: 13px 18px; border: 1px solid var(--tile-edge);
+    background: var(--panel); color: var(--ink);
+    transition: opacity .15s, background .15s;
+  }
+  .btn.primary { flex: 1; background: var(--gold); color: #1c1608; border-color: var(--gold); }
+  .btn.primary:disabled { background: var(--tile); color: var(--muted); border-color: var(--tile-edge); cursor: not-allowed; }
+  .btn.ghost:hover { background: var(--tile); }
+
+  .result {
+    background: var(--panel); border: 1px solid var(--gold-dim);
+    border-radius: var(--radius); padding: 20px; display: none;
+    flex-direction: column; gap: 14px;
+  }
+  .result.show { display: flex; animation: rise .35s cubic-bezier(.2,.9,.3,1); }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  .result .stars { font-size: 30px; letter-spacing: .1em; }
+  .result .rank { font-family: 'Fraunces', Georgia, serif; font-size: 24px; font-weight: 650; }
+  .result .perfect { color: var(--gold); font-size: 13px; font-weight: 700; letter-spacing: .1em; }
+  .result .numbers { display: flex; gap: 22px; }
+  .result .numbers div { display: flex; flex-direction: column; gap: 2px; }
+  .result .numbers .big { font-family: 'Fraunces', Georgia, serif; font-size: 26px; font-weight: 650; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .result .numbers .lbl { color: var(--muted); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+  .share {
+    background: var(--ground); border: 1px solid var(--tile-edge); border-radius: 10px;
+    padding: 12px 14px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap;
+    color: var(--ink);
+  }
+  .result-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .result-actions .btn { font-size: 13.5px; padding: 10px 14px; }
+  .practice-note { color: var(--muted); font-size: 12.5px; }
+
+  footer { color: var(--muted); font-size: 12px; line-height: 1.6; border-top: 1px solid var(--tile-edge); padding-top: 14px; }
+</style>
+
+<div class="app">
+  <header>
+    <div class="wordmark">Ledger <span class="coin">Lane</span></div>
+    <div class="demo-chip">DEMO</div>
+  </header>
+
+  <div class="days" id="days"></div>
+
+  <p class="brief"><strong>Tap tiles to turn the arrows</strong> and route the gold from the Vault 🏦 to the Market 🏪. Every lane costs 5g in courier fees, and any pickpocket 🥷 next to your route lifts 15g — bank the most you can.</p>
+
+  <div class="puzzle-name">
+    <h2 id="pname"></h2>
+    <span class="par" id="parLabel"></span>
+  </div>
+
+  <div class="board" id="board" role="grid" aria-label="Puzzle board"></div>
+
+  <div class="status">
+    <span>Taps: <span id="taps">0</span></span>
+    <span id="projWrap">Projected: <span class="proj" id="proj">—</span></span>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" id="submitBtn" disabled>Connect the route</button>
+    <button class="btn ghost" id="resetBtn">Reset</button>
+  </div>
+
+  <div class="result" id="result">
+    <div>
+      <div class="stars" id="stars"></div>
+      <div class="rank" id="rank"></div>
+      <div class="perfect" id="perfectBadge" hidden>✦ PERFECT DAY</div>
+    </div>
+    <div class="numbers">
+      <div><span class="big" id="scorePct"></span><span class="lbl">of optimal</span></div>
+      <div><span class="big" id="netGold"></span><span class="lbl">banked</span></div>
+      <div><span class="big" id="tapsPar"></span><span class="lbl">taps / par</span></div>
+    </div>
+    <div class="share" id="shareText"></div>
+    <div class="result-actions">
+      <button class="btn ghost" id="copyBtn">Copy share text</button>
+      <button class="btn ghost" id="revealBtn">Show perfect run</button>
+      <button class="btn ghost" id="nextBtn">Next day →</button>
+    </div>
+    <div class="practice-note">Result banked — the board is now in practice mode, taps no longer count.</div>
+  </div>
+
+  <footer>
+    Prototype of the Gold Run + Par daily mechanic — three hand-authored boards from the
+    build spec. The production game serves one deterministic puzzle per UTC day with
+    streaks and a 365-day solvability gate.
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const DIRS = ['N', 'E', 'S', 'W'];
+  const STEP = { N: [-1, 0], E: [0, 1], S: [1, 0], W: [0, -1] };
+  const ANGLE = { N: 0, E: 90, S: 180, W: 270 };
+  const FEE = 5, TAX = 15;
+
+  // t: V vault, M market, L lane, P pickpocket, F fountain. d: initial direction. g: gold.
+  const PUZZLES = [
+    { name: 'Opening Day', tiles: [
+      { t:'V', d:'E' }, { t:'L', d:'N' }, { t:'L', d:'N', g:20 }, { t:'L', d:'E' },
+      { t:'L', d:'E' }, { t:'L', d:'N' }, { t:'P' },              { t:'L', d:'E', g:40 },
+      { t:'L', d:'E' }, { t:'F' },        { t:'L', d:'W' },       { t:'L', d:'E' },
+      { t:'L', d:'N' }, { t:'L', d:'S', g:30 }, { t:'L', d:'N' }, { t:'M' },
+    ]},
+    { name: 'The Long Way Round', tiles: [
+      { t:'V', d:'S' }, { t:'L', d:'S' }, { t:'L', d:'S' },       { t:'P' },
+      { t:'L', d:'N', g:10 }, { t:'L', d:'E' }, { t:'F' },        { t:'L', d:'W' },
+      { t:'L', d:'N' }, { t:'L', d:'N', g:50 }, { t:'L', d:'N' }, { t:'L', d:'E', g:25 },
+      { t:'P' },        { t:'L', d:'N' }, { t:'L', d:'E', locked:true }, { t:'M' },
+    ]},
+    { name: 'Rush Hour', tiles: [
+      { t:'V', d:'E' }, { t:'L', d:'N' }, { t:'L', d:'E' },       { t:'L', d:'N', g:20 },
+      { t:'L', d:'S', locked:true }, { t:'F' }, { t:'L', d:'W', g:30 }, { t:'L', d:'E', g:40 },
+      { t:'P' },        { t:'L', d:'E' }, { t:'F' },              { t:'L', d:'E' },
+      { t:'L', d:'E' }, { t:'L', d:'W' }, { t:'L', d:'N' },       { t:'M' },
+    ]},
+  ];
+
+  const rc = (id) => [id >> 2, id & 3];
+  const inGrid = (r, c) => r >= 0 && r < 4 && c >= 0 && c < 4;
+  const neighbor = (id, dir) => {
+    const [r, c] = rc(id);
+    const nr = r + STEP[dir][0], nc = c + STEP[dir][1];
+    return inGrid(nr, nc) ? nr * 4 + nc : -1;
+  };
+  const dirBetween = (a, b) => DIRS.find((d) => neighbor(a, d) === b);
+  const cwDistance = (from, to) => (DIRS.indexOf(to) - DIRS.indexOf(from) + 4) % 4;
+
+  // Score a final path (ordered ids, vault..market) per spec section 2.4.
+  function scorePath(tiles, path) {
+    const onPath = new Set(path);
+    const lanes = path.filter((id) => tiles[id].t === 'L');
+    const gross = lanes.reduce((s, id) => s + (tiles[id].g || 0), 0);
+    let tax = 0;
+    tiles.forEach((tile, id) => {
+      if (tile.t !== 'P') return;
+      if (DIRS.some((d) => onPath.has(neighbor(id, d)))) tax += TAX;
+    });
+    return gross - lanes.length * FEE - tax;
+  }
+
+  // Enumerate all realizable simple routes vault->market (locked lanes constrain exits).
+  function solve(tiles) {
+    const vault = tiles.findIndex((t) => t.t === 'V');
+    const routes = [];
+    const walk = (id, path, visited) => {
+      const tile = tiles[id];
+      const exits = tile.t === 'V' || tile.locked ? [tile.d] : DIRS;
+      for (const d of exits) {
+        const nid = neighbor(id, d);
+        if (nid < 0 || visited.has(nid)) continue;
+        const nt = tiles[nid];
+        if (nt.t === 'M') { routes.push([...path, nid]); continue; }
+        if (nt.t !== 'L') continue;
+        visited.add(nid);
+        walk(nid, [...path, nid], visited);
+        visited.delete(nid);
+      }
+    };
+    walk(vault, [vault], new Set([vault]));
+    let best = null, bestScore = -Infinity;
+    for (const r of routes) {
+      const s = scorePath(tiles, r);
+      if (s > bestScore) { bestScore = s; best = r; }
+    }
+    let par = 0;
+    for (let i = 1; i < best.length - 1; i++) {
+      const id = best[i];
+      if (tiles[id].locked) continue;
+      par += cwDistance(tiles[id].d, dirBetween(id, best[i + 1]));
+    }
+    return { optimalGold: bestScore, solutionPath: best, par };
+  }
+
+  // ---- state ----
+  const S = {
+    day: 0, tiles: [], dirs: [], spins: [], taps: 0,
+    submitted: false, result: null, solved: null, revealing: false,
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const board = $('board');
+  let cells = [];
+
+  function loadDay(day) {
+    S.day = day;
+    S.tiles = PUZZLES[day].tiles;
+    S.dirs = S.tiles.map((t) => t.d || null);
+    S.spins = S.tiles.map(() => 0);
+    S.taps = 0;
+    S.submitted = false;
+    S.result = null;
+    S.revealing = false;
+    S.solved = solve(S.tiles);
+    $('pname').textContent = `#${day + 1} ${PUZZLES[day].name}`;
+    $('parLabel').textContent = `par ${S.solved.par}`;
+    $('result').classList.remove('show');
+    buildBoard();
+    refresh();
+    renderDayChips();
+  }
+
+  function buildBoard() {
+    board.innerHTML = '';
+    cells = S.tiles.map((tile, id) => {
+      const el = document.createElement(tile.t === 'L' && !tile.locked ? 'button' : 'div');
+      el.className = 'tile';
+      el.setAttribute('role', 'gridcell');
+      if (tile.t === 'V') { el.textContent = '🏦'; el.classList.add('locked-lane'); }
+      else if (tile.t === 'M') { el.textContent = '🏪'; el.classList.add('locked-lane'); }
+      else if (tile.t === 'P') { el.textContent = '🥷'; el.classList.add('wall'); }
+      else if (tile.t === 'F') { el.textContent = '⛲'; el.classList.add('wall'); }
+      else {
+        el.classList.add(tile.locked ? 'locked-lane' : 'lane');
+        const wrap = document.createElement('div');
+        wrap.className = 'arrow-wrap';
+        wrap.innerHTML = '<svg class="arrow" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 40 V10 M13 20 L24 9 L35 20"/></svg>';
+        wrap.style.transform = `rotate(${ANGLE[tile.d]}deg)`;
+        el.appendChild(wrap);
+        if (tile.locked) {
+          const lk = document.createElement('span');
+          lk.className = 'lock-glyph'; lk.textContent = '🔒';
+          el.appendChild(lk);
+        }
+        if (tile.g) {
+          const b = document.createElement('span');
+          b.className = 'gold-badge'; b.textContent = tile.g + 'g';
+          el.appendChild(b);
+        }
+        el.addEventListener('click', () => onTap(id, el, wrap));
+      }
+      board.appendChild(el);
+      return el;
+    });
+  }
+
+  function onTap(id, el, wrap) {
+    const tile = S.tiles[id];
+    if (tile.t !== 'L' || tile.locked) {
+      el.classList.add('shake');
+      setTimeout(() => el.classList.remove('shake'), 260);
+      return;
+    }
+    S.dirs[id] = DIRS[(DIRS.indexOf(S.dirs[id]) + 1) % 4];
+    S.spins[id] += 90;
+    wrap.style.transform = `rotate(${ANGLE[tile.d] + S.spins[id]}deg)`;
+    if (!S.submitted) S.taps += 1;
+    S.revealing = false;
+    refresh();
+  }
+
+  // Deterministic walk from the vault using current directions.
+  function currentPath() {
+    const vault = S.tiles.findIndex((t) => t.t === 'V');
+    const path = [vault];
+    const visited = new Set([vault]);
+    let id = vault;
+    for (;;) {
+      const nid = neighbor(id, S.dirs[id]);
+      if (nid < 0) return { path, connected: false };
+      const nt = S.tiles[nid];
+      if (nt.t === 'M') return { path: [...path, nid], connected: true };
+      if (nt.t !== 'L' || visited.has(nid)) return { path, connected: false };
+      visited.add(nid);
+      path.push(nid);
+      id = nid;
+    }
+  }
+
+  function refresh() {
+    const { path, connected } = currentPath();
+    const onPath = new Set(path);
+    cells.forEach((el, id) => {
+      el.classList.toggle('on-path', onPath.has(id) && (connected || S.tiles[id].t !== 'M'));
+      el.classList.toggle('reveal', S.revealing && S.solved.solutionPath.includes(id));
+      const tile = S.tiles[id];
+      if (tile.t === 'L') {
+        el.setAttribute('aria-label',
+          `Lane pointing ${S.dirs[id]}${tile.g ? ', ' + tile.g + ' gold' : ''}${tile.locked ? ', locked' : ''}`);
+      }
+    });
+    $('taps').textContent = S.taps;
+    const proj = $('proj');
+    if (connected) {
+      const net = scorePath(S.tiles, path);
+      proj.textContent = net + 'g';
+      proj.classList.toggle('neg', net < 0);
+    } else {
+      proj.textContent = '—';
+      proj.classList.remove('neg');
+    }
+    const btn = $('submitBtn');
+    if (S.submitted) {
+      btn.disabled = true;
+      btn.textContent = 'Banked ✓';
+    } else {
+      btn.disabled = !connected;
+      btn.textContent = connected ? `Bank ${Math.max(0, scorePath(S.tiles, path))}g` : 'Connect the route';
+    }
+  }
+
+  function submit() {
+    const { path, connected } = currentPath();
+    if (!connected || S.submitted) return;
+    const { optimalGold, par } = S.solved;
+    const net = Math.max(0, scorePath(S.tiles, path));
+    const pct = Math.round((100 * net) / optimalGold);
+    const stars = net >= 0.95 * optimalGold ? 3 : net >= 0.75 * optimalGold ? 2 : 1;
+    const perfect = stars === 3 && S.taps <= par;
+    const onPath = new Set(path);
+    const dodged = S.tiles.filter((t, id) =>
+      t.t === 'P' && !DIRS.some((d) => onPath.has(neighbor(id, d)))).length;
+    S.submitted = true;
+    S.result = { net, pct, stars, perfect, taps: S.taps, dodged };
+    showResult();
+    refresh();
+  }
+
+  function showResult() {
+    const r = S.result, { optimalGold, par } = S.solved;
+    const RANKS = { p: 'Master of the Ledger', 3: 'Guild Courier', 2: 'Street Runner', 1: 'Errand Kid' };
+    $('stars').textContent = '⭐'.repeat(r.stars);
+    $('rank').textContent = r.perfect ? RANKS.p : RANKS[r.stars];
+    $('perfectBadge').hidden = !r.perfect;
+    $('scorePct').textContent = r.pct + '%';
+    $('netGold').textContent = `${r.net}/${optimalGold}g`;
+    $('tapsPar').textContent = `${r.taps}/${par}`;
+    $('shareText').textContent =
+      `Ledger Lane #${S.day + 1} — ${PUZZLES[S.day].name}\n` +
+      `💰 ${r.net}/${optimalGold}g (${r.pct}%) ⛳ ${r.taps} taps (par ${par})\n` +
+      `🥷 dodged x${r.dodged} · ${'⭐'.repeat(r.stars)}${r.perfect ? ' · ✦ perfect day' : ''}`;
+    $('result').classList.add('show');
+    $('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function renderDayChips() {
+    const wrap = $('days');
+    wrap.innerHTML = '';
+    PUZZLES.forEach((p, i) => {
+      const b = document.createElement('button');
+      b.className = 'day-chip' + (i === S.day ? ' active' : '');
+      b.textContent = `Day ${i + 1}`;
+      b.addEventListener('click', () => loadDay(i));
+      wrap.appendChild(b);
+    });
+  }
+
+  $('submitBtn').addEventListener('click', submit);
+  $('resetBtn').addEventListener('click', () => loadDay(S.day));
+  $('nextBtn').addEventListener('click', () => loadDay((S.day + 1) % PUZZLES.length));
+  $('revealBtn').addEventListener('click', () => { S.revealing = !S.revealing; refresh(); });
+  $('copyBtn').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('shareText').textContent);
+      $('copyBtn').textContent = 'Copied ✓';
+    } catch {
+      $('copyBtn').textContent = 'Select the text above';
+    }
+    setTimeout(() => { $('copyBtn').textContent = 'Copy share text'; }, 1800);
+  });
+
+  loadDay(0);
+})();
+</script>
+</body>
+</html>
