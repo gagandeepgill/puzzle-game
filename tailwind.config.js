@@ -35,7 +35,15 @@
  *
  * Text needs 4.5, a component boundary needs 3.0 (WCAG 1.4.11). There is no
  * headroom left in `steel`, `bad`, `copper` or `edge`: lightening any surface
- * further means re-solving them. Measure, and put the number in the comment.
+ * further means re-solving them.
+ *
+ * Those numbers are asserted, not promised. `src/ui/__tests__/contrast.test.ts`
+ * reads this file, walks every foreground against every flat dark and every
+ * gradient's lit top stop, and fails the build if one drops below its floor.
+ * This comment was wrong twice before that test existed: it named `card` as the
+ * tightest background, which stopped being true the day `bg-machined` shipped
+ * and left the board's own cell borders at 2.86:1 for months. Do not hand-edit
+ * the table — run the test and copy what it measures.
  *
  * `edge-soft` used to be a separate token. Solving both against the new
  * lightest surface landed them on the same value, so it is gone rather than
