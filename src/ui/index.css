@@ -93,6 +93,68 @@
     @apply bg-ground text-ink font-sans;
     min-height: 100dvh;
   }
+
+  /**
+   * The ground plane.
+   *
+   * Two layers of very low-alpha colour drifting behind the app, so a wide
+   * monitor is a room the machine sits in rather than a black void with a
+   * grid in the middle.
+   *
+   * The reason this is safe, and the reason it is here rather than anywhere
+   * else: every surface that carries text is opaque. `bg-panel-lit`,
+   * `bg-raised`, `bg-machined` and the `bg-ground` empty cells all paint over
+   * this completely, so no measured contrast ratio in the app changes by a
+   * single point. What shows through is page gutter and the gaps between
+   * panels, where there is nothing to read. Into the Breach's rule is to
+   * sacrifice the cool idea for clarity every time; this is the version of
+   * the idea that does not have to be sacrificed, because it never touches
+   * the thing being read.
+   *
+   * Both layers animate `transform` only, which the compositor runs off the
+   * main thread. That matters: the drop animation dwells 41ms on its fastest
+   * frame, and decoration that repainted on the main thread would eat that
+   * budget. Two periods, coprime enough that the pattern does not visibly
+   * repeat.
+   *
+   * `inset: -30%` gives the scale and translate room to move without ever
+   * pulling an edge into view.
+   *
+   * Reduced motion is already handled: the rule below freezes every animation
+   * in the app, which leaves these as two still gradients rather than nothing.
+   */
+  body::before,
+  body::after {
+    content: '';
+    position: fixed;
+    inset: -30%;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  body::before {
+    background:
+      radial-gradient(38% 34% at 22% 18%, rgba(217, 164, 65, .10), transparent 70%),
+      radial-gradient(34% 30% at 78% 76%, rgba(111, 211, 217, .08), transparent 70%);
+    animation: drift-a 71s ease-in-out infinite alternate;
+  }
+
+  body::after {
+    background:
+      radial-gradient(30% 40% at 86% 30%, rgba(212, 132, 84, .07), transparent 72%),
+      radial-gradient(44% 36% at 12% 82%, rgba(217, 164, 65, .05), transparent 74%);
+    animation: drift-b 53s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift-a {
+    from { transform: translate3d(-3%, -2%, 0) scale(1); }
+    to { transform: translate3d(4%, 3%, 0) scale(1.12); }
+  }
+
+  @keyframes drift-b {
+    from { transform: translate3d(3%, 2%, 0) scale(1.08); }
+    to { transform: translate3d(-4%, -3%, 0) scale(1); }
+  }
   button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   /* Every button, not just board cells. In standalone mode there is no
      browser chrome, so a keyboard player has nothing else to orient by. */
