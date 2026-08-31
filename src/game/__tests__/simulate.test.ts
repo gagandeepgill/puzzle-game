@@ -1,6 +1,6 @@
 /**
  * These tests exist to prove the extracted engine scores identically to the
- * vanilla build in site/payload.html. Expected values were derived by hand
+ * vanilla build in public/payload.html. Expected values were derived by hand
  * from the original runMarble, then checked against the live game.
  */
 import { describe, expect, it } from 'vitest';

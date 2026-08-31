@@ -7,7 +7,7 @@ Agent skills for this repo. Claude Code loads these automatically; each one is a
 
 | Skill | Use it when |
 |---|---|
-| [verify-puzzle-game](verify-puzzle-game/SKILL.md) | Running, previewing, screenshotting or verifying a game. There is no build step or dev server; this covers browser-pane testing, bot-played balance runs, mobile checks, and the scratchpad→`site/`→artifact path. |
+| [verify-puzzle-game](verify-puzzle-game/SKILL.md) | Running, previewing, screenshotting or verifying a game. There is no build step or dev server; this covers browser-pane testing, bot-played balance runs, mobile checks, and the scratchpad→`public/`→artifact path. |
 | [payload-engine](payload-engine/SKILL.md) | Touching Payload's simulation, parts, blueprints, jams, difficulties or quotas — the architecture map plus the invariants that keep runs deterministic and fair. |
 | [daily-seeded-runs](daily-seeded-runs/SKILL.md) | Anything about daily puzzles: UTC date keys, deterministic seeding, rotating variants, streaks, share payloads. |
 

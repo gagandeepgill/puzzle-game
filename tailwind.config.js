@@ -1,5 +1,5 @@
 /**
- * Design tokens, moved out of the CSS custom properties in site/payload.html.
+ * Design tokens, moved out of the CSS custom properties in public/payload.html.
  *
  * These class names are the NativeWind vocabulary too, so components written
  * against them port to the Expo app unchanged. That is the whole reason
