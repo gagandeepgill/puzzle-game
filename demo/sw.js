@@ -10,7 +10,7 @@
  * skipWaiting(), because swapping the shell out from under someone mid-run would
  * lose their game.
  */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = `arcade-shell-${CACHE_VERSION}`;
 const FONT_CACHE = `arcade-fonts-${CACHE_VERSION}`;
 
@@ -19,6 +19,10 @@ const SHELL = [
   'index.html',
   'payload.html',
   'ledger.html',
+  // The React port. Its JS and CSS carry build hashes that change every
+  // deploy, so they cannot be listed here; they are picked up by the runtime
+  // cache below on first visit, which is the same visit that loads this page.
+  'app/index.html',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',

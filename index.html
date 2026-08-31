@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#131519" />
+    <title>Payload</title>
+    <meta
+      name="description"
+      content="A daily marble engine-builder. Draft parts, install them on the board, and drop marbles through the machine you built to beat a rising quota."
+    />
+
+    <!-- The app builds to demo/app/, one level below the shell it shares with
+         the vanilla games, so every path here is relative to that. -->
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Payload" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Payload" />
+    <meta
+      property="og:description"
+      content="A daily marble engine-builder. Build the machine, then beat the quota."
+    />
+    <meta property="og:image" content="../icons/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/ui/main.tsx"></script>
+  </body>
+</html>
