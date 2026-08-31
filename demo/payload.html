@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Payload</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap">
 </head>
@@ -22,13 +22,16 @@
     --ok: #8cbb7d;
   }
   * { box-sizing: border-box; margin: 0; }
+  button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   body {
     background: var(--ground); color: var(--ink);
     font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh; display: flex; justify-content: center;
-    padding: 22px 12px 40px; overflow-x: hidden;
+    min-height: 100dvh; display: flex; justify-content: center;
+    padding: 14px calc(10px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+    overflow-x: hidden; -webkit-text-size-adjust: 100%;
   }
-  .app { width: 100%; max-width: 430px; display: flex; flex-direction: column; gap: 13px; }
+  .app { width: 100%; max-width: 430px; display: flex; flex-direction: column; gap: 10px; }
+  @media (min-width: 560px) { body { padding-top: 24px; } .app { gap: 13px; } }
 
   header { display: flex; align-items: baseline; justify-content: space-between; }
   .wordmark { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 27px; }
@@ -50,9 +53,9 @@
 
   .drops { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
   .dropbtn {
-    font: inherit; font-weight: 700; cursor: pointer; font-size: 15px;
+    font: inherit; font-weight: 700; cursor: pointer; font-size: 17px;
     background: var(--card); color: var(--brass); border: 1px solid var(--edge);
-    border-radius: 9px; padding: 7px 0;
+    border-radius: 9px; padding: 10px 0; min-height: 44px;
   }
   .dropbtn:hover:not(:disabled) { border-color: var(--brass); }
   .dropbtn:disabled { opacity: .35; cursor: not-allowed; }
@@ -127,16 +130,63 @@
   .skipbtn { font: inherit; font-size: 12.5px; font-weight: 600; color: var(--steel);
     background: none; border: 1px solid var(--edge); border-radius: 8px; padding: 5px 11px; cursor: pointer; }
 
-  .endcard { border-radius: 13px; padding: 18px; display: none; flex-direction: column; gap: 10px; }
-  .endcard.show { display: flex; animation: rise .4s cubic-bezier(.2,.9,.3,1); }
-  .endcard.win { background: rgba(140,187,125,.1); border: 1px solid var(--ok); }
-  .endcard.lose { background: rgba(207,106,88,.1); border: 1px solid var(--bad); }
-  @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
-  .endcard h2 { font-family: 'Fraunces', Georgia, serif; font-size: 24px; }
-  .endcard p { color: var(--steel); font-size: 13.5px; line-height: 1.5; }
+  /* ---- end-of-run modal: sits over the board, never needs scrolling ---- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+    background: rgba(9, 11, 14, .72); backdrop-filter: blur(4px);
+    animation: fadein .2s ease-out;
+  }
+  .overlay[hidden] { display: none; }
+  @keyframes fadein { from { opacity: 0; } }
+  .modal {
+    position: relative; width: 100%; max-width: 380px; max-height: 88dvh; overflow-y: auto;
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 18px;
+    padding: 22px 18px 18px; display: flex; flex-direction: column; gap: 11px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.6);
+    animation: pop .32s cubic-bezier(.2,.9,.3,1.1);
+  }
+  .modal.win { border-color: var(--ok); }
+  .modal.lose { border-color: var(--bad); }
+  @keyframes pop { from { opacity: 0; transform: translateY(16px) scale(.94); } }
+  .modal-x {
+    position: absolute; top: 10px; right: 10px; width: 34px; height: 34px;
+    font: inherit; font-size: 14px; cursor: pointer; color: var(--steel);
+    background: none; border: 1px solid var(--edge); border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-x:hover { color: var(--ink); }
+  .modal-icon { font-size: 40px; line-height: 1; }
+  .modal h2 { font-family: 'Fraunces', Georgia, serif; font-size: 25px; line-height: 1.15; }
+  .modal-text { color: var(--steel); font-size: 13.5px; line-height: 1.5; }
+  .modal-stats { display: flex; gap: 8px; }
+  .modal-stats div { flex: 1; background: var(--card); border: 1px solid var(--edge);
+    border-radius: 11px; padding: 9px 6px; display: flex; flex-direction: column; gap: 2px;
+    align-items: center; text-align: center; }
+  .modal-stats .v { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 700;
+    color: var(--brass); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .modal-stats .k { font-size: 10px; color: var(--steel); letter-spacing: .07em; text-transform: uppercase; }
+  .modal-actions { display: flex; gap: 9px; margin-top: 2px; }
+  .modal-actions .btn { flex: 1; }
+  .modal-switch { font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    color: var(--glow); background: none; border: 1px dashed rgba(111,211,217,.45);
+    border-radius: 10px; padding: 10px; }
+  .modal-switch[hidden] { display: none; }
+
+  .fab {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 40;
+    font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
+    background: var(--brass); color: #241a05; border: none; border-radius: 999px;
+    padding: 13px 24px; box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    animation: pop .3s cubic-bezier(.2,.9,.3,1.1);
+  }
+  .fab[hidden] { display: none; }
+
   .btn { font: inherit; font-weight: 700; font-size: 14.5px; cursor: pointer;
-    border-radius: 11px; padding: 11px 16px; border: 1px solid var(--brass);
-    background: var(--brass); color: #241a05; }
+    border-radius: 11px; padding: 13px 16px; border: 1px solid var(--brass);
+    background: var(--brass); color: #241a05; min-height: 46px; }
 
   .resetbtn { font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--steel);
     background: none; border: 1px solid var(--edge); border-radius: 8px; padding: 4px 10px; }
@@ -158,6 +208,13 @@
   .btn.ghost2 { background: none; color: var(--ink); border-color: var(--edge); }
 
   .how { color: var(--steel); font-size: 12.5px; line-height: 1.55; }
+  .how summary { cursor: pointer; font-weight: 700; color: var(--steel);
+    list-style: none; padding: 7px 0; min-height: 32px; display: flex; align-items: center; gap: 6px; }
+  .how summary::-webkit-details-marker { display: none; }
+  .how summary::before { content: '▸'; transition: transform .15s; }
+  .how[open] summary::before { transform: rotate(90deg); }
+  .how summary:hover { color: var(--ink); }
+  .how p { padding-bottom: 4px; }
   .how strong { color: var(--ink); }
   button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) {
@@ -186,7 +243,10 @@
   </div>
   <p class="daily-banner" id="dailybanner" hidden></p>
 
-  <p class="how"><strong>Build a scoring machine.</strong> Place drafted parts on the grid, then drop marbles down a column — every part they touch mutates their value. Adds feed multipliers, prisms clone marbles, springs re-trigger what's above. Beat the quota; it climbs steeply. Multiplication or death.</p>
+  <details class="how">
+    <summary>How to play</summary>
+    <p><strong>Build a scoring machine.</strong> Place drafted parts on the grid, then drop marbles down a column — every part they touch mutates their value. Adds feed multipliers, prisms clone marbles, springs re-trigger what's above. Beat the quota; it climbs steeply. Multiplication or death.</p>
+  </details>
 
   <div class="quota-wrap">
     <div class="quota-row">
@@ -221,23 +281,22 @@
   </div>
   <div class="bpchips" id="bpchips"></div>
 
-  <div class="endcard win" id="wincard">
-    <h2>🏆 The Grand Payout</h2>
-    <p id="wintext"></p>
-    <div class="share" id="share-win" hidden></div>
-    <div style="display:flex; gap:10px;">
-      <button class="btn" id="again-win">New machine</button>
-      <button class="btn ghost2" id="copy-win" hidden>Copy share text</button>
+  <button class="fab" id="fab" hidden>↻ Play again</button>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button class="modal-x" id="modal-close" aria-label="View the board">✕</button>
+    <div class="modal-icon" id="modal-icon">🏆</div>
+    <h2 id="modal-title">The Grand Payout</h2>
+    <p class="modal-text" id="modal-text"></p>
+    <div class="modal-stats" id="modal-stats"></div>
+    <div class="share" id="modal-share" hidden></div>
+    <div class="modal-actions">
+      <button class="btn" id="modal-again">Play again</button>
+      <button class="btn ghost2" id="modal-copy" hidden>Copy result</button>
     </div>
-  </div>
-  <div class="endcard lose" id="losecard">
-    <h2>💥 The machine seized</h2>
-    <p id="losetext"></p>
-    <div class="share" id="share-lose" hidden></div>
-    <div style="display:flex; gap:10px;">
-      <button class="btn" id="again-lose">New run</button>
-      <button class="btn ghost2" id="copy-lose" hidden>Copy share text</button>
-    </div>
+    <button class="modal-switch" id="modal-switch" hidden></button>
   </div>
 </div>
 
@@ -720,9 +779,7 @@ async function roundWon() {
   S.round += 1;
   if (S.round >= rounds()) {
     S.phase = 'over';
-    $('wintext').textContent = `All ${rounds()} ${S.diff.name} quotas beaten. Total banked: ${S.total} · best single drop: ${S.bestDrop}.`;
-    finishRun(true);
-    $('wincard').classList.add('show');
+    finishRun(true, `Every quota on the ${S.diff.name} line, beaten. The machine paid out to the last marble.`);
     renderDrops(); renderMoveBtn();
     return;
   }
@@ -736,9 +793,7 @@ async function roundWon() {
 function runLost() {
   S.phase = 'over';
   blip(160, .3, 'sawtooth', .06);
-  $('losetext').textContent = `Round ${S.round + 1} demanded ${quotaFor(S.round)}; the machine paid ${S.roundScore}. Best drop this run: ${S.bestDrop}. Additive parts alone can't outrun the quota curve — find the multipliers, splitters and springs.`;
-  finishRun(false);
-  $('losecard').classList.add('show');
+  finishRun(false, `Round ${S.round + 1} demanded ${quotaFor(S.round)}; the machine paid ${S.roundScore}. Additive parts alone can't outrun the curve — find the multipliers, splitters and springs.`);
   renderDrops(); renderMoveBtn();
 }
 
@@ -774,30 +829,62 @@ function shareTextFor(rec) {
     `${result} · banked ${rec.total} · best drop ${rec.best}` +
     (rec.streak >= 2 ? `\n🔥 ${rec.streak}-day streak` : '');
 }
-function finishRun(won) {
-  const suffix = won ? 'win' : 'lose';
-  const shareEl = $('share-' + suffix), copyBtn = $('copy-' + suffix);
-  if (S.mode !== 'daily') {
+function finishRun(won, text) {
+  const cleared = won ? rounds() : S.round;
+  $('modal').className = 'modal ' + (won ? 'win' : 'lose');
+  $('modal-icon').textContent = won ? '🏆' : '💥';
+  $('modal-title').textContent = won ? 'The Grand Payout' : 'The machine seized';
+  $('modal-text').textContent = text;
+  $('modal-stats').innerHTML =
+    `<div><span class="v">${cleared}/${rounds()}</span><span class="k">rounds</span></div>` +
+    `<div><span class="v">${S.total}</span><span class="k">banked</span></div>` +
+    `<div><span class="v">${S.bestDrop}</span><span class="k">best drop</span></div>`;
+
+  const shareEl = $('modal-share'), copyBtn = $('modal-copy');
+  if (S.mode === 'daily') {
+    const already = todaysRecord();
+    const rec = recordDaily(won);
+    shareEl.textContent = shareTextFor(rec) + (already ? '\n(your first attempt today is the one on record)' : '');
+    shareEl.hidden = false; copyBtn.hidden = false;
+    renderDailyBanner();
+  } else {
     shareEl.hidden = true; copyBtn.hidden = true;
-    return;
   }
-  const already = todaysRecord();
-  const rec = recordDaily(won);
-  shareEl.textContent = shareTextFor(rec) + (already ? '\n(recorded from your first attempt today)' : '');
-  shareEl.hidden = false;
-  copyBtn.hidden = false;
-  renderDailyBanner();
+
+  // Contextual next step: nudge toward the other difficulty.
+  const sw = $('modal-switch');
+  const other = S.diff.key === 'easy' ? 'hard' : 'easy';
+  if (won || S.diff.key === 'hard') {
+    sw.textContent = won
+      ? `Ready for more? Try ${other === 'hard' ? '🔥 Hard · 8 rounds' : '🌤 Easy · 4 rounds'}`
+      : 'Try 🌤 Easy · 4 rounds instead';
+    sw.hidden = false;
+    sw.onclick = () => startRun(S.mode, other);
+  } else {
+    sw.hidden = true;
+  }
+
+  $('overlay').hidden = false;
+  $('fab').hidden = true;
+  $('modal-again').focus();
 }
-async function copyShare(suffix) {
-  const btn = $('copy-' + suffix);
+async function copyShare() {
+  const btn = $('modal-copy');
   try {
-    await navigator.clipboard.writeText($('share-' + suffix).textContent);
+    await navigator.clipboard.writeText($('modal-share').textContent);
     btn.textContent = 'Copied ✓';
-  } catch (e) { btn.textContent = 'Select the text above'; }
-  setTimeout(() => { btn.textContent = 'Copy share text'; }, 1800);
+  } catch (e) { btn.textContent = 'Select the text'; }
+  setTimeout(() => { btn.textContent = 'Copy result'; }, 1800);
 }
-$('copy-win').onclick = () => copyShare('win');
-$('copy-lose').onclick = () => copyShare('lose');
+$('modal-copy').onclick = copyShare;
+$('modal-close').onclick = () => { $('overlay').hidden = true; $('fab').hidden = false; };
+$('fab').onclick = () => startRun(S.mode);
+$('overlay').addEventListener('click', (e) => {
+  if (e.target === $('overlay')) { $('overlay').hidden = true; $('fab').hidden = false; }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('overlay').hidden) { $('overlay').hidden = true; $('fab').hidden = false; }
+});
 
 /* ---------- run setup & modes ---------- */
 function renderDailyBanner() {
@@ -834,8 +921,8 @@ function startRun(mode, diffKey) {
   S.dropsLeft = dropsForRound();
   S.blueprints = new Set(); S.screwUsed = false; S.moveSrc = null;
   S.pendingBlueprint = false; S.busy = false;
-  $('wincard').classList.remove('show');
-  $('losecard').classList.remove('show');
+  $('overlay').hidden = true;
+  $('fab').hidden = true;
   $('droptick').hidden = true;
   $('mode-daily').classList.toggle('active', mode === 'daily');
   $('mode-free').classList.toggle('active', mode === 'free');
@@ -850,8 +937,7 @@ $('mode-daily').onclick = () => startRun('daily');
 $('mode-free').onclick = () => startRun('free');
 $('diff-easy').onclick = () => startRun(S.mode, 'easy');
 $('diff-hard').onclick = () => startRun(S.mode, 'hard');
-$('again-win').onclick = () => startRun(S.mode);
-$('again-lose').onclick = () => startRun(S.mode);
+$('modal-again').onclick = () => startRun(S.mode);
 
 /* reset (two-tap confirm) */
 let resetArmed = null;
