@@ -62,6 +62,15 @@ export interface Playback {
   readonly ticking: boolean;
   readonly marbles: readonly MarbleView[];
   readonly labels: readonly FloatLabel[];
+  /** How long the current frame holds. The marble's CSS transition is derived
+   *  from this rather than hardcoded: the fall accelerates, so a fixed
+   *  duration would exceed the dwell as the marble speeds up and reintroduce
+   *  the bug where it never arrives at a cell. */
+  readonly stepMs: number;
+  /** 0 to 3, by what the drop was worth against the quota. Absolute score is
+   *  the wrong scale — the quota escalates, so a fixed threshold makes every
+   *  late drop shake maximally and the signal dies. */
+  readonly shake: number;
   /** Human-readable trace of the last drop, which persists after it ends. */
   readonly breakdown: readonly string[];
   /** Written once per drop, after it resolves, with final figures. Kept
@@ -79,8 +88,21 @@ export interface Playback {
  */
 const EMPTY_PLAYBACK: Playback = {
   firingCells: [], firingSeq: 0, tick: 0, ticking: false,
-  marbles: [], labels: [], breakdown: [], announcement: '',
+  marbles: [], labels: [], stepMs: 60, shake: 0, breakdown: [], announcement: '',
 };
+
+/**
+ * How long the marble rests on each cell as it falls.
+ *
+ * Constant velocity is a conveyor, not a fall. This accelerates, and resets to
+ * the top of the curve whenever a part fires: gravity pulls you, the machine
+ * catches you, you start again. That rhythm is what reads as a contraption
+ * rather than a scrolling list.
+ *
+ * True sqrt(n) gravity is too fast to read by the third cell, so this is a
+ * decay curve tuned for legibility: 86, 73, 64, 57, 52, 48, 46.
+ */
+const fallMs = (step: number) => Math.round(40 + 46 * Math.pow(0.72, Math.max(0, step - 1)));
 
 /** Colour by what the label means, not by which part produced it. */
 function toneFor(text: string): string {
@@ -221,6 +243,9 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     let labels: FloatLabel[] = [];
     let labelId = 0;
     let firingCells: CellIndex[] = [];
+    let stepMs = 60;
+    // Steps since a part last fired, which drives the acceleration.
+    let fallStep = 0;
 
     // Animating and not animating are the same loop; only the sleeps differ.
     // A drop the player skipped, or one under prefers-reduced-motion, drops
@@ -228,13 +253,14 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     // breakdown panel and the live region carry the same information.
     const paint = async (ms: number) => {
       if (abandoned() || instant || skipRef.current) return;
+      stepMs = ms;
       const marbles = [...live.values()];
       const shown = labels.slice(-8);   // bound the DOM; older ones have faded
       const at = firingCells;
       const n = seq;
       setPlayback((p) => ({
         ...p, firingCells: at, firingSeq: n, marbles, labels: shown,
-        tick: running, ticking: true,
+        tick: running, ticking: true, stepMs: ms,
       }));
       await sleep(ms);
     };
@@ -245,6 +271,15 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
 
     const byMarble = chunkByMarble(result.events);
     const starts = startFrames(byMarble);
+
+    /** The frame the last marble banks on, so the hit-stop lands there. */
+    let lastBankFrame = -1;
+    for (const [id, chunks] of byMarble) {
+      const base = starts.get(id) ?? 0;
+      chunks.forEach((chunk, i) => {
+        if (chunk.some((e) => e.kind === 'banked')) lastBankFrame = Math.max(lastBankFrame, base + i);
+      });
+    }
     const frames = Math.max(
       0,
       ...[...byMarble].map(([id, cs]) => (starts.get(id) ?? 0) + cs.length),
@@ -257,6 +292,12 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     // unrelated drops.
     for (let f = 0; f < frames; f++) {
       if (abandoned()) return;
+
+      // Everything stops just before the final payout. Nothing moves, nothing
+      // sounds. Borrowed from fighting-game hit-stop, which is the cheapest
+      // way to make a number land rather than appear.
+      if (f === lastBankFrame && !instant && !skipRef.current) await sleep(150);
+
       firingCells = [];
       let fired = 0;
 
@@ -325,8 +366,9 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
       }
 
       // A frame where something fired holds longer, so the part that scored is
-      // readable before the next one does.
-      await paint(fired > 0 ? 130 : 60);
+      // readable before the next one does, and the fall restarts from slow.
+      if (fired > 0) { fallStep = 0; await paint(130); }
+      else { fallStep += 1; await paint(fallMs(fallStep)); }
     }
 
     // A restart landed while this drop was animating, so its score belongs to
@@ -339,9 +381,18 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     const quotaNow = quotaFor(state, state.round);
     const roundAfter = state.roundScore + result.total;
     const dropsAfter = state.dropsLeft - 1;
+    const share = quotaFor(state, state.round) > 0
+      ? result.total / quotaFor(state, state.round)
+      : 0;
+    const shake = instant || skipRef.current
+      ? 0
+      : share >= 0.75 ? 3 : share >= 0.4 ? 2 : share > 0.12 ? 1 : 0;
+
     setPlayback({
       firingCells: [],
       firingSeq: seq,
+      stepMs,
+      shake,
       tick: result.total,
       ticking: false,
       marbles: [],
@@ -381,13 +432,24 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     const over = state.phase.kind === 'runOver';
     // A new round is a new machine to read, so the log starts empty. This runs
     // after the drop that cleared the quota has already appended to it.
-    if (state.round > prev.round) { sfx.roundWon(); setCleared(state.round); setRoundLog([]); }
+    if (state.round > prev.round) {
+      sfx.roundWon();
+      setCleared(state.round);
+      setRoundLog([]);
+      if (!prefersReducedMotion()) setPlayback((p) => ({ ...p, shake: 3 }));
+    }
     if (over && !prev.over) {
       if (state.phase.kind === 'runOver' && state.phase.won) sfx.roundWon();
       else sfx.runLost();
     }
     prevRef.current = { round: state.round, over };
   }, [state.round, state.phase]);
+
+  useEffect(() => {
+    if (playback.shake === 0) return;
+    const t = setTimeout(() => setPlayback((p) => ({ ...p, shake: 0 })), 520);
+    return () => clearTimeout(t);
+  }, [playback.shake]);
 
   useEffect(() => {
     if (cleared === 0) return;
