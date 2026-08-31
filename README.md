@@ -35,9 +35,11 @@ A run-based engine builder. Draft a part from three, install it on a 5x6 grid, t
 
 Quotas roughly double each round across an 8-round run, so additive builds die on the curve. The game is finding multiplier combos before it catches you.
 
-Play: [`public/payload.html`](public/payload.html)
+Play: [payload-arcade.netlify.app/app/](https://payload-arcade.netlify.app/app/), built from `src/`.
 
-Ten part types. Boss "Jam" rounds at 3 and 6. Permanent blueprint drafts: Lead Marbles, Overtime, Gravity Well, Loose Screws. A guaranteed-scaler rule so no run is starved of multipliers. Best-drop tracking, a two-tap run reset, WebAudio feedback.
+Ten part types. Boss "Jam" rounds at 3 and 6. Permanent blueprint drafts: Lead Marbles, Overtime, Gravity Well, Loose Screws. A guaranteed-scaler rule so no run is starved of multipliers. Daily records and streaks, a spoiler-free share line, an in-game compendium, and a placement preview that runs the same simulation the real drop runs, so it cannot promise a score the game then does not pay.
+
+`public/payload.html` is the older single-file build. It is kept as the reference the parity tests diff against, not as the game.
 
 Design lineage, researched rather than copied: Balatro's multiplicative scoring and forced build commitment, Slay the Spire's draft dilution, Drop7's cascade spectacle. Resolution is deterministic, and the machine's geometry is the hand you play.
 
@@ -45,8 +47,10 @@ Design lineage, researched rather than copied: Balatro's multiplicative scoring 
 
 A tap-to-rotate routing puzzle. Turn the lane arrows to connect the Vault to the Market. Coins on the route pay out, every lane charges a 5g courier fee, and any pickpocket next to your route lifts 15g, so the greedy path is usually a trap. Score is net haul against a solver-proven optimum, with taps against par as the substat.
 
-Play: [`public/ledger.html`](public/ledger.html)
+Play: [payload-arcade.netlify.app/ledger.html](https://payload-arcade.netlify.app/ledger.html), source at [`public/ledger.html`](public/ledger.html).
 
 Five boards from Gentle to Expert, including a width-parameterised 5x5 and a sealed-ledger mode on Hard and above where the projected total is hidden until you bank. A built-in DFS solver derives each board's optimum and par at load. All five have verified-unique optima.
 
-The full daily-game build spec, covering deterministic UTC-seeded puzzles, streaks and the React Native architecture, is in [`MASTER_PROMPT.md`](MASTER_PROMPT.md).
+[`MASTER_PROMPT.md`](MASTER_PROMPT.md) specs a React Native version of Ledger Lane with a daily mode, written before any code existed. It is a proposal, not a description of what is here: the daily machinery it describes was built for Payload instead, and Ledger Lane is still one HTML file with no daily. Its rules and design pillars have held up; the architecture from section 3 onward describes a stack this repo never adopted.
+
+How the repo actually works, for a person or an agent picking it up, is in [`CLAUDE.md`](CLAUDE.md).

@@ -1,5 +1,28 @@
 # Master Developer Prompt: Ledger Lane
 
+**Status: proposal, not a description of this repo. Written 2026-08-31, before
+any code existed, and not built.**
+
+What it specs and what is actually here differ on every axis that matters:
+
+| This document | The repo today |
+|---|---|
+| Ledger Lane as a React Native app: Expo, Zustand, TanStack Query, MMKV, Reanimated | Ledger Lane is one self-contained HTML file, `public/ledger.html`, with no build and no state library |
+| A daily UTC-seeded puzzle for Ledger Lane, with streaks, a generator and a solver | Ledger Lane has no daily at all. That machinery was built for **Payload** instead, in `src/game/rng.ts` and `src/game/daily.ts` |
+| Nothing about Payload | Payload is the flagship, and is React and TypeScript |
+
+Read it as a design brief for a version of Ledger Lane that may still get built.
+It is not loaded as context by anything, so nothing behaves differently because
+of it. For how the repo actually works, see [`CLAUDE.md`](CLAUDE.md); for the
+daily mechanics as they were really implemented, see
+`.claude/skills/daily-seeded-runs`.
+
+The rules in section 2 and the design pillars in section 1 are the parts that
+have held up. The architecture from section 3 onward describes a stack this repo
+never adopted.
+
+---
+
 > A daily 4x4 grid-rotation puzzle game for React Native. One puzzle per day, worldwide.
 > Tap tiles to rotate arrows and route the day's gold shipment from the **Vault** to the
 > **Market.** Any connection wins, but the best couriers bank the most gold.
