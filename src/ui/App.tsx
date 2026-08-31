@@ -5,7 +5,7 @@ import { Compendium } from './Compendium.js';
 import { Icon, UIIcon } from './icons.js';
 import type { IconName } from './icons.js';
 import { usePayloadRun } from './usePayloadRun.js';
-import { isMuted, setMuted } from './audio.js';
+import { isMuted, setMuted, setSoundTheme } from './audio.js';
 import { loadSkin, saveSkin } from './pixel/skin.js';
 import { PixelPart, hasPixelArt } from './pixel/PixelSprite.js';
 import type { GameSkin } from './pixel/skin.js';
@@ -53,6 +53,10 @@ export function App() {
    *  preference; nothing about the run depends on it. */
   const [skin, setSkin] = useState<GameSkin>(loadSkin);
   const pixel = skin === 'pixel';
+  // The sound language follows the skin. Kept in an effect rather than in
+  // the click handler so it is also right on the first render after a
+  // reload, when the skin comes back from storage.
+  useEffect(() => { setSoundTheme(pixel ? 'pixel' : 'classic'); }, [pixel]);
   /**
    * The parts reference is the highest-value thing to promote on a wide
    * screen: the board draws each part as a glyph and a badge, and until now
