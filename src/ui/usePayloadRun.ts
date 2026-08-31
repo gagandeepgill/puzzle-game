@@ -1,10 +1,14 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   dropInto, dropsForRound, jamFor, quotaFor, reduce, startOptions, startRun,
 } from '../game/run.js';
 import type { Rng } from '../game/rng.js';
 import type { Action, RunOptions } from '../game/run.js';
-import { utcDateKey } from '../game/rng.js';
+import { dayNumber, utcDateKey } from '../game/rng.js';
+import { bumpStreak, recordFor, streakIsLive } from '../game/daily.js';
+import type { DailyRecord, Streak } from '../game/daily.js';
+import { loadRecord, loadStreak, saveRecord, saveStreak } from './store.js';
+import { sfx } from './audio.js';
 import { assertNever } from '../game/types.js';
 import type {
   CellIndex, Column, DifficultyKey, DropEvent, DropResult, Mode, RunState,
@@ -97,6 +101,8 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
   const runIdRef = useRef(0);
 
   const dispatch = useCallback((action: Action) => {
+    if (action.type === 'placeSelected' || action.type === 'movePart') sfx.place();
+    if (action.type === 'takeBlueprint') sfx.blueprint();
     setState((s) => reduce(s, action, rngRef.current));
   }, []);
 
@@ -177,6 +183,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     const instant = prefersReducedMotion();
     let running = 0;
     let seq = 0;
+    let triggers = 0;
 
     // Marbles in flight, and the labels floating off cells. Both are held
     // outside React state and republished as fresh arrays, so a marble keeps
@@ -225,6 +232,8 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
           const m = live.get(event.marble);
           if (m) live.set(event.marble, { ...m, value: event.after });
           if (event.label) float(event.cell, event.label);
+          triggers += 1;
+          sfx.trigger(triggers);
           seq += 1;
           firingCell = event.cell;
           await paint(130);   // one part at a time, paced for comprehension
@@ -232,16 +241,19 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
         }
 
         case 'skid':
+          sfx.skid();
           float(event.cell, 'skid!');
           await paint(90);
           break;
 
         case 'split':
+          sfx.split();
           float(event.cell, 'SPLIT');
           await paint(90);
           break;
 
         case 'confiscated':
+          sfx.seized();
           float(event.cell, 'seized');
           live.delete(event.marble);
           await paint(200);
@@ -249,6 +261,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
 
         case 'banked': {
           const m = live.get(event.marble);
+          sfx.bank(event.value);
           if (m) float(m.cell, `+${event.value}`);
           live.delete(event.marble);
           running += event.value;
@@ -257,6 +270,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
         }
 
         case 'bounce':
+          sfx.spring();
           // The row change shows up in the next `enter`, which moves the
           // marble; there is nothing extra to draw here.
           break;
@@ -294,6 +308,77 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     skipRef.current = false;
   }, [state, dispatch]);
 
+  /**
+   * Round and run transitions, which nothing else marks.
+   *
+   * Clearing a quota used to drop the player straight into the next draft
+   * panel with no signal that anything had been achieved. `cleared` drives a
+   * short banner; the arpeggio is its audible half.
+   */
+  const [cleared, setCleared] = useState(0);
+  const prevRef = useRef({ round: state.round, over: false });
+
+  useEffect(() => {
+    const prev = prevRef.current;
+    const over = state.phase.kind === 'runOver';
+    if (state.round > prev.round) { sfx.roundWon(); setCleared(state.round); }
+    if (over && !prev.over) {
+      if (state.phase.kind === 'runOver' && state.phase.won) sfx.roundWon();
+      else sfx.runLost();
+    }
+    prevRef.current = { round: state.round, over };
+  }, [state.round, state.phase]);
+
+  useEffect(() => {
+    if (cleared === 0) return;
+    const t = setTimeout(() => setCleared(0), 1100);
+    return () => clearTimeout(t);
+  }, [cleared]);
+
+  /**
+   * Persist a finished daily, once.
+   *
+   * Runs in an effect rather than inside `drop`, because the run can also end
+   * from the reducer's win branch after the last quota clears. Keyed on the
+   * phase so a re-render cannot write twice, and `recordFor` keeps the first
+   * attempt even if this somehow runs again.
+   */
+  const [record, setRecord] = useState<DailyRecord | null>(null);
+  const [streak, setStreak] = useState<Streak>(() => loadStreak());
+
+  useEffect(() => {
+    if (state.phase.kind !== 'runOver') { setRecord(null); return; }
+    const dateKey = optsRef.current.dateKey;
+    if (state.mode !== 'daily') return;
+
+    const won = state.phase.won;
+    const attempt: DailyRecord = {
+      dateKey,
+      difficulty: state.difficulty.key,
+      won,
+      rounds: won ? state.difficulty.rounds : state.round,
+      of: state.difficulty.rounds,
+      total: state.total,
+      bestDrop: state.bestDrop,
+    };
+    const kept = recordFor(loadRecord(state.difficulty.key), attempt);
+    saveRecord(kept);
+    setRecord(kept);
+
+    // Only the attempt that produced the record moves the streak. A replay
+    // returns the stored record, and bumpStreak is idempotent for the day.
+    const next = bumpStreak(loadStreak(), dateKey, kept.won);
+    saveStreak(next);
+    setStreak(next);
+  }, [state.phase, state.mode, state.difficulty, state.round, state.total, state.bestDrop]);
+
+  /** Today's stored result, if the player has already finished this daily. */
+  const todaysRecord = useMemo(() => {
+    if (state.mode !== 'daily') return null;
+    const stored = loadRecord(state.difficulty.key);
+    return stored && stored.dateKey === optsRef.current.dateKey ? stored : null;
+  }, [state.mode, state.difficulty, record]);
+
   return {
     state,
     playback,
@@ -302,6 +387,13 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey }
     drop,
     skip,
     restart,
+    record,
+    todaysRecord,
+    cleared,
+    streak,
+    streakLive: streakIsLive(streak, optsRef.current.dateKey),
+    dateKey: optsRef.current.dateKey,
+    day: dayNumber(optsRef.current.dateKey),
     quota: quotaFor(state, state.round),
     jam: jamFor(state, state.round),
     dropsThisRound: dropsForRound(state, state.round),

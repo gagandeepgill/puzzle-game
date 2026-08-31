@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Board } from './Board.js';
 import { ResultModal } from './ResultModal.js';
 import { usePayloadRun } from './usePayloadRun.js';
+import { isMuted, setMuted } from './audio.js';
 import { PARTS, BLUEPRINTS } from '../game/content.js';
 import { COLS, ROWS, cellAt, column } from '../game/types.js';
 import type { CellIndex, DifficultyKey, Mode } from '../game/types.js';
@@ -15,6 +16,7 @@ export function App() {
   const [moveFrom, setMoveFrom] = useState<CellIndex | null>(null);
   const [moving, setMoving] = useState(false);
   const [resetArmed, setResetArmed] = useState(false);
+  const [mute, setMute] = useState(() => isMuted());
 
   const drafting = state.phase.kind === 'drafting';
   const placeable = drafting && state.phase.selected !== null;
@@ -77,7 +79,18 @@ export function App() {
   }, [resetArmed]);
 
   return (
-    <main id="app-root" className="w-full max-w-[430px] mx-auto flex flex-col gap-2.5 px-2.5 pt-3.5 pb-6">
+    // Safe-area padding matters only once installed, where there is no browser
+    // chrome between the page and the notch or the home indicator.
+    <main
+      id="app-root"
+      className="w-full max-w-[430px] mx-auto flex flex-col gap-2.5"
+      style={{
+        paddingLeft: 'max(10px, env(safe-area-inset-left))',
+        paddingRight: 'max(10px, env(safe-area-inset-right))',
+        paddingTop: 'max(14px, env(safe-area-inset-top))',
+        paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+      }}
+    >
       <header className="flex items-baseline justify-between">
         <h1 className="font-display font-bold text-[27px]">
           Pay<span className="text-brass">load</span>
@@ -110,16 +123,44 @@ export function App() {
       {sheetOpen && (
         <div id="settings-sheet" className="bg-panel border border-edge rounded-xl p-2.5 flex flex-col gap-2">
           <div role="group" aria-label="Mode" className="flex gap-1.5">
-            <Tab on={state.mode === 'daily'} onClick={() => setMode('daily')}>Daily</Tab>
-            <Tab on={state.mode === 'free'} onClick={() => setMode('free')}>Free Play</Tab>
+            <Tab on={state.mode === 'daily'} onClick={() => setMode('daily')}>🗓 Daily</Tab>
+            <Tab on={state.mode === 'free'} onClick={() => setMode('free')}>∞ Free Play</Tab>
           </div>
           <div role="group" aria-label="Difficulty" className="flex gap-1.5">
-            <Tab on={state.difficulty.key === 'easy'} onClick={() => setDifficulty('easy')}>Easy · 4</Tab>
-            <Tab on={state.difficulty.key === 'hard'} onClick={() => setDifficulty('hard')}>Hard · 8</Tab>
+            <Tab on={state.difficulty.key === 'easy'} onClick={() => setDifficulty('easy')}>🌤 Easy · 4</Tab>
+            <Tab on={state.difficulty.key === 'hard'} onClick={() => setDifficulty('hard')}>🔥 Hard · 8</Tab>
           </div>
-          {state.variant && (
+          <button
+            type="button"
+            aria-pressed={mute}
+            onClick={() => { setMuted(!mute); setMute(!mute); }}
+            className="text-[12.5px] font-semibold text-steel border border-edge rounded-[10px] py-2 min-h-[36px]"
+          >
+            {mute ? '🔇 Sound off' : '🔊 Sound on'}
+          </button>
+          {/* The daily has no identity without its number, and free play had
+              no copy at all — it looked like a daily that failed to load. */}
+          {state.mode === 'daily' ? (
             <p className="text-[12px] text-steel leading-snug">
-              <b className="text-ink">{state.variant.icon} {state.variant.name}.</b> {state.variant.desc}
+              <b className="text-ink">
+                Day #{run.day}
+                {state.variant && ` — ${state.variant.icon} ${state.variant.name}`}
+              </b>{' '}
+              {state.variant?.desc} Everyone gets this same run today.
+              {run.todaysRecord && (
+                <>
+                  {' '}<b className="text-brass">
+                    Locked in: {run.todaysRecord.won ? 'cleared' : `stalled at round ${run.todaysRecord.rounds + 1}`},
+                    banked {run.todaysRecord.total}.
+                  </b>{' '}Replays won't change it.
+                </>
+              )}
+              {run.streakLive && <> <b className="text-glow">⚙ {run.streak.count}-day streak.</b></>}
+            </p>
+          ) : (
+            <p className="text-[12px] text-steel leading-snug">
+              <b className="text-ink">{state.difficulty.name}</b> — {state.difficulty.rounds} rounds.
+              Unseeded: every run reshuffles.
             </p>
           )}
         </div>
@@ -238,7 +279,7 @@ export function App() {
           sits over its own column. The board panel's own padding used to
           offset the grid by 8px, leaving the arrows subtly out of line.
           Capping the width is also what gets all six rows onto a phone. */}
-      <div className="w-full max-w-[320px] mx-auto flex flex-col gap-2">
+      <div className="relative w-full max-w-[320px] mx-auto flex flex-col gap-2">
         {/* 9px = the board panel's 8px padding plus its 1px border. */}
         <div className="grid grid-cols-5 gap-1.5 px-[9px]">
           {Array.from({ length: COLS }, (_, c) => (
@@ -265,6 +306,17 @@ export function App() {
           movable={movable}
           onCellPress={onCellPress}
         />
+
+        {/* Clearing a quota used to drop the player straight into the next
+            draft with nothing marking that they had beaten anything. */}
+        {run.cleared > 0 && (
+          <p
+            aria-hidden
+            className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-display text-[24px] font-bold text-brass animate-pop pointer-events-none drop-shadow-[0_2px_6px_rgba(0,0,0,.9)]"
+          >
+            QUOTA BEATEN
+          </p>
+        )}
       </div>
 
       {/* Loose Screws. Without this the blueprint is a permanent slot spent on
@@ -309,10 +361,36 @@ export function App() {
         </div>
       )}
 
+      <details className="bg-panel border border-edge rounded-xl px-3 py-2">
+        <summary className="text-[12.5px] font-semibold text-steel cursor-pointer">
+          How to play
+        </summary>
+        <div className="text-[12px] text-steel leading-normal mt-2 flex flex-col gap-1.5">
+          <p>
+            Each round you draft one part and install it anywhere on the board, then
+            drop marbles down a column. A marble starts at value 1 and every part it
+            falls through changes it. Whatever reaches the bottom is banked.
+          </p>
+          <p>
+            Beat the round's quota before you run out of drops. Quotas climb faster
+            than adding does, so the run is really about stacking multipliers under
+            the parts that feed them — a coil at the bottom of a loaded column is
+            worth more than three weights scattered around.
+          </p>
+          <p>
+            Blueprints are permanent rules for the rest of the run. Jams are the
+            opposite, and last one round.
+          </p>
+        </div>
+      </details>
+
       {state.phase.kind === 'runOver' && !modalDismissed && (
         <ResultModal
           state={state}
           won={state.phase.won}
+          record={run.record}
+          streak={run.streak}
+          quota={run.quota}
           onPlayAgain={() => { setModalDismissed(false); run.restart(); }}
           onSwitchDifficulty={() => {
             setModalDismissed(false);

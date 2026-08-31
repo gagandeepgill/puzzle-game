@@ -1,10 +1,16 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { shareText } from '../game/daily.js';
+import type { DailyRecord, Streak } from '../game/daily.js';
 import type { RunState } from '../game/types.js';
 
 interface Props {
   readonly state: RunState;
   readonly won: boolean;
+  /** The stored daily result. Null in free play, or before it is written. */
+  readonly record: DailyRecord | null;
+  readonly streak: Streak;
+  readonly quota: number;
   readonly onPlayAgain: () => void;
   readonly onSwitchDifficulty: () => void;
   readonly onDismiss: () => void;
@@ -18,8 +24,9 @@ interface Props {
  * aria-modal is a claim; inert plus a Tab trap is the behaviour.
  */
 export function ResultModal({
-  state, won, onPlayAgain, onSwitchDifficulty, onDismiss,
+  state, won, record, streak, quota, onPlayAgain, onSwitchDifficulty, onDismiss,
 }: Props) {
+  const [copied, setCopied] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<Element | null>(null);
   // Read through a ref so the effect below can hold empty deps. Depending on
@@ -95,10 +102,13 @@ export function ResultModal({
         <h2 id="over-title" className="font-display text-[25px] leading-tight">
           {won ? 'The Grand Payout' : 'The machine seized'}
         </h2>
+        {/* The gap is the lesson. "More than the machine paid" tells a player
+            nothing they can act on; 145 against 96 tells them they needed a
+            multiplier two rounds ago. */}
         <p className="text-[13.5px] text-steel leading-normal">
           {won
             ? `Every quota on the ${state.difficulty.name} line, beaten.`
-            : `Round ${state.round + 1} demanded more than the machine paid. Additive parts alone can't outrun the curve.`}
+            : `Round ${state.round + 1} demanded ${quota}; the machine paid ${state.roundScore}.`}
         </p>
 
         <div className="flex gap-2">
@@ -106,6 +116,37 @@ export function ResultModal({
           <Stat value={String(state.total)} label="banked" />
           <Stat value={String(state.bestDrop)} label="best drop" />
         </div>
+
+        {/* Daily only. The record is written on the first attempt, so this is
+            what the player is sharing even if they replay afterwards. */}
+        {record && (
+          <div className="bg-card border border-edge rounded-[11px] p-2.5 flex flex-col gap-2">
+            <pre className="text-[11.5px] text-steel font-sans whitespace-pre-wrap leading-snug">
+              {shareText(record, state.variant, streak)}
+            </pre>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(shareText(record, state.variant, streak));
+                  setCopied(true);
+                } catch {
+                  // Denied permission, or an insecure origin. The text is on
+                  // screen above, so there is still a way to share it.
+                  setCopied(false);
+                }
+              }}
+              className="text-[12.5px] font-bold text-glow border border-glow rounded-[9px] py-2 min-h-[40px]"
+            >
+              {copied ? '✓ Copied' : 'Copy result'}
+            </button>
+          </div>
+        )}
+        {record && !won && state.mode === 'daily' && (
+          <p className="text-[11.5px] text-steel -mt-1">
+            Locked in for today. Replays won't change it.
+          </p>
+        )}
 
         <button
           type="button"
@@ -115,13 +156,16 @@ export function ResultModal({
         >
           Play again
         </button>
-        <button
-          type="button"
-          onClick={onSwitchDifficulty}
-          className="text-[13px] font-semibold text-glow border border-dashed border-glow/60 rounded-[10px] py-2.5 min-h-[44px]"
-        >
-          {won ? `Ready for more? Try ${other}` : `Try ${other} instead`}
-        </button>
+        {/* Losing on Easy and being offered Hard reads as a taunt. */}
+        {(won || state.difficulty.key === 'hard') && (
+          <button
+            type="button"
+            onClick={onSwitchDifficulty}
+            className="text-[13px] font-semibold text-glow border border-dashed border-glow/60 rounded-[10px] py-2.5 min-h-[44px]"
+          >
+            {won ? `Ready for more? Try ${other}` : `Try ${other} instead`}
+          </button>
+        )}
       </div>
     </div>,
     document.body,
