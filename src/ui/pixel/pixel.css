@@ -427,3 +427,63 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
 .pixel-skin .text-brass { color: var(--px-gold); }
 .pixel-skin .text-ok { color: var(--px-green); }
 .pixel-skin .text-ink { color: var(--px-text); }
+
+/**
+ * Draft cards, from section 9.
+ *
+ * Idle is a flat dark card. Hover brightens the border and lifts it 1px over
+ * 120ms. Selected takes a stronger border and a 1.05 scale, and holds there
+ * rather than bouncing, because a card you are holding should look held and
+ * not keep asking for attention.
+ *
+ * The lift is a transform, so it moves the card without moving anything around
+ * it. Disabled keeps its contrast readable rather than fading toward the
+ * background.
+ */
+.pixel-skin .ck-rail-a button[aria-pressed] {
+  transition: transform 120ms steps(2), border-color 120ms, background-color 120ms;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pixel-skin .ck-rail-a button[aria-pressed='false']:hover {
+    transform: translateY(-1px);
+    border-color: var(--px-blue);
+  }
+}
+/* Targeted by the class React toggles rather than by the ARIA attribute. Both
+   select the same element, but an attribute-value selector was losing here to
+   something else in the cascade, and the class-based approach is what the rest
+   of this file already uses successfully. */
+.pixel-skin .ck-rail-a .border-brass {
+  transform: scale(1.05);
+  border-color: var(--px-gold);
+}
+
+/**
+ * Blueprint acquisition, from section 6: a quick 200-300ms pop with a small
+ * cyan flash. One pass, no loop.
+ */
+@keyframes px-blueprint-pop {
+  0% { transform: scale(0.9); border-color: var(--px-blue); }
+  45% { transform: scale(1.06); border-color: var(--px-blue); }
+  100% { transform: scale(1); }
+}
+.pixel-skin .ck-rail-a .border-glow button {
+  animation: px-blueprint-pop 0.24s steps(4) 1;
+}
+
+/* Section 19: a visible 2px focus outline that does not rely on colour alone.
+   The classic skin already outlines in `ink`; against this darker ground the
+   blue accent reads better and still measures 6.47:1 on the cell. */
+.pixel-skin button:focus-visible,
+.pixel-skin [tabindex]:focus-visible {
+  outline: 2px solid var(--px-blue);
+  outline-offset: 2px;
+}
+
+/* Reduced motion covers the additions above too. The global rule clamps
+   durations, and these are the ones whose resting state must be the finished
+   state rather than the first frame. */
+@media (prefers-reduced-motion: reduce) {
+  .pixel-skin .ck-rail-a .border-brass { transform: none; }
+  .pixel-skin .ck-rail-a .border-glow button { animation: none; }
+}
