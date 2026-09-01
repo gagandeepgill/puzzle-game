@@ -9,7 +9,10 @@
  * start one outside a user gesture — constructing it at module load leaves a
  * permanently suspended context and silence for the rest of the session.
  */
-import { pixelVoices } from './pixel/pixelSfx.js';
+import { pixelVoices, playCue } from './pixel/pixelSfx.js';
+import { preload } from './pixel/sampleBank.js';
+import { DEFERRED, PRELOAD } from './pixel/sfxMap.js';
+import type { SfxName } from './pixel/sfxMap.js';
 import type { PartKey } from '../game/types.js';
 
 /**
@@ -51,6 +54,7 @@ function context(): AudioContext | null {
   if (muted) return null;
   try {
     ctx ??= new AudioContext();
+    if (theme === 'pixel') warm(ctx);
     // Autoplay policy suspends the context until a gesture. Resuming here is
     // safe: the first blip always follows a tap.
     if (ctx.state === 'suspended') void ctx.resume();
@@ -58,6 +62,26 @@ function context(): AudioContext | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Warm the sample cache.
+ *
+ * Called from the first cue rather than at module load, because decoding needs
+ * a context and a context needs a gesture. Safe to call repeatedly; the bank
+ * remembers what it has already looked for, including what is absent.
+ */
+let warmed = false;
+function warm(ac: AudioContext): void {
+  if (warmed) return;
+  warmed = true;
+  preload(ac, PRELOAD);
+  // The long event sounds cannot fire in the first seconds of a run, so they
+  // wait for idle time rather than competing with the first drop.
+  const idle = (cb: () => void) => (
+    typeof requestIdleCallback === 'function' ? requestIdleCallback(cb) : setTimeout(cb, 2000)
+  );
+  idle(() => preload(ac, DEFERRED));
 }
 
 export function blip(
@@ -94,7 +118,9 @@ export const sfx = {
   trigger: (n: number, part?: PartKey) => {
     if (theme === 'pixel' && part) {
       const ac = context();
-      if (ac) pixelVoices.part(ac, part);
+      // Gate's success cue is its own file, distinct from the confiscation
+      // one, so a player can tell the two outcomes apart without looking.
+      if (ac) playCue(ac, part === 'gate' ? 'gatePass' : (part as SfxName), part);
       return;
     }
     blip(300 + Math.min(n, 22) * 45);
@@ -103,6 +129,10 @@ export const sfx = {
   spring: () => voice('part', 'spring', () => blip(660, 0.1, 'sine', 0.06)),
   skid: () => voice('part', 'anvil', () => blip(180, 0.07, 'sawtooth', 0.04)),
   seized: () => pixelOr('gateFail', () => blip(120, 0.22, 'sawtooth', 0.06)),
+  /** The tiny per-step tick. Ducked automatically while a part is sounding. */
+  marbleStep: () => { if (theme === 'pixel') { const ac = context(); if (ac) playCue(ac, 'marbleMove'); } },
+  roundStart: () => { if (theme === 'pixel') { const ac = context(); if (ac) playCue(ac, 'roundStart'); } },
+  select: () => pixelOr('select', () => blip(660, 0.04, 'square', 0.03)),
   bank: (value: number) => pixelOr(
     value > 80 ? 'scoreBig' : value > 20 ? 'scoreMedium' : 'scoreSmall',
     () => blip(value > 80 ? 1046 : 784, 0.11, 'triangle', 0.06),
@@ -120,6 +150,10 @@ export const sfx = {
     });
   },
   runLost: () => pixelOr('gameOver', () => blip(110, 0.5, 'sawtooth', 0.07)),
+  runWon: () => pixelOr('win', () => {
+    blip(98, 0.5, 'sine', 0.09);
+    [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => blip(f, 0.16, 'triangle', 0.07), i * 110));
+  }),
 };
 
 /**
@@ -128,15 +162,15 @@ export const sfx = {
  * The classic fallback is a thunk rather than a value so its oscillators are
  * only built when it actually plays.
  */
-function pixelOr(name: Exclude<keyof typeof pixelVoices, 'part'>, classic: () => void): void {
+function pixelOr(name: SfxName, classic: () => void): void {
   if (theme !== 'pixel') { classic(); return; }
   const ac = context();
-  if (ac) pixelVoices[name](ac);
+  if (ac) playCue(ac, name);
 }
 
 /** The same, for cues whose pixel version is a specific part voice. */
 function voice(_kind: 'part', part: PartKey, classic: () => void): void {
   if (theme !== 'pixel') { classic(); return; }
   const ac = context();
-  if (ac) pixelVoices.part(ac, part);
+  if (ac) playCue(ac, part as SfxName, part);
 }

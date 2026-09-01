@@ -96,17 +96,38 @@ describe('pixel part voices', () => {
 
 describe('pixel levels follow the spec guidelines', () => {
   it('uses the published table', () => {
+    // Updated when the fuller sound spec arrived with its own mix. These are
+    // its numbers, not the first pass's.
+    expect(LEVEL.hover).toBe(0.18);
     expect(LEVEL.ui).toBe(0.30);
-    expect(LEVEL.marble).toBe(0.45);
-    expect(LEVEL.part).toBe(0.58);
-    expect(LEVEL.event).toBe(0.72);
-    expect(LEVEL.win).toBe(0.80);
+    expect(LEVEL.marble).toBe(0.40);
+    expect(LEVEL.wire).toBe(0.42);
+    expect(LEVEL.part).toBe(0.55);
+    expect(LEVEL.anvil).toBe(0.60);
+    expect(LEVEL.jam).toBe(0.62);
+    expect(LEVEL.event).toBe(0.68);
+    expect(LEVEL.roundClear).toBe(0.72);
+    expect(LEVEL.win).toBe(0.78);
   });
 
-  it('never plays a part louder than an event', () => {
-    // The readability rule: a cascade of parts must not drown the payout.
+  it('preserves the hierarchy the spec draws', () => {
+    // UI under marble under parts under score/jam under round clear under win.
+    // This is the assertion that matters: the exact numbers are tunable by ear,
+    // the ordering is what keeps a cascade readable.
+    const ladder = [
+      LEVEL.hover, LEVEL.ui, LEVEL.marble, LEVEL.wire,
+      LEVEL.part, LEVEL.anvil, LEVEL.jam, LEVEL.event,
+      LEVEL.roundClear, LEVEL.win,
+    ];
+    for (let i = 1; i < ladder.length; i++) {
+      expect(ladder[i]!, `step ${i}`).toBeGreaterThanOrEqual(ladder[i - 1]!);
+    }
+  });
+
+  it('keeps a part quieter than the payout it contributes to', () => {
     expect(LEVEL.part).toBeLessThan(LEVEL.event);
-    expect(LEVEL.ui).toBeLessThan(LEVEL.part);
+    expect(LEVEL.wire).toBeLessThan(LEVEL.part);
+    expect(LEVEL.anvil).toBeGreaterThan(LEVEL.part);
   });
 });
 
