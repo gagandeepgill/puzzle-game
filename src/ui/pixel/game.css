@@ -349,6 +349,9 @@ body:has(.game-skin) { background-color: #0a0f18; }
 }
 .gm-board button[aria-label^='Row']:focus-visible {
   border-color: var(--gm-blue);
+  background-image: url('/assets/pixel/hud/board/cell-focus.png');
+  background-size: 100% 100%;
+  image-rendering: pixelated;
 }
 /* Placement heat arrives as a Tailwind ring, which is a box-shadow. An earlier
    `box-shadow: none` here to clear the classic recess took the ring with it and
@@ -365,12 +368,16 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-board.is-placing button[aria-label*='press to install']:hover,
 .gm-board.is-placing button[aria-label*='press to install']:focus-visible {
   border-color: var(--gm-green);
-  background-color: color-mix(in srgb, var(--gm-green) 16%, var(--gm-bg));
+  background-image: url('/assets/pixel/hud/board/cell-valid.png');
+  background-size: 100% 100%;
+  image-rendering: pixelated;
 }
 .gm-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):hover,
 .gm-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):focus-visible {
   border-color: var(--gm-red);
-  background-color: color-mix(in srgb, var(--gm-red) 16%, var(--gm-bg));
+  background-image: url('/assets/pixel/hud/board/cell-invalid.png');
+  background-size: 100% 100%;
+  image-rendering: pixelated;
 }
 
 .gm-cleared {
@@ -507,6 +514,66 @@ body:has(.game-skin) { background-color: #0a0f18; }
 /* Blueprints keep the plain frame. A hue-rotate to tint it blue rotated the
    part sprite inside it too, because a filter applies to the whole subtree. */
 .gm-card.is-blueprint { background-image: url('/assets/pixel/hud/cards/frame.png'); }
+
+/* ---- part effects ---- */
+
+/*
+ * The pack's frame strips, played on the cell that fired.
+ *
+ * Six frames at 96px, walked with background-position rather than by swapping
+ * six files. The overlay is a pseudo-element on the cell, not on the part
+ * sprite, because the sprite is an `img` and cannot carry one — and because
+ * the effect should sit over the part rather than replace it.
+ *
+ * `:has` picks the strip from the part already in the cell, so nothing new
+ * has to be threaded through Board.
+ */
+.gm-board button.animate-fire { position: relative; }
+.gm-board button.animate-fire::after {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: 600% 100%;
+  image-rendering: pixelated;
+  animation: gm-fx-walk var(--fx-ms, 260ms) steps(6) 1 forwards;
+}
+@keyframes gm-fx-walk {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+.gm-board button.animate-fire:has(img[data-part='spring'])::after {
+  background-image: url('/assets/pixel/hud/fx/spring.png');
+  --fx-ms: var(--px-t-spring, 260ms);
+}
+.gm-board button.animate-fire:has(img[data-part='bell'])::after {
+  background-image: url('/assets/pixel/hud/fx/bell.png');
+  --fx-ms: var(--px-t-bell, 350ms);
+}
+/* Every other part keeps the CSS motion the pixel skin already defines. The
+   atlas has coil and prism rows, but a pulse and a split are exactly what
+   those rules do, and a strip on top would play the effect twice. */
+.gm-board button.animate-fire:not(:has(img[data-part='spring'])):not(:has(img[data-part='bell']))::after {
+  content: none;
+}
+
+/* The jam burst, on the panel, when one arrives. */
+.gm-jam.is-active::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  background: url('/assets/pixel/hud/fx/jamfx.png') no-repeat;
+  background-size: 600% 100%;
+  image-rendering: pixelated;
+  animation: gm-fx-walk var(--px-t-jam, 600ms) steps(6) 1 forwards;
+}
+.gm-jam { position: relative; overflow: hidden; }
 
 /* ---- score pops ---- */
 
@@ -731,8 +798,12 @@ body:has(.game-skin) { background-color: #0a0f18; }
 
 @media (prefers-reduced-motion: reduce) {
   /* The number still appears and still carries its size and colour; only the
-     burst behind it goes, because it is the part that exists to move. */
+     burst behind it goes, because it is the part that exists to move. Same
+     for the part strips and the jam burst: they are motion and nothing else,
+     so under reduced motion there is nothing of them worth keeping. */
   .gm-board .animate-floatup[data-pop='lg']::before { display: none; }
+  .gm-board button.animate-fire::after,
+  .gm-jam.is-active::before { display: none; }
   .gm-card, .gm-btn, .gm-bar-fill, .gm-tick, .gm-jam, .gm-cleared {
     animation: none;
     transition: none;

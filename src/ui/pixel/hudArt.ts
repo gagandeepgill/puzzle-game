@@ -144,6 +144,39 @@ export const ICON_ART = {
 export const PLATE_ART = `${BASE}/ui/plate.png`;
 
 /**
+ * Frame strips, six frames each, 96px per frame.
+ *
+ * The atlas draws these as loose rows with the frames at different sizes and
+ * uneven spacing, which a `steps()` animation cannot read. Each frame is
+ * recut on its own centre into a fixed box and the six are stacked into an
+ * even strip, so the animation is a background-position walk rather than six
+ * separate files.
+ *
+ * Spring and Bell play on the cell that fired; Jam plays on the panel when one
+ * arrives. Coil and Prism have rows in the atlas too and are not used: the
+ * pixel skin already gives them a pulse and a split in CSS, and those rules
+ * are unscoped, so they play here as well.
+ *
+ * Source windows in retro_pixel_game_fx_sprite_atlas, each 176x176 taken on
+ * its frame's own centre, in play order:
+ *
+ *   spring: 92,504 176x176 · 310,522 176x176 · 527,500 176x176 ·
+ *           739,535 176x176 · 956,498 176x176 · 1173,506 176x176
+ *   bell:   78,685 176x176 · 313,684 176x176 · 532,677 176x176 ·
+ *           768,675 176x176 · 960,682 176x176 · 1189,684 176x176
+ *   jam:    82,855 176x176 · 302,856 176x176 · 526,856 176x176 ·
+ *           751,854 176x176 · 972,861 176x176 · 1191,855 176x176
+ */
+export const FX_STRIP = {
+  spring: `${BASE}/fx/spring.png`,
+  bell: `${BASE}/fx/bell.png`,
+  jam: `${BASE}/fx/jamfx.png`,
+} as const;
+
+/** How many frames each strip holds. The CSS `steps()` has to match. */
+export const FX_FRAMES = 6;
+
+/**
  * The burst behind the biggest score pops.
  *
  * The atlas also draws `+10`, `+50` and `+100` as finished plates. Those are
@@ -155,8 +188,28 @@ export const PLATE_ART = `${BASE}/ui/plate.png`;
  */
 export const SCORE_BURST = `${BASE}/fx/score-burst.png`;
 
+/**
+ * Placement states, on the cell being aimed at.
+ *
+ * The pack draws these three and CSS cannot draw a crosshair, so they are art.
+ * Only the aimed cell takes one. An earlier pass tiled the whole board with
+ * the matching idle stone tile and thirty of them shouted over every part; one
+ * cell at a time is a targeting reticle, which is what they are drawn as.
+ *
+ * The idle tile is deliberately still absent — a resting cell is flat, which
+ * is how the mockups draw the board.
+ *
+ * retro_sci_fi_board_tileset_sprites: valid 386,521 323x333,
+ * invalid 739,521 327x333, focus 1091,518 333x340.
+ */
+export const CELL_ART = {
+  valid: `${BASE}/board/cell-valid.png`,
+  invalid: `${BASE}/board/cell-invalid.png`,
+  focus: `${BASE}/board/cell-focus.png`,
+} as const;
+
 /*
- * Board cells are not here on purpose.
+ * Idle board cells are not here on purpose.
  *
  * An earlier pass tiled them with the cracked stone sprites out of
  * `retro_sci_fi_board_tileset_sprites.png`, the blob at x=31 y=522 and the
