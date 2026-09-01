@@ -354,9 +354,12 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
 /* The chrome this skin adds costs vertical space, and the phone has none to
    give: at 390x844 the taller quota track, the header rule and the offset
    shadows together pushed the board's last row 1px below the fold. Both grow
-   only from md up, where the budget exists. */
+   only from md up, where the budget exists.
+
+   This block has to sit after the base rules it overrides. It was above them,
+   which is why the quota track stayed 8px on a 1300px desktop: a media query
+   adds no specificity, so the later unconditional rule simply won. */
 @media (min-width: 768px) {
-  .pixel-skin .ck-hud .bg-ground { height: 10px; }
   .pixel-skin .ck-header header { padding-bottom: 0.5rem; }
 }
 .pixel-skin .ck-header h1 {
@@ -376,6 +379,13 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   background-color: var(--px-bg);
   border-radius: 0;
 }
+/* Taller only where the vertical budget allows it. After the base rule above,
+   not before: a media query adds no specificity, so ordering is the whole
+   mechanism here. */
+@media (min-width: 768px) {
+  .pixel-skin .ck-hud .bg-ground { height: 10px; }
+}
+
 .pixel-skin .ck-hud .bg-gradient-to-r {
   background-image: none;
   background-color: var(--px-green);
