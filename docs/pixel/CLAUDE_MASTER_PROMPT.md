@@ -6,7 +6,7 @@ This document is the authoritative implementation prompt for the Pixel skin.
 
 Use:
 
-`/docs/pixel/hud-sources/reference/payload-ui-hud-asset-sheet.png`
+`/public/assets/pixel/hud-sources/reference/payload-ui-hud-asset-sheet.png`
 
 as the visual target.
 

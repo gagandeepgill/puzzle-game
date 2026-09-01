@@ -2,7 +2,7 @@
 
 Use the visual reference:
 
-`/docs/pixel/hud-sources/reference/payload-ui-hud-asset-sheet.png`
+`/public/assets/pixel/hud-sources/reference/payload-ui-hud-asset-sheet.png`
 
 Do not render that image as the application.
 

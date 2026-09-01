@@ -2,7 +2,7 @@
  * The HUD art the `game` skin draws with.
  *
  * The pack arrived as eight 1448x1086 sprite sheets, 6.7MB of them. Those are
- * sources, not assets: they live in `docs/pixel/hud-sources/` and are not
+ * sources, not assets: they live in `public/assets/pixel/hud-sources/` and are not
  * copied into the build. What ships is the pieces actually referenced here,
  * cropped out of them and quantised, which is 188KB.
  *
@@ -43,6 +43,48 @@ export const BOARD_FRAME = `${BASE}/board/frame.png`;
 export const MARBLE_ART = `${BASE}/board/marble.png`;
 
 /**
+ * HUD icons.
+ *
+ * From `neon_pixel_ui_icon_sheet.png` rather than `pixel_sci_fi_hud_icon_set`,
+ * which is the order the brief asks for: the main set first, the neon sheet
+ * only where the main set has no match. The main set draws a marble, a prism,
+ * a progress bar, a divider and an info badge, and none of the five below.
+ *
+ * The game skin drew these as SVG glyphs and as two sprites left over from an
+ * older pack. These are the pack's own.
+ */
+export const ICON_ART = {
+  /** neon_pixel_ui_icon_sheet: 144,78 200x250 */
+  jam: `${BASE}/icons/jam.png`,
+  /** 587,82 260x266 */
+  blueprints: `${BASE}/icons/blueprints.png`,
+  /** 1033,70 291x299 */
+  settings: `${BASE}/icons/settings.png`,
+  /** 157,451 266x217 */
+  soundOn: `${BASE}/icons/sound-on.png`,
+  /** 615,444 224x230 */
+  soundOff: `${BASE}/icons/sound-off.png`,
+  /** 170,768 223x224 */
+  check: `${BASE}/icons/check.png`,
+} as const;
+
+/**
+ * The header stat plate, as a 9-slice.
+ *
+ * The sheet draws this with ROUND and a 7 painted into it, which is why an
+ * earlier pass called it unusable and drew a CSS border instead. That was
+ * wrong: a 9-slice discards the centre unless `fill` is asked for, so the
+ * baked text goes with it and the live value sits in the well. Only using the
+ * plate whole is impossible.
+ *
+ * Stored at a quarter of the source, 106x40, so a 10px slice renders at a
+ * 10px border with no resampling.
+ *
+ * retro_payload_hud_pixel_art_assets: 151,502 425x162.
+ */
+export const PLATE_ART = `${BASE}/ui/plate.png`;
+
+/**
  * The burst behind the biggest score pops.
  *
  * The atlas also draws `+10`, `+50` and `+100` as finished plates. Those are
@@ -67,7 +109,7 @@ export const SCORE_BURST = `${BASE}/fx/score-burst.png`;
  *
  * So the cells are drawn in `game.css` instead, which is also what the
  * sheet's notes describe — 2px borders, 2px radius — and it costs no files.
- * The stone tileset is still in `docs/pixel/hud-sources/` if a future skin
+ * The stone tileset is still in `public/assets/pixel/hud-sources/` if a future skin
  * wants a stone board.
  */
 

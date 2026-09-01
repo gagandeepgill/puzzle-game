@@ -102,14 +102,24 @@ body:has(.game-skin) { background-color: #0a0f18; }
   width: auto;
   image-rendering: pixelated;
 }
+/* The sheet's own stat plate, not a border pretending to be one. The 9-slice
+   drops the centre, so the ROUND and the 7 painted into the source go with it
+   and the live value sits in the well. 10px slices at a 10px border is 1:1,
+   which is why the file is stored at a quarter of the source.
+   
+   The well measures #0a101b, so text on it is 15.79:1 and the gold 10.25:1 —
+   both well clear, and both were measured off the sprite rather than assumed
+   from the token the CSS border used to sit on. */
 .gm-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--gm-border);
-  border-radius: 2px;
-  padding: 7px 10px;
-  background: var(--gm-panel);
+  border: 10px solid transparent;
+  border-image: url('/assets/pixel/hud/ui/plate.png') 10 / 10px / 0 round;
+  border-radius: 0;
+  padding: 2px 4px;
+  min-height: 40px;
+  background: transparent;
 }
 .gm-header-spacer { flex: 1 1 auto; }
 
@@ -134,12 +144,21 @@ body:has(.game-skin) { background-color: #0a0f18; }
      jam and blueprints right. An earlier pass put both rails on the left,
      reading a different sheet; the desktop, tablet and mobile mockups all
      agree on this one. */
+  /* Jam and blueprints are siblings of the board now, not one rail, so the
+     phone can put one above it and one below. On a wide screen they are
+     placed back into a single right-hand column. */
   .gm-play {
     display: grid;
     grid-template-columns: 136px auto 152px;
+    grid-template-rows: auto 1fr;
     justify-content: center;
     align-items: start;
+    align-content: start;
   }
+  .gm-play > .gm-rail { grid-column: 1; grid-row: 1 / span 2; }
+  .gm-play > .gm-boardwrap { grid-column: 2; grid-row: 1 / span 2; }
+  .gm-play > .gm-jam { grid-column: 3; grid-row: 1; }
+  .gm-play > .gm-bp { grid-column: 3; grid-row: 2; }
 }
 
 .gm-rail { display: flex; flex-direction: column; gap: var(--u); min-width: 0; }
@@ -192,6 +211,10 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-jam-body > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .gm-jam-name { font-size: 13px; font-weight: 700; color: var(--gm-red); }
 .gm-icon { image-rendering: pixelated; flex: none; }
+/* The pack's icons are 64px crops of 32x32 art. Sized here rather than by the
+   width attribute so one rule moves all of them with the type scale. */
+.gm-icon-sm { image-rendering: pixelated; flex: none; width: 18px; height: 18px; }
+.gm-icon-xs { image-rendering: pixelated; flex: none; width: 13px; height: 13px; }
 /* Only a jam that exists gets the flash. Unconditional, this fired on every
    mount and the box announced a jam that was not there. */
 .gm-jam.is-active { animation: gm-jam-in var(--px-t-jam, 600ms) steps(6) 1; }
@@ -583,17 +606,22 @@ body:has(.game-skin) { background-color: #0a0f18; }
   .gm-btn-icon { padding: 0 8px; min-width: 32px; }
 
   .gm-rail { flex-direction: row; flex-wrap: wrap; }
-  /* Jam and blueprints share one row on a phone, which is what the sheet's
-     mobile column does, rather than eating two full-width blocks above the
-     board. */
-  .gm-rail-info > .gm-panel { flex: 1 1 44%; }
-  /* Stacked, the mockup's phone column runs stats, then jam and blueprints,
-     then the board. Source order is stats, board, info, because that is the
-     wide-screen arrangement, so the phone moves the board rather than the
-     markup changing. A jam is a warning and belongs above the thing it warns
-     about. */
+
+  /* The brief's phone order: header, stats, jam, board, blueprints, draft.
+     Jam goes above the board because it is a warning about what the next drop
+     will do; blueprints go below because they are a standing reference, not
+     something to read before acting.
+     
+     Source order is stats, board, jam, blueprints, since that is the
+     wide-screen arrangement, so the phone reorders rather than the markup
+     changing. Flex order only reorders paint, not the tab sequence or what a
+     screen reader reads — both still follow the source, which stays a sensible
+     reading order either way. */
   .gm-play { display: flex; flex-direction: column; }
-  .gm-boardwrap { order: 1; }
+  .gm-rail { order: 1; }
+  .gm-jam { order: 2; }
+  .gm-boardwrap { order: 3; }
+  .gm-bp { order: 4; }
 
   /* Everything above the board is overhead on a phone. Measured at 375x812,
      these tighten it from 271px to 250px. */
@@ -629,7 +657,17 @@ body:has(.game-skin) { background-color: #0a0f18; }
      replaced, which pushed the settings button onto a line of its own again;
      measured, the row needs to come in under 355px and this puts it at 324. */
   .gm-logo img { height: 20px; }
-  .gm-chip { gap: 4px; padding: 4px 5px; }
+  /* Back to a border under 600px. The plate's frame is 10px a side, which is
+     20px of a chip that has to fit two of them, a wordmark and two buttons
+     across 355px — measured, the header wrapped to two rows with it on. */
+  .gm-chip {
+    gap: 4px;
+    padding: 4px 5px;
+    border: 1px solid var(--gm-border);
+    border-image: none;
+    min-height: 0;
+    background: var(--gm-panel);
+  }
   .gm-chip .gm-label { font-size: 8px; }
   .gm-chip .gm-num { font-size: 12px; }
   .gm-header { gap: 5px; }

@@ -3,7 +3,7 @@
 ## Visual reference
 
 ```text
-/docs/pixel/hud-sources/reference/payload-ui-hud-asset-sheet.png
+/public/assets/pixel/hud-sources/reference/payload-ui-hud-asset-sheet.png
 ```
 
 This is a visual guide only.

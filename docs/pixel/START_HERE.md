@@ -13,7 +13,7 @@ This folder is the source of truth for implementing the **Simple Pixel** present
 
 Visual reference:
 
-`/docs/pixel/hud-sources/reference/payload-ui-hud-asset-sheet.png`
+`/public/assets/pixel/hud-sources/reference/payload-ui-hud-asset-sheet.png`
 
 ## One-line instruction for Claude Code
 
