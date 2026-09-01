@@ -11,7 +11,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SKIN, SKINS, SKIN_LABEL, loadSkin, saveSkin } from '../pixel/skin.js';
 import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
-import { BOARD_FRAME, CARD_ART, LOGO_ART, MARBLE_ART } from '../pixel/hudArt.js';
+import { BOARD_FRAME, CARD_ART, LOGO_ART, MARBLE_ART, SCORE_BURST } from '../pixel/hudArt.js';
 import { PART_KEYS } from '../../game/types.js';
 
 // Resolved through the map, because the pack is half PNG and half WebP.
@@ -112,7 +112,7 @@ describe('pixel sprite coverage', () => {
  * files rather than the constants.
  */
 describe('game HUD art', () => {
-  const paths = [...Object.values(CARD_ART), LOGO_ART.src, BOARD_FRAME, MARBLE_ART];
+  const paths = [...Object.values(CARD_ART), LOGO_ART.src, BOARD_FRAME, MARBLE_ART, SCORE_BURST];
 
   it('every referenced file is on disk', () => {
     for (const path of paths) {
@@ -168,5 +168,29 @@ describe('game cell selectors', () => {
   it('game.css still matches on it', () => {
     expect(css).toContain("[aria-label^='Row']");
     expect(css).toContain("[aria-label*='press to install']");
+  });
+});
+
+/**
+ * The game skin styles score pops by matching the class `Board` gives them.
+ *
+ * Same coupling as the cell selectors: `game.css` hangs off
+ * `.animate-floatup` and `data-pop`, and `Board` is shared. Rename either and
+ * the pops silently revert to the cockpit's sizing with nothing failing.
+ */
+describe('game score pop selectors', () => {
+  const board = readFileSync(new URL('../Board.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../pixel/game.css', import.meta.url), 'utf8');
+
+  it('Board still emits the hooks game.css matches on', () => {
+    expect(board, 'the float label lost its animation class').toContain('animate-floatup');
+    expect(board, 'the pop tier is no longer on the element').toContain('data-pop={l.pop}');
+  });
+
+  it('game.css still matches on them', () => {
+    expect(css).toContain('.animate-floatup');
+    for (const tier of ['sm', 'md', 'lg']) {
+      expect(css, tier).toContain(`[data-pop='${tier}']`);
+    }
   });
 });

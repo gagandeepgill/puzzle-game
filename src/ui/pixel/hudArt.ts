@@ -42,6 +42,18 @@ export const BOARD_FRAME = `${BASE}/board/frame.png`;
  */
 export const MARBLE_ART = `${BASE}/board/marble.png`;
 
+/**
+ * The burst behind the biggest score pops.
+ *
+ * The atlas also draws `+10`, `+50` and `+100` as finished plates. Those are
+ * unusable here: a score is whatever the machine made it, and a plate with
+ * 100 painted on it cannot show 37. The burst carries no number, so it goes
+ * behind a figure the run actually produced.
+ *
+ * retro_pixel_game_fx_sprite_atlas: 56,43 149x187.
+ */
+export const SCORE_BURST = `${BASE}/fx/score-burst.png`;
+
 /*
  * Board cells are not here on purpose.
  *

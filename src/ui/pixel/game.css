@@ -456,6 +456,61 @@ body:has(.game-skin) { background-color: #0a0f18; }
    part sprite inside it too, because a filter applies to the whole subtree. */
 .gm-card.is-blueprint { background-image: url('/assets/pixel/hud/cards/frame.png'); }
 
+/* ---- score pops ---- */
+
+/*
+ * The numbers that float off a cell when a part fires.
+ *
+ * The mechanism already existed; this is the sheet's treatment of it. Size
+ * comes from `data-pop`, which the run decides from what the hit was worth,
+ * so a big number reads as big before it reads as a number. Colour follows
+ * the sheet's score-pop row: gold for a gain, blue for a multiplier, red for
+ * a loss.
+ *
+ * Selected on `.animate-floatup`, which is the class `Board` gives the label.
+ * A test asserts the two still agree, the same way the cell selectors are
+ * guarded.
+ */
+.gm-board .animate-floatup {
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-shadow: 0 2px 0 rgb(0 0 0 / .85);
+}
+.gm-board .animate-floatup[data-pop='sm'] { font-size: 12px; }
+.gm-board .animate-floatup[data-pop='md'] { font-size: 16px; }
+.gm-board .animate-floatup[data-pop='lg'] { font-size: 21px; }
+
+/* Tone arrives as a classic Tailwind class, so the skin restates it in its
+   own palette rather than the cockpit's brass and steel. */
+.gm-board .animate-floatup.text-ok,
+.gm-board .animate-floatup.text-brass { color: var(--gm-gold); }
+.gm-board .animate-floatup.text-glow { color: var(--gm-blue); }
+.gm-board .animate-floatup.text-bad { color: var(--gm-red); }
+
+/* Only the largest tier gets the burst, so it stays an event rather than
+   decoration on every trigger. Behind the figure, never over it. */
+.gm-board .animate-floatup[data-pop='lg'] {
+  position: relative;
+  isolation: isolate;
+}
+.gm-board .animate-floatup[data-pop='lg']::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 50%;
+  width: 52px;
+  height: 52px;
+  transform: translate(-50%, -50%);
+  background: url('/assets/pixel/hud/fx/score-burst.png') center / contain no-repeat;
+  image-rendering: pixelated;
+  animation: gm-burst var(--px-t-score, 300ms) steps(4) 1 forwards;
+}
+@keyframes gm-burst {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(.5); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+}
+
 /* ---- readout and footer ---- */
 
 .gm-readout {
@@ -579,6 +634,9 @@ body:has(.game-skin) { background-color: #0a0f18; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* The number still appears and still carries its size and colour; only the
+     burst behind it goes, because it is the part that exists to move. */
+  .gm-board .animate-floatup[data-pop='lg']::before { display: none; }
   .gm-card, .gm-btn, .gm-bar-fill, .gm-tick, .gm-jam, .gm-cleared {
     animation: none;
     transition: none;
