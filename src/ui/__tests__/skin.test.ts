@@ -145,3 +145,26 @@ describe('game HUD art', () => {
     expect(rects.length).toBe(paths.length);
   });
 });
+
+/**
+ * The game skin styles board cells by matching their accessible name.
+ *
+ * `game.css` selects on `[aria-label^='Row']` and `[aria-label*='press to
+ * install']` because `Board` is shared and takes no skin prop. That couples
+ * presentation to English copy: reword either string and every cell silently
+ * loses its tile, with nothing failing. This is the thing that would fail.
+ */
+describe('game cell selectors', () => {
+  const board = readFileSync(new URL('../Board.tsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../pixel/game.css', import.meta.url), 'utf8');
+
+  it('Board still builds the label game.css matches on', () => {
+    expect(board, 'the cell label no longer starts with Row').toContain('`Row ${row + 1}');
+    expect(board, 'the installable hint was reworded').toContain('press to install');
+  });
+
+  it('game.css still matches on it', () => {
+    expect(css).toContain("[aria-label^='Row']");
+    expect(css).toContain("[aria-label*='press to install']");
+  });
+});
