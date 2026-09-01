@@ -191,6 +191,7 @@ export function PixelGameView({
               forkReach={forkReach}
               path={path}
               firingCells={playback.firingCells}
+            seizedCells={playback.seizedCells}
               firingSeq={playback.firingSeq}
               stepMs={playback.stepMs}
               marbles={playback.marbles}
@@ -312,6 +313,14 @@ export function PixelGameView({
           </div>
         </section>
       )}
+
+      {/* Only controls that exist. The skin toggle lives in the settings
+          sheet, so this carries build identity and the way back to the hub
+          rather than duplicating a control. */}
+      <footer className="px-footer">
+        <span>Payload · Simple Pixel</span>
+        <a href="/">Arcade</a>
+      </footer>
 
       <p role="status" aria-live="polite" className="sr-only">{playback.announcement}</p>
     </div>

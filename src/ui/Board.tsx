@@ -44,6 +44,8 @@ interface CellProps {
   readonly step: number;
   readonly movable: boolean;
   readonly firing: boolean;
+  /** A marble was taken here this frame. */
+  readonly seized: boolean;
   /** Draw the pixel skin's sprites instead of the SVG glyphs. Presentation
    *  only: nothing about the cell's behaviour or accessible name changes. */
   readonly pixel: boolean;
@@ -55,7 +57,7 @@ interface CellProps {
  * twenty-five cells. Identity is the cell index, which never changes.
  */
 const Cell = memo(function Cell({
-  index, part, row, col, forked, placeable, heat, wouldFork, step, movable, firing, pixel, onPress,
+  index, part, row, col, forked, placeable, heat, wouldFork, step, movable, firing, seized, pixel, onPress,
 }: CellProps) {
   const where = `Row ${row + 1}, column ${col + 1}`;
   const affordance = movable
@@ -105,6 +107,7 @@ const Cell = memo(function Cell({
         movable ? 'border-[1.5px] border-dashed border-glow bg-glow/[0.08] cursor-pointer' : '',
         forked ? 'shadow-[inset_0_0_0_1.5px_rgba(111,211,217,.5)]' : '',
         firing ? 'animate-fire' : '',
+        seized ? 'px-seized' : '',
       ].join(' ')}
     >
       {step > 0 && !part && (
@@ -142,6 +145,9 @@ interface BoardProps {
   readonly board: BoardModel;
   readonly placeable: boolean;
   readonly firingCells: readonly CellIndex[];
+  /** Cells where a marble was confiscated, so a Gate rejection reads
+   *  differently from a part firing. */
+  readonly seizedCells: readonly CellIndex[];
   /** Increments on every flash. Part of the firing cell's key so a Spring
    *  landing on the same cell twice replays the animation; toggling a class
    *  back on within one paint does not restart a CSS animation. */
@@ -167,7 +173,7 @@ interface BoardProps {
 }
 
 export function Board({
-  board, placeable, firingCells, firingSeq, stepMs, marbles, labels, movable,
+  board, placeable, firingCells, seizedCells, firingSeq, stepMs, marbles, labels, movable,
   heat, forkReach, path, pixel, onCellPress,
 }: BoardProps) {
   const cells = [];
@@ -176,6 +182,7 @@ export function Board({
       const index = cellAt(r, c);
       const part = board[index] ?? null;
       const firing = firingCells.includes(index);
+      const seized = seizedCells.includes(index);
       cells.push(
         <Cell
           key={firing ? `${index}-${firingSeq}` : index}
@@ -190,6 +197,7 @@ export function Board({
           step={path.indexOf(index) + 1}
           movable={movable.has(index)}
           firing={firing}
+          seized={seized}
           pixel={pixel}
           onPress={onCellPress}
         />,
