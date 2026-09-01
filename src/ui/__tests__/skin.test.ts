@@ -11,7 +11,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SKIN, SKINS, SKIN_LABEL, loadSkin, saveSkin } from '../pixel/skin.js';
 import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
-import { CARD_ART, LOGO_ART } from '../pixel/hudArt.js';
+import { BOARD_FRAME, CARD_ART, LOGO_ART } from '../pixel/hudArt.js';
 import { PART_KEYS } from '../../game/types.js';
 
 // Resolved through the map, because the pack is half PNG and half WebP.
@@ -112,7 +112,7 @@ describe('pixel sprite coverage', () => {
  * files rather than the constants.
  */
 describe('game HUD art', () => {
-  const paths = [...Object.values(CARD_ART), LOGO_ART.src];
+  const paths = [...Object.values(CARD_ART), LOGO_ART.src, BOARD_FRAME];
 
   it('every referenced file is on disk', () => {
     for (const path of paths) {
@@ -137,12 +137,14 @@ describe('game HUD art', () => {
     expect(walk(dir).sort()).toEqual([...paths].sort());
   });
 
-  it('records the crop rectangle for every piece', () => {
+  it('records a crop rectangle for every piece', () => {
     // The source sheets are 1448x1086 and the pieces were located by
     // measurement. Losing the rectangles means re-deriving them by eye.
+    // At least one per shipped file, and more where a piece was composed out
+    // of several: the board frame names two.
     const src = readFileSync(new URL('../pixel/hudArt.ts', import.meta.url), 'utf8');
     const rects = src.match(/\d+,\d+ \d+x\d+/g) ?? [];
-    expect(rects.length).toBe(paths.length);
+    expect(rects.length).toBeGreaterThanOrEqual(paths.length);
   });
 });
 

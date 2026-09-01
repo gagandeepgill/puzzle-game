@@ -16,6 +16,20 @@
 
 const BASE = '/assets/pixel/hud';
 
+/**
+ * The board's metal frame, as a 9-slice.
+ *
+ * Composed rather than cropped: the tileset draws one corner and one straight
+ * bar, and this is those two pieces mirrored into the eight edge and corner
+ * slices of a 144x144 image with a hollow centre. `border-image` then draws
+ * the frame at any board size, which is what the mockups show around the
+ * grid and what CSS corner brackets were standing in for.
+ *
+ * Two source rectangles, both in retro_sci_fi_board_tileset_sprites:
+ * the corner at 53,118 324x334 and the bar at 454,206 696x98.
+ */
+export const BOARD_FRAME = `${BASE}/board/frame.png`;
+
 /*
  * Board cells are not here on purpose.
  *
