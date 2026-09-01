@@ -223,48 +223,46 @@ export function GameView({
           )}
         </div>
 
-        <aside className="gm-rail gm-rail-info">
-          <div key={run.jam?.name ?? 'none'} className={`gm-panel gm-jam${run.jam ? ' is-active' : ''}`}>
-            <span className="gm-label">Jam</span>
-            {run.jam ? (
-              <div className="gm-jam-body">
-                <img src={ICON_ART.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
-                <span>
-                  <b className="gm-jam-name">{run.jam.name}</b>
-                  <span className="gm-note">{run.jam.rule}</span>
-                </span>
-              </div>
-            ) : (
-              <span className="gm-note">None active.</span>
-            )}
-          </div>
+        <div key={run.jam?.name ?? 'none'} className={`gm-panel gm-jam${run.jam ? ' is-active' : ''}`}>
+          <span className="gm-label">Jam</span>
+          {run.jam ? (
+            <div className="gm-jam-body">
+              <img src={ICON_ART.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
+              <span>
+                <b className="gm-jam-name">{run.jam.name}</b>
+                <span className="gm-note">{run.jam.rule}</span>
+              </span>
+            </div>
+          ) : (
+            <span className="gm-note">None active.</span>
+          )}
+        </div>
 
-          <div className="gm-panel">
-            <span className="gm-label gm-label-icon">
-              <img
-                src={ICON_ART.blueprints}
-                alt=""
-                aria-hidden
-                className="gm-icon-sm"
-                width={32}
-                height={32}
-              />
-              Blueprints
-            </span>
-            {state.blueprints.size === 0 ? (
-              <span className="gm-note">None yet.</span>
-            ) : (
-              <ul aria-label="Blueprints in effect" className="gm-bplist">
-                {[...state.blueprints].map((key) => (
-                  <li key={key} aria-label={`${BLUEPRINTS[key].name}. ${BLUEPRINTS[key].rule}`}>
-                    <Icon name={BLUEPRINTS[key].glyph as IconName} size={13} />
-                    <span>{BLUEPRINTS[key].name}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </aside>
+        <div className="gm-panel gm-bp">
+          <span className="gm-label gm-label-icon">
+            <img
+              src={ICON_ART.blueprints}
+              alt=""
+              aria-hidden
+              className="gm-icon-sm"
+              width={32}
+              height={32}
+            />
+            Blueprints
+          </span>
+          {state.blueprints.size === 0 ? (
+            <span className="gm-note">None yet.</span>
+          ) : (
+            <ul aria-label="Blueprints in effect" className="gm-bplist">
+              {[...state.blueprints].map((key) => (
+                <li key={key} aria-label={`${BLUEPRINTS[key].name}. ${BLUEPRINTS[key].rule}`}>
+                  <Icon name={BLUEPRINTS[key].glyph as IconName} size={13} />
+                  <span>{BLUEPRINTS[key].name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {drafting && (

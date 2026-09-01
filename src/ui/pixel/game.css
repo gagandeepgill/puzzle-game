@@ -144,12 +144,21 @@ body:has(.game-skin) { background-color: #0a0f18; }
      jam and blueprints right. An earlier pass put both rails on the left,
      reading a different sheet; the desktop, tablet and mobile mockups all
      agree on this one. */
+  /* Jam and blueprints are siblings of the board now, not one rail, so the
+     phone can put one above it and one below. On a wide screen they are
+     placed back into a single right-hand column. */
   .gm-play {
     display: grid;
     grid-template-columns: 136px auto 152px;
+    grid-template-rows: auto 1fr;
     justify-content: center;
     align-items: start;
+    align-content: start;
   }
+  .gm-play > .gm-rail { grid-column: 1; grid-row: 1 / span 2; }
+  .gm-play > .gm-boardwrap { grid-column: 2; grid-row: 1 / span 2; }
+  .gm-play > .gm-jam { grid-column: 3; grid-row: 1; }
+  .gm-play > .gm-bp { grid-column: 3; grid-row: 2; }
 }
 
 .gm-rail { display: flex; flex-direction: column; gap: var(--u); min-width: 0; }
@@ -597,17 +606,22 @@ body:has(.game-skin) { background-color: #0a0f18; }
   .gm-btn-icon { padding: 0 8px; min-width: 32px; }
 
   .gm-rail { flex-direction: row; flex-wrap: wrap; }
-  /* Jam and blueprints share one row on a phone, which is what the sheet's
-     mobile column does, rather than eating two full-width blocks above the
-     board. */
-  .gm-rail-info > .gm-panel { flex: 1 1 44%; }
-  /* Stacked, the mockup's phone column runs stats, then jam and blueprints,
-     then the board. Source order is stats, board, info, because that is the
-     wide-screen arrangement, so the phone moves the board rather than the
-     markup changing. A jam is a warning and belongs above the thing it warns
-     about. */
+
+  /* The brief's phone order: header, stats, jam, board, blueprints, draft.
+     Jam goes above the board because it is a warning about what the next drop
+     will do; blueprints go below because they are a standing reference, not
+     something to read before acting.
+     
+     Source order is stats, board, jam, blueprints, since that is the
+     wide-screen arrangement, so the phone reorders rather than the markup
+     changing. Flex order only reorders paint, not the tab sequence or what a
+     screen reader reads — both still follow the source, which stays a sensible
+     reading order either way. */
   .gm-play { display: flex; flex-direction: column; }
-  .gm-boardwrap { order: 1; }
+  .gm-rail { order: 1; }
+  .gm-jam { order: 2; }
+  .gm-boardwrap { order: 3; }
+  .gm-bp { order: 4; }
 
   /* Everything above the board is overhead on a phone. Measured at 375x812,
      these tighten it from 271px to 250px. */
