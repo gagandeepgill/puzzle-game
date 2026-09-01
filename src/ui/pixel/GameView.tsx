@@ -85,11 +85,11 @@ export function GameView({
     <div className="gm-shell">
       <header className="gm-header">
         <h1 className="gm-logo">Payload</h1>
-        <span className="gm-chip">
+        <span className="gm-chip gm-chip-round">
           <b className="gm-label">Round</b>
           <b className="gm-num">{state.round + 1} / {state.difficulty.rounds}</b>
         </span>
-        <span className="gm-chip">
+        <span className="gm-chip gm-chip-score">
           <b className="gm-label">Score</b>
           <b className="gm-num gm-gold">{n(state.total)}</b>
         </span>
@@ -122,14 +122,14 @@ export function GameView({
 
       <div className="gm-play">
         <aside className="gm-rail">
-          <Box label="Quota">
+          <Box label="Quota" className="gm-box-quota">
             <span className="gm-num">
               <b className="gm-gold">{n(state.roundScore)}</b> / {n(run.quota)}
             </span>
             <div className="gm-bar"><div className="gm-bar-fill" style={{ width: `${pct}%` }} /></div>
           </Box>
 
-          <Box label="Drops">
+          <Box label="Drops" className="gm-box-drops">
             {/* Filled and empty pips, which is what the sheet's drops indicator
                 shows: how many are left against how many the round started
                 with, rather than a bare count. */}
@@ -141,7 +141,7 @@ export function GameView({
             <b className="gm-num sr-only">{state.dropsLeft} left</b>
           </Box>
 
-          <Box label="Banked" className="gm-box-inline">
+          <Box label="Banked" className="gm-box-inline gm-box-banked">
             <b className="gm-num">{n(state.total)}</b>
             <span aria-hidden className="gm-diamond" />
             {playback.ticking && (

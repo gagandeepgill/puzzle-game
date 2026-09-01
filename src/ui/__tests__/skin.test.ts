@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SKIN, SKINS, SKIN_LABEL, loadSkin, saveSkin } from '../pixel/skin.js';
 import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
 import {
-  BAR_ART, BOARD_FRAME, BUTTON_FRAME, CARD_ART, CARD_FRAME, CELL_ART, DIVIDER_ART, EFFECT_ART,
+  BOARD_FRAME, BUTTON_FRAME, CARD_ART, CARD_FRAME, CELL_ART, CORE_ART, DIVIDER_ART, EFFECT_ART,
   ICON_ART, PANEL_ART,
 } from '../pixel/hudArt.js';
 import { PART_KEYS } from '../../game/types.js';
@@ -117,7 +117,7 @@ describe('pixel sprite coverage', () => {
 describe('game HUD art', () => {
   const paths = [
     ...Object.values(CARD_ART), ...Object.values(ICON_ART), ...Object.values(EFFECT_ART),
-    ...Object.values(BAR_ART), ...Object.values(CELL_ART),
+    ...Object.values(CORE_ART), ...Object.values(CELL_ART),
     BOARD_FRAME, PANEL_ART, DIVIDER_ART, BUTTON_FRAME, CARD_FRAME,
   ];
 

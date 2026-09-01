@@ -31,23 +31,35 @@ const BASE = '/assets/pixel/hud';
 export const BOARD_FRAME = `${BASE}/frames/board-frame.png`;
 
 /**
- * The quota bar, and the divider under a section title.
+ * The core HUD frames, one per panel, each at the inset the art was drawn to.
  *
- * The bar is two pieces because a track and a fill have to move
- * independently. Both are 9-sliced rather than stretched: they have rounded
- * caps, and stretching a cap to a 200px bar smears it into a lozenge, while
- * slicing keeps the caps their drawn size and repeats only the straight
- * middle. The fill's own caps then sit at the ends of the filled portion,
- * which is what a partly-full bar should look like.
+ * These were given with the batch rather than measured off the corner art,
+ * which is what every earlier frame in this skin needed. The generic
+ * `PANEL_ART` stays for panels with no frame of their own.
  *
- * pixel_sci_fi_hud_icon_set: track 557,562 275x134, fill 93,564 276x132,
- * divider 926,570 472x118.
+ * The track and the fill are the same 112x12 art. The fill is clipped by
+ * width rather than resized, so its texture reads at its drawn scale whatever
+ * the panel is, and the width comes from the run.
  */
-export const BAR_ART = {
-  track: `${BASE}/panels/bar-track.png`,
-  fill: `${BASE}/panels/bar-fill.png`,
+export const CORE_ART = {
+  header: `${BASE}/core/header-frame.png`,
+  round: `${BASE}/core/round-frame.png`,
+  score: `${BASE}/core/score-frame.png`,
+  quota: `${BASE}/core/quota-panel.png`,
+  quotaTrack: `${BASE}/core/quota-track.png`,
+  quotaFill: `${BASE}/core/quota-fill.png`,
+  drops: `${BASE}/core/drops-panel.png`,
+  dropActive: `${BASE}/core/drop-active.png`,
+  dropEmpty: `${BASE}/core/drop-empty.png`,
+  banked: `${BASE}/core/banked-panel.png`,
+  bankedIcon: `${BASE}/core/banked-icon.png`,
+  jam: `${BASE}/core/jam-panel.png`,
+  blueprints: `${BASE}/core/blueprints-panel.png`,
+  draftHeader: `${BASE}/core/draft-header-frame.png`,
+  support: `${BASE}/core/support-panel.png`,
 } as const;
 
+/** The divider under a section title. */
 export const DIVIDER_ART = `${BASE}/panels/divider.png`;
 
 /**

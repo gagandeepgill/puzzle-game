@@ -109,7 +109,14 @@ body:has(.game-skin) { background-color: #0a0f18; }
 
 /* ---- header: every item its own bordered box, as the sheet draws it ---- */
 
-.gm-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* Every frame below is drawn at the inset the art was authored to, given with
+   the batch rather than measured off the corner art. */
+.gm-header {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  border: 8px solid transparent;
+  border-image: url('/assets/pixel/hud/core/header-frame.png') 8 / 8px / 0 round;
+  padding-inline: 6px;
+}
 /* The wordmark is the pack's plate, so the height is what is set and the
    width follows the art's 1269:303. Decorative scale steps down with the
    breakpoints; the text alternative on the img is what carries the name. */
@@ -132,16 +139,18 @@ body:has(.game-skin) { background-color: #0a0f18; }
    The well measures #0a101b, so text on it is 15.79:1 and the gold 10.25:1 —
    both well clear, and both were measured off the sprite rather than assumed
    from the token the CSS border used to sit on. */
-/* Bordered boxes, as the mockup draws them. */
 .gm-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 2px solid var(--gm-border);
-  border-radius: 2px;
-  padding: 7px 10px;
-  background: var(--gm-panel);
+  border: 6px solid transparent;
+  border-radius: 0;
+  padding: 2px 6px;
+  background: transparent;
+  min-height: 32px;
 }
+.gm-chip-round { border-image: url('/assets/pixel/hud/core/round-frame.png') 6 / 6px / 0 round; }
+.gm-chip-score { border-image: url('/assets/pixel/hud/core/score-frame.png') 6 / 6px / 0 round; }
 /* The wordmark's own margin does the pushing now. */
 .gm-header-spacer { display: none; }
 
@@ -190,10 +199,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
 
 .gm-box, .gm-panel {
   background: var(--gm-panel);
-  /* The delivered panel frame, at its stated 8px inset. An earlier attempt
-     used the sci-fi panel sheet here and had to be taken back out: that art is
-     drawn at 461x376 with a notched top edge, and sliced down to a 150x56 box
-     the notch tiled into a scallop. This one is authored to slice. */
+  /* The generic frame. Panels that have one of their own override it below. */
   border: 8px solid transparent;
   border-image: url('/assets/pixel/hud/frames/panel-frame.png') 8 / 8px / 0 round;
   border-radius: 0;
@@ -204,6 +210,12 @@ body:has(.game-skin) { background-color: #0a0f18; }
   min-width: 0;
 }
 .gm-box-body { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gm-box-quota { border-image: url('/assets/pixel/hud/core/quota-panel.png') 8 / 8px / 0 round; }
+.gm-box-drops { border-image: url('/assets/pixel/hud/core/drops-panel.png') 8 / 8px / 0 round; }
+.gm-box-banked { border-image: url('/assets/pixel/hud/core/banked-panel.png') 8 / 8px / 0 round; }
+.gm-jam { border-image: url('/assets/pixel/hud/core/jam-panel.png') 8 / 8px / 0 round; }
+.gm-bp { border-image: url('/assets/pixel/hud/core/blueprints-panel.png') 8 / 8px / 0 round; }
+.gm-readout { border-image: url('/assets/pixel/hud/core/support-panel.png') 8 / 8px / 0 round; }
 /* Banked reads as a single line: label, value, diamond. */
 .gm-box-inline { flex-direction: row; align-items: center; justify-content: space-between; }
 
@@ -211,18 +223,23 @@ body:has(.game-skin) { background-color: #0a0f18; }
    caps, and stretching one across a 200px bar smears it. The fill keeps its
    own caps at the end of the filled portion, which is what a partly-full bar
    should look like. */
+/* Track and fill are the same 112x12 art, so the fill is clipped by width
+   rather than resized: its own texture then reads at its drawn scale whatever
+   the panel is. Width comes from the run, not from a per-percentage image. */
 .gm-bar {
   width: 100%;
-  height: 14px;
-  border: 7px solid transparent;
-  border-image: url('/assets/pixel/hud/panels/bar-track.png') 14 fill / 7px / 0 round;
+  height: 12px;
+  background: url('/assets/pixel/hud/core/quota-track.png') left center / auto 100% repeat-x;
+  image-rendering: pixelated;
+  border: 0;
   padding: 0;
+  overflow: hidden;
 }
 .gm-bar-fill {
   height: 100%;
-  min-width: 0;
-  border: 7px solid transparent;
-  border-image: url('/assets/pixel/hud/panels/bar-fill.png') 14 fill / 7px / 0 round;
+  background: url('/assets/pixel/hud/core/quota-fill.png') left center / auto 100% repeat-x;
+  image-rendering: pixelated;
+  border: 0;
   transition: width 300ms ease-out;
 }
 
@@ -230,16 +247,17 @@ body:has(.game-skin) { background-color: #0a0f18; }
    began with, which is more than a bare count tells you. */
 .gm-pips { display: inline-flex; gap: 4px; }
 .gm-pip {
-  width: 9px; height: 9px; border-radius: 50%;
-  border: 1px solid var(--gm-border);
-  background: transparent;
+  width: 12px; height: 12px;
+  border: 0;
+  background: url('/assets/pixel/hud/core/drop-empty.png') center / contain no-repeat;
+  image-rendering: pixelated;
 }
-.gm-pip.is-on { background: var(--gm-green); border-color: var(--gm-green); }
+.gm-pip.is-on { background-image: url('/assets/pixel/hud/core/drop-active.png'); }
 
 .gm-diamond {
-  width: 10px; height: 10px;
-  background: var(--gm-gold);
-  transform: rotate(45deg);
+  width: 14px; height: 14px;
+  background: url('/assets/pixel/hud/core/banked-icon.png') center / contain no-repeat;
+  image-rendering: pixelated;
   display: inline-block;
 }
 
@@ -471,6 +489,8 @@ body:has(.game-skin) { background-color: #0a0f18; }
    rather than being pushed off by it. */
 .gm-draft-head {
   position: relative;
+  border: 8px solid transparent;
+  border-image: url('/assets/pixel/hud/core/draft-header-frame.png') 8 / 8px / 0 round;
   display: flex; flex-direction: row;
   align-items: center; justify-content: center;
   gap: calc(var(--u) * 1.25);
