@@ -726,6 +726,7 @@ export function App() {
           forkReach={reach}
           path={path}
           firingCells={playback.firingCells}
+          seizedCells={playback.seizedCells}
           firingSeq={playback.firingSeq}
           stepMs={playback.stepMs}
           marbles={playback.marbles}
