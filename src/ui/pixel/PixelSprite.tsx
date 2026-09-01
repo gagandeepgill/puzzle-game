@@ -7,26 +7,49 @@ import type { PartKey } from '../../game/types.js';
  * so a cell that measures 55.6px on a phone and 90px on a monitor shows the
  * same crisp sprite at a different size rather than a resampled one.
  *
- * ## The pack is incomplete, and this is where that is handled
- *
- * The engine has ten parts. The supplied pack contains six sprites: bell,
- * coil, gate, prism, spring and wire. `weight`, `anvil`, `reso` and `fork`
- * have no art.
- *
- * Rather than invent four sprites or ship four empty cells, a part with no
- * sprite falls back to the SVG glyph the classic skin already uses. That is
- * visibly a mix, which is the honest state of the pack and better than a board
- * with holes in it. Dropping the four PNGs into `public/assets/pixel/parts/`
- * and adding their keys below is the whole of the remaining work.
+ * The pack arrived in two halves and two formats: six as PNG, and the four
+ * that completed it as lossless WebP. `PART_SPRITE` below is the one place
+ * that knows which is which.
  */
-export const PIXEL_PARTS = new Set<PartKey>([
-  'bell', 'coil', 'gate', 'prism', 'spring', 'wire',
-]);
+const BASE = '/assets/pixel';
+
+/**
+ * Every part's sprite file.
+ *
+ * Explicit rather than `${part}.png`, because the pack arrived in two halves
+ * and two formats: the first six as PNG, the four that completed it as lossless
+ * WebP. Both are 32x32 and both render identically, so converting one half to
+ * match the other would be churn for no gain. This map is where that fact
+ * lives, so nothing else has to know about it.
+ *
+ * All ten resolve now. The `hasPixelArt` fallback to the SVG glyph stays,
+ * because a missing file should degrade to a readable board rather than to an
+ * empty cell, and a test asserts this map against the filesystem in both
+ * directions.
+ */
+export const PART_SPRITE: Record<PartKey, string> = {
+  weight: `${BASE}/parts/weight.webp`,
+  anvil: `${BASE}/parts/anvil.webp`,
+  reso: `${BASE}/parts/reso.webp`,
+  fork: `${BASE}/parts/fork.webp`,
+  coil: `${BASE}/parts/coil.png`,
+  prism: `${BASE}/parts/prism.png`,
+  spring: `${BASE}/parts/spring.png`,
+  wire: `${BASE}/parts/wire.png`,
+  gate: `${BASE}/parts/gate.png`,
+  bell: `${BASE}/parts/bell.png`,
+};
+
+/** The two interface sprites, which are not parts. */
+export const UI_SPRITE = {
+  jam: `${BASE}/ui/jam.webp`,
+  blueprints: `${BASE}/ui/blueprints.webp`,
+} as const;
+
+export const PIXEL_PARTS = new Set<PartKey>(Object.keys(PART_SPRITE) as PartKey[]);
 
 /** True when this part has real pixel art and does not need the SVG fallback. */
 export const hasPixelArt = (part: PartKey): boolean => PIXEL_PARTS.has(part);
-
-const BASE = '/assets/pixel';
 
 interface PartProps {
   readonly part: PartKey;
@@ -44,7 +67,7 @@ interface PartProps {
 export function PixelPart({ part, size, active = false }: PartProps) {
   return (
     <img
-      src={`${BASE}/parts/${part}.png`}
+      src={PART_SPRITE[part]}
       alt=""
       aria-hidden
       draggable={false}
