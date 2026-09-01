@@ -500,6 +500,13 @@ body:has(.game-skin) { background-color: #0a0f18; }
      mobile column does, rather than eating two full-width blocks above the
      board. */
   .gm-rail-info > .gm-panel { flex: 1 1 44%; }
+  /* Stacked, the mockup's phone column runs stats, then jam and blueprints,
+     then the board. Source order is stats, board, info, because that is the
+     wide-screen arrangement, so the phone moves the board rather than the
+     markup changing. A jam is a warning and belongs above the thing it warns
+     about. */
+  .gm-play { display: flex; flex-direction: column; }
+  .gm-boardwrap { order: 1; }
 
   /* Everything above the board is overhead on a phone. Measured at 375x812,
      these tighten it from 271px to 250px. */
