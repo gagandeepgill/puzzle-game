@@ -37,19 +37,20 @@
  * Each was lifted to the least change that clears its floor, hue preserved.
  * The supplied value is kept in the comment so the intent is still legible.
  */
-.pixel-skin {
-  --px-bg: #08111b;
-  --px-panel: #0d1722;
-  --px-cell: #101a24;
-  --px-text: #edf1ee;
-
-  /* #263544 -> 3.02:1 */
-  --px-edge: #4a6885;
-  --px-edge-dim: #263544;   /* the original, safe for purely decorative rules */
-
-  /* Mirrors of PIXEL_MOTION in motion.ts, which is the source. CSS cannot
-     import a TypeScript value, so motion.test.ts asserts the two agree
-     rather than trusting them to be kept in step by hand. */
+/**
+ * Mirrors of PIXEL_MOTION in motion.ts, which is the source. CSS cannot
+ * import a TypeScript value, so motion.test.ts asserts the two agree rather
+ * than trusting them to be kept in step by hand.
+ *
+ * On `:root` rather than on `.pixel-skin`, because the part animations below
+ * are not scoped to a skin either — `PixelPart` adds `.px-activate` whichever
+ * skin is wearing it. Scoped, the game skin got the class and an undefined
+ * duration, which makes the whole `animation` shorthand invalid at
+ * computed-value time: every part in that skin fired without moving, and
+ * nothing failed anywhere. Classic never adds the class, so the twelve unused
+ * properties cost it nothing.
+ */
+:root {
   --px-t-weight: 150ms;
   --px-t-anvil: 220ms;
   --px-t-coil: 180ms;
@@ -62,6 +63,17 @@
   --px-t-bell: 350ms;
   --px-t-score: 300ms;
   --px-t-jam: 600ms;
+}
+
+.pixel-skin {
+  --px-bg: #08111b;
+  --px-panel: #0d1722;
+  --px-cell: #101a24;
+  --px-text: #edf1ee;
+
+  /* #263544 -> 3.02:1 */
+  --px-edge: #4a6885;
+  --px-edge-dim: #263544;   /* the original, safe for purely decorative rules */
 
   --px-panel-alt: #101a24;
   --px-muted: #8f98ab;      /* 6.06:1 on panel-alt */
