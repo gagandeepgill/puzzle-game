@@ -13,7 +13,7 @@ import { DEFAULT_SKIN, SKINS, SKIN_LABEL, loadSkin, saveSkin } from '../pixel/sk
 import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
 import {
   BAR_ART, BOARD_FRAME, BUTTON_ART, CARD_ART, CELL_ART, DIVIDER_ART, ICON_ART, LOGO_ART,
-  FX_STRIP, MARBLE_ART, PANEL_ART, PLATE_ART, SCORE_BURST,
+  FX_STRIP, MARBLE_ART, PANEL_ART, PART_ART, PLATE_ART, SCORE_BURST,
 } from '../pixel/hudArt.js';
 import { PART_KEYS } from '../../game/types.js';
 
@@ -118,6 +118,7 @@ describe('game HUD art', () => {
   const paths = [
     ...Object.values(CARD_ART), ...Object.values(ICON_ART), ...Object.values(BUTTON_ART),
     ...Object.values(BAR_ART), ...Object.values(CELL_ART), ...Object.values(FX_STRIP),
+    ...Object.values(PART_ART),
     LOGO_ART.src, BOARD_FRAME, MARBLE_ART, SCORE_BURST, PLATE_ART, PANEL_ART, DIVIDER_ART,
   ];
 

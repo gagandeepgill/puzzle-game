@@ -189,6 +189,33 @@ export const FX_FRAMES = 6;
 export const SCORE_BURST = `${BASE}/fx/score-burst.png`;
 
 /**
+ * The ten part sprites, from the asset sheet's own PART SPRITES row.
+ *
+ * The game skin was drawing parts out of `/assets/pixel/parts/`, which belongs
+ * to the pixel skin and is a different, flatter set — its coil is a plain
+ * orange ladder where this one is a coiled spring with depth. Same part, not
+ * the same art, so the skin was borrowing.
+ *
+ * Extracted from the sheet rather than supplied loose: the sheet draws each
+ * one inside a rounded tile, so each is cropped inside its frame and the
+ * tile's #16202b interior keyed out.
+ *
+ * payload-ui-hud-asset-sheet, 33x33 windows on a 44x65 grid from 1311,36.
+ */
+export const PART_ART: Record<string, string> = {
+  weight: `${BASE}/parts/weight.png`,
+  anvil: `${BASE}/parts/anvil.png`,
+  coil: `${BASE}/parts/coil.png`,
+  prism: `${BASE}/parts/prism.png`,
+  spring: `${BASE}/parts/spring.png`,
+  wire: `${BASE}/parts/wire.png`,
+  reso: `${BASE}/parts/reso.png`,
+  fork: `${BASE}/parts/fork.png`,
+  gate: `${BASE}/parts/gate.png`,
+  bell: `${BASE}/parts/bell.png`,
+};
+
+/**
  * Placement states, on the cell being aimed at.
  *
  * The pack draws these three and CSS cannot draw a crosshair, so they are art.

@@ -84,14 +84,7 @@ export function GameView({
   return (
     <div className="gm-shell">
       <header className="gm-header">
-        <h1 className="gm-logo">
-          <img
-            src={LOGO_ART.src}
-            alt="Payload"
-            width={LOGO_ART.width}
-            height={LOGO_ART.height}
-          />
-        </h1>
+        <h1 className="gm-logo">Payload</h1>
         <span className="gm-chip">
           <b className="gm-label">Round</b>
           <b className="gm-num">{state.round + 1} / {state.difficulty.rounds}</b>
@@ -146,7 +139,7 @@ export function GameView({
             <b className="gm-num sr-only">{state.dropsLeft} left</b>
           </Box>
 
-          <Box label="Banked">
+          <Box label="Banked" className="gm-box-inline">
             <b className="gm-num">{n(state.total)}</b>
             <span aria-hidden className="gm-diamond" />
             {playback.ticking && (
@@ -227,11 +220,11 @@ export function GameView({
           <span className="gm-label">Jam</span>
           {run.jam ? (
             <div className="gm-jam-body">
-              <img src={ICON_ART.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
-              <span>
-                <b className="gm-jam-name">{run.jam.name}</b>
-                <span className="gm-note">{run.jam.rule}</span>
+              <span className="gm-well">
+                <img src={ICON_ART.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
               </span>
+              <b className="gm-jam-name">{run.jam.name}</b>
+              <span className="gm-note">{run.jam.rule}</span>
             </div>
           ) : (
             <span className="gm-note">None active.</span>
@@ -250,6 +243,9 @@ export function GameView({
             />
             Blueprints
           </span>
+          <span aria-hidden className="gm-well gm-bp-well">
+            <img src={ICON_ART.blueprints} alt="" className="gm-icon" width={32} height={32} />
+          </span>
           {state.blueprints.size === 0 ? (
             <span className="gm-note">None yet.</span>
           ) : (
@@ -267,7 +263,7 @@ export function GameView({
 
       {drafting && (
         <section className="gm-draft">
-          <div className="gm-draft-head gm-panel">
+          <div className="gm-draft-head">
             <h2 className="gm-draft-title">Draft: choose 1 part</h2>
             <button
               type="button"

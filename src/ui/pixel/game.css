@@ -81,7 +81,12 @@
    pane paints its own dark ground behind the page. */
 body:has(.game-skin) { background-color: #0a0f18; }
 
+/* The mockup frames the whole app in one console, gold-edged, rather than
+   letting the panels float loose on the page. */
 .gm-shell {
+  border: 2px solid var(--gm-gold);
+  border-radius: 4px;
+  background: var(--gm-bg);
   max-width: 1180px;
   margin-inline: auto;
   padding: 12px max(10px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-bottom));
@@ -96,11 +101,16 @@ body:has(.game-skin) { background-color: #0a0f18; }
 /* The wordmark is the pack's plate, so the height is what is set and the
    width follows the art's 1269:303. Decorative scale steps down with the
    breakpoints; the text alternative on the img is what carries the name. */
-.gm-logo { display: flex; }
-.gm-logo img {
-  height: 42px;
-  width: auto;
-  image-rendering: pixelated;
+/* Gold pixel text, which is how the desktop mockup sets it. The pack's metal
+   plate was here; this composition does not use it, and it stays in
+   hudArt.ts for a skin that does. */
+.gm-logo {
+  font-family: 'Press Start 2P', 'Pixelify Sans', monospace;
+  font-size: clamp(15px, 1.7vw, 20px);
+  color: var(--gm-gold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin-right: auto;
 }
 /* The sheet's own stat plate, not a border pretending to be one. The 9-slice
    drops the centre, so the ROUND and the 7 painted into the source go with it
@@ -110,18 +120,18 @@ body:has(.game-skin) { background-color: #0a0f18; }
    The well measures #0a101b, so text on it is 15.79:1 and the gold 10.25:1 —
    both well clear, and both were measured off the sprite rather than assumed
    from the token the CSS border used to sit on. */
+/* Bordered boxes, as the mockup draws them. */
 .gm-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 10px solid transparent;
-  border-image: url('/assets/pixel/hud/ui/plate.png') 10 / 10px / 0 round;
-  border-radius: 0;
-  padding: 2px 4px;
-  min-height: 40px;
-  background: transparent;
+  border: 2px solid var(--gm-border);
+  border-radius: 2px;
+  padding: 7px 10px;
+  background: var(--gm-panel);
 }
-.gm-header-spacer { flex: 1 1 auto; }
+/* The wordmark's own margin does the pushing now. */
+.gm-header-spacer { display: none; }
 
 .gm-label {
   font-size: 11px;
@@ -133,6 +143,9 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-num { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .gm-label-icon { display: inline-flex; align-items: center; gap: 6px; }
 .gm-gold { color: var(--gm-gold); }
+/* The quota's current value is green in the mockup: it reads against the bar
+   under it rather than against the score in the header. */
+.gm-box .gm-num .gm-gold { color: var(--gm-green); }
 .gm-blue { color: var(--gm-blue); }
 
 /* ---- gameplay row ---- */
@@ -181,6 +194,8 @@ body:has(.game-skin) { background-color: #0a0f18; }
   min-width: 0;
 }
 .gm-box-body { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* Banked reads as a single line: label, value, diamond. */
+.gm-box-inline { flex-direction: row; align-items: center; justify-content: space-between; }
 
 /* The pack's track and fill. Sliced rather than stretched: both have rounded
    caps, and stretching one across a 200px bar smears it. The fill keeps its
@@ -224,8 +239,20 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-note { font-size: 12px; line-height: 1.45; color: var(--gm-muted); }
 .gm-center { text-align: center; }
 
-.gm-jam-body { display: flex; gap: 8px; align-items: flex-start; }
-.gm-jam-body > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* Jam and Blueprints each show their icon in a bordered well with the text
+   beneath, which is how the mockup lays both out. */
+.gm-jam-body { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.gm-well {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border: 2px solid var(--gm-border);
+  border-radius: 2px;
+  background: var(--gm-bg);
+}
+.gm-bp-well { margin-block: 4px; }
+.gm-bp-well .gm-icon { width: 34px; height: 34px; }
 .gm-jam-name { font-size: 13px; font-weight: 700; color: var(--gm-red); }
 .gm-icon { image-rendering: pixelated; flex: none; }
 /* The pack's icons are 64px crops of 32x32 art. Sized here rather than by the
@@ -420,7 +447,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-draft-head::after {
   content: '';
   position: absolute;
-  left: 0; right: 0; bottom: -6px;
+  left: 0; right: 0; top: 0;
   height: 8px;
   background: url('/assets/pixel/hud/panels/divider.png') center / auto 100% no-repeat;
   pointer-events: none;
@@ -428,15 +455,17 @@ body:has(.game-skin) { background-color: #0a0f18; }
 
 /* 4.9 draft title bar: the title is a panel with the skip control in it,
    rather than a heading floating above the cards. */
+/* Centred title with the divider above it, which is the mockup's treatment.
+   Skip is pulled to the right edge so the heading stays optically centred
+   rather than being pushed off by it. */
 .gm-draft-head {
-  /* Row, restated. `.gm-panel` stacks its children, and inheriting that here
-     put the skip control on a line of its own under the title. */
   position: relative;
   display: flex; flex-direction: row;
-  align-items: center; justify-content: space-between;
+  align-items: center; justify-content: center;
   gap: calc(var(--u) * 1.25);
-  padding-block: calc(var(--u) * 0.5);
+  padding-block: calc(var(--u) * 1.5) calc(var(--u) * 0.5);
 }
+.gm-draft-head .gm-btn { position: absolute; right: 0; top: 50%; transform: translateY(-40%); }
 .gm-draft-title {
   font-size: 15px;
   font-weight: 700;
@@ -514,6 +543,27 @@ body:has(.game-skin) { background-color: #0a0f18; }
 /* Blueprints keep the plain frame. A hue-rotate to tint it blue rotated the
    part sprite inside it too, because a filter applies to the whole subtree. */
 .gm-card.is-blueprint { background-image: url('/assets/pixel/hud/cards/frame.png'); }
+
+/* ---- part sprites ---- */
+
+/*
+ * The asset sheet's own parts, replacing the pixel skin's set.
+ *
+ * `PixelPart` is shared and points at `/assets/pixel/parts/`, which belongs to
+ * that skin — a flatter, earlier set whose coil is a plain orange ladder where
+ * this one is a coiled spring with depth. Swapped with `content` rather than
+ * by changing the component, so the pixel skin keeps the art it shipped with.
+ */
+.game-skin .px-sprite[data-part='weight'] { content: url('/assets/pixel/hud/parts/weight.png'); }
+.game-skin .px-sprite[data-part='anvil'] { content: url('/assets/pixel/hud/parts/anvil.png'); }
+.game-skin .px-sprite[data-part='coil'] { content: url('/assets/pixel/hud/parts/coil.png'); }
+.game-skin .px-sprite[data-part='prism'] { content: url('/assets/pixel/hud/parts/prism.png'); }
+.game-skin .px-sprite[data-part='spring'] { content: url('/assets/pixel/hud/parts/spring.png'); }
+.game-skin .px-sprite[data-part='wire'] { content: url('/assets/pixel/hud/parts/wire.png'); }
+.game-skin .px-sprite[data-part='reso'] { content: url('/assets/pixel/hud/parts/reso.png'); }
+.game-skin .px-sprite[data-part='fork'] { content: url('/assets/pixel/hud/parts/fork.png'); }
+.game-skin .px-sprite[data-part='gate'] { content: url('/assets/pixel/hud/parts/gate.png'); }
+.game-skin .px-sprite[data-part='bell'] { content: url('/assets/pixel/hud/parts/bell.png'); }
 
 /* ---- part effects ---- */
 
@@ -720,7 +770,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
 @media (max-width: 879px) {
   /* One header row on a 375px phone. Untuned, the two chips pushed the
      settings button onto a line of its own and cost 56px of board. */
-  .gm-logo img { height: 26px; }
+  .gm-logo { font-size: 13px; }
   .gm-chip { gap: 5px; padding: 5px 7px; }
   .gm-chip .gm-label { font-size: 9px; letter-spacing: .06em; }
   .gm-chip .gm-num { font-size: 13px; }
@@ -754,7 +804,6 @@ body:has(.game-skin) { background-color: #0a0f18; }
   .gm-note { font-size: 11px; line-height: 1.35; }
   .gm-rail > .gm-box, .gm-rail > .gm-panel { flex: 1 1 0; min-width: 104px; }
   .gm-rail > .gm-btn { flex: 1 1 100%; }
-  .gm-logo { font-size: 12px; padding: 6px 9px; }
   .gm-cards { gap: 6px; }
   .gm-card-name { font-size: 11px; }
   .gm-card-rule { font-size: 9px; line-height: 1.3; }
@@ -767,7 +816,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
 @media (min-width: 600px) and (max-width: 879px) {
   /* 6.2, tablet column: 80%. */
   .game-skin { --u: 6.4px; --icon: 26px; --card-pad: 10px; }
-  .gm-logo img { height: 34px; }
+  .gm-logo { font-size: 16px; }
   .gm-card { max-width: 168px; }
 }
 @media (max-width: 599px) {
@@ -778,7 +827,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
   /* One header row at 375. The plate is wider than the text wordmark it
      replaced, which pushed the settings button onto a line of its own again;
      measured, the row needs to come in under 355px and this puts it at 324. */
-  .gm-logo img { height: 20px; }
+  .gm-logo { font-size: 12px; }
   /* Back to a border under 600px. The plate's frame is 10px a side, which is
      20px of a chip that has to fit two of them, a wordmark and two buttons
      across 355px — measured, the header wrapped to two rows with it on. */
