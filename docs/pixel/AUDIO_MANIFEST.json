@@ -1,0 +1,42 @@
+{
+  "variant": "polished-snes",
+  "format": {
+    "container": "wav",
+    "channels": 2,
+    "sampleRate": 44100,
+    "bitDepth": 16
+  },
+  "root": "public/assets/audio/pixel",
+  "files": [
+    "events/game-over.wav",
+    "events/game-win.wav",
+    "events/jam-warning.wav",
+    "events/round-clear.wav",
+    "events/round-start.wav",
+    "gameplay/marble-drop.wav",
+    "gameplay/marble-land.wav",
+    "gameplay/marble-move.wav",
+    "gameplay/quota-clear.wav",
+    "gameplay/score-big.wav",
+    "gameplay/score-medium.wav",
+    "gameplay/score-small.wav",
+    "parts/anvil.wav",
+    "parts/bell.wav",
+    "parts/coil.wav",
+    "parts/fork.wav",
+    "parts/gate-fail.wav",
+    "parts/gate-pass.wav",
+    "parts/prism.wav",
+    "parts/reso.wav",
+    "parts/spring.wav",
+    "parts/weight.wav",
+    "parts/wire.wav",
+    "ui/blueprint.wav",
+    "ui/click.wav",
+    "ui/draft-open.wav",
+    "ui/error.wav",
+    "ui/hover.wav",
+    "ui/place.wav",
+    "ui/select.wav"
+  ]
+}
