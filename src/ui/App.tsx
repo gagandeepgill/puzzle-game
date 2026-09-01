@@ -6,9 +6,9 @@ import { Icon, UIIcon } from './icons.js';
 import type { IconName } from './icons.js';
 import { usePayloadRun } from './usePayloadRun.js';
 import { isMuted, setMuted, setSoundTheme } from './audio.js';
-import { loadSkin, saveSkin } from './pixel/skin.js';
-import { PixelPart, hasPixelArt } from './pixel/PixelSprite.js';
+import { SKINS, SKIN_LABEL, loadSkin, saveSkin } from './pixel/skin.js';
 import { PixelGameView } from './pixel/PixelGameView.js';
+import { GameView } from './pixel/GameView.js';
 import type { GameSkin } from './pixel/skin.js';
 import { isCockpit, watchCockpit } from './breakpoints.js';
 import { PARTS, BLUEPRINTS } from '../game/content.js';
@@ -40,17 +40,33 @@ const PRESSABLE = [
 ].join(' ');
 const RAISED = `bg-raised border border-edge shadow-raised hover:border-steel ${PRESSABLE}`;
 
+/**
+ * Which component draws each skin.
+ *
+ * Classic is absent on purpose: it is the body of this file, and the rest of
+ * `App` is its view. Everything else is a page of its own, so adding a skin
+ * is a line here and a line in `SKINS` rather than another branch through a
+ * 700-line function.
+ */
+const SKIN_VIEW: Partial<Record<GameSkin, typeof PixelGameView>> = {
+  pixel: PixelGameView,
+  game: GameView,
+};
+
 export function App() {
   /** Presentation only. Persisted, and read once on mount like the mute
    *  preference; nothing about the run depends on it. Declared above the run
    *  hook because the hook takes the skin's pacing, and reading storage on
    *  every render to get it would be a localStorage hit per frame. */
   const [skin, setSkin] = useState<GameSkin>(loadSkin);
-  const pixel = skin === 'pixel';
+  /** Everything that is not classic is a pixel presentation, and pacing and
+   *  sound follow the presentation rather than the individual skin, so a
+   *  fourth skin in that family needs no change here. */
+  const retro = skin !== 'classic';
   const run = usePayloadRun({
     mode: 'daily',
     difficulty: 'easy',
-    pace: pixel ? 'pixel' : 'classic',
+    pace: retro ? 'pixel' : 'classic',
   });
   const { state, playback, busy } = run;
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -63,7 +79,7 @@ export function App() {
   // The sound language follows the skin. Kept in an effect rather than in
   // the click handler so it is also right on the first render after a
   // reload, when the skin comes back from storage.
-  useEffect(() => { setSoundTheme(pixel ? 'pixel' : 'classic'); }, [pixel]);
+  useEffect(() => { setSoundTheme(retro ? 'pixel' : 'classic'); }, [retro]);
   /**
    * The parts reference is the highest-value thing to promote on a wide
    * screen: the board draws each part as a glyph and a badge, and until now
@@ -215,8 +231,16 @@ export function App() {
         <Tab on={state.difficulty.key === 'hard'} onClick={() => setDifficulty('hard')} icon="flame">Hard · 8</Tab>
       </div>
       <div role="group" aria-label="Skin" className="flex flex-wrap gap-1.5">
-        <Tab on={!pixel} onClick={() => { setSkin('classic'); saveSkin('classic'); }} icon="sliders">Classic</Tab>
-        <Tab on={pixel} onClick={() => { setSkin('pixel'); saveSkin('pixel'); }} icon="sliders">Pixel</Tab>
+        {SKINS.map((key) => (
+          <Tab
+            key={key}
+            on={skin === key}
+            onClick={() => { setSkin(key); saveSkin(key); }}
+            icon="sliders"
+          >
+            {SKIN_LABEL[key]}
+          </Tab>
+        ))}
       </div>
       <button
         type="button"
@@ -261,18 +285,24 @@ export function App() {
   ) : null;
 
   /**
-   * Pixel is its own page, not the classic one repainted.
+   * Each skin past classic is its own page, not the classic one repainted.
    *
-   * The two compositions differ enough that CSS could not bridge them: classic
-   * is a three-column cockpit with full-height rails, pixel is a centred shell
-   * with a thin header and the board as the hero. State, playback, scoring and
-   * the engine are shared unchanged; only the presentation forks here.
+   * The compositions differ enough that CSS could not bridge them: classic is
+   * a three-column cockpit with full-height rails, and the others are centred
+   * shells with a thin header and the board as the hero. State, playback,
+   * scoring and the engine are shared unchanged; only the presentation forks
+   * here.
+   *
+   * A registry rather than a chain of conditionals, so adding a skin is one
+   * entry in `SKINS` and one entry here instead of another branch through
+   * this function.
    */
-  if (pixel) {
+  const Skinned = SKIN_VIEW[skin];
+  if (Skinned) {
     return (
       <>
-        <main id="app-root" className="pixel-skin">
-          <PixelGameView
+        <main id="app-root" className={`${skin}-skin`}>
+          <Skinned
             run={run}
             heat={heat}
             forkReach={reach}
@@ -305,7 +335,7 @@ export function App() {
     // chrome between the page and the notch or the home indicator.
     <main
       id="app-root"
-      className={`ck w-full mx-auto${pixel ? ' pixel-skin' : ''}`}
+      className="ck w-full mx-auto"
       style={{
         paddingLeft: 'max(10px, env(safe-area-inset-left))',
         paddingRight: 'max(10px, env(safe-area-inset-right))',
@@ -370,20 +400,16 @@ export function App() {
               and difficulty, which restart the run. Switching skins mid-run is
               safe and deliberately does not reset anything. */}
           <div role="group" aria-label="Skin" className="flex flex-wrap gap-1.5">
-            <Tab
-              on={!pixel}
-              onClick={() => { setSkin('classic'); saveSkin('classic'); }}
-              icon="sliders"
-            >
-              Classic
-            </Tab>
-            <Tab
-              on={pixel}
-              onClick={() => { setSkin('pixel'); saveSkin('pixel'); }}
-              icon="sliders"
-            >
-              Pixel
-            </Tab>
+            {SKINS.map((key) => (
+              <Tab
+                key={key}
+                on={skin === key}
+                onClick={() => { setSkin(key); saveSkin(key); }}
+                icon="sliders"
+              >
+                {SKIN_LABEL[key]}
+              </Tab>
+            ))}
           </div>
 
           {/* The daily has no identity without its number, and free play had
@@ -632,9 +658,7 @@ export function App() {
                       : 'border-edge bg-raised shadow-raised hover:border-brass/70'
                   }`}
                 >
-                  {pixel && hasPixelArt(key)
-                    ? <PixelPart part={key} size="28px" />
-                    : <Icon name={PARTS[key].glyph as IconName} size={24} className="text-ink/90" />}
+                  <Icon name={PARTS[key].glyph as IconName} size={24} className="text-ink/90" />
                   <span className="font-bold text-body leading-tight text-center">{PARTS[key].name}</span>
                   <span className="text-micro text-steel leading-[1.3] text-center">{PARTS[key].rule}</span>
                 </button>
@@ -732,7 +756,7 @@ export function App() {
           marbles={playback.marbles}
           labels={playback.labels}
           movable={movable}
-          pixel={pixel}
+          pixel={false}
           onCellPress={onCellPress}
         />
 

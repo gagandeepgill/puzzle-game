@@ -1,5 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+
+// One source of truth for the version the footer prints, rather than a
+// literal in a component that drifts from the manifest the day it is bumped.
+const { version } = JSON.parse(readFileSync('./package.json', 'utf8')) as { version: string };
 
 // The whole site is one build output.
 //
@@ -9,6 +14,7 @@ import react from '@vitejs/plugin-react';
 // repo is a folder pretending to be a website; dist/ is the website.
 export default defineConfig({
   plugins: [react()],
+  define: { __APP_VERSION__: JSON.stringify(version) },
   // Relative, so the same build works at a domain root and under a subpath.
   base: './',
   build: {

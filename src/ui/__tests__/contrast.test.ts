@@ -194,3 +194,72 @@ describe('pixel palette floors', () => {
     }
   });
 });
+
+/**
+ * The game skin's palette.
+ *
+ * Same treatment as the pixel one above: custom properties the Tailwind suite
+ * cannot see, read out of `game.css` and held to the same floors.
+ *
+ * The mockup sheet's own token table, transcribed. Ten of its eleven values
+ * cleared as supplied; `border` measured 1.29:1 against `panel` and was
+ * lifted, which matters more here than anywhere else because it is the
+ * outline of every panel and every board cell, and cells are buttons.
+ */
+describe('game palette floors', () => {
+  const css = readFileSync(new URL('../pixel/game.css', import.meta.url), 'utf8');
+  const token = (name: string): Hex => {
+    const at = css.indexOf(`--gm-${name}:`);
+    if (at < 0) throw new Error(`--gm-${name} not declared in game.css`);
+    const m = /#[0-9a-fA-F]{6}/.exec(css.slice(at, at + 80));
+    if (!m) throw new Error(`--gm-${name} has no hex value`);
+    return m[0].toLowerCase() as Hex;
+  };
+
+  // panel-alt is the lightest of the three and therefore the binding one, but
+  // all three are checked so that darkening one later cannot go unnoticed.
+  const surfaces = (['bg', 'panel', 'panel-alt'] as const).map((n) => [n, token(n)] as const);
+
+  const text = ['text', 'muted', 'green', 'blue', 'purple', 'gold', 'orange', 'red', 'cyan'] as const;
+
+  for (const name of text) {
+    it(`--gm-${name} clears 4.5:1 on every game surface`, () => {
+      for (const [bgName, bg] of surfaces) {
+        const ratio = contrast(token(name), bg);
+        expect(
+          Number(ratio.toFixed(2)),
+          `--gm-${name} on --gm-${bgName} is ${ratio.toFixed(2)}:1`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+  }
+
+  it('--gm-border clears 3:1, because it is what identifies a board cell', () => {
+    for (const [bgName, bg] of surfaces) {
+      const ratio = contrast(token('border'), bg);
+      expect(
+        Number(ratio.toFixed(2)),
+        `--gm-border on --gm-${bgName} is ${ratio.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('keeps the supplied value recorded next to the correction', () => {
+    // The one token that moved. Its supplied hex stays in a comment so the
+    // change is auditable rather than silent.
+    expect(css).toContain('#2a3650');
+  });
+
+  it('uses the sheet hexes for the tokens that passed', () => {
+    // Transcription, not interpretation. If one of these drifts, it drifted
+    // by hand rather than by measurement.
+    const supplied: Record<string, Hex> = {
+      bg: '#0c1220', panel: '#121a2b', 'panel-alt': '#1a2436',
+      text: '#e6eaf2', muted: '#8b94a6', gold: '#f0b43c',
+      green: '#39d16a', blue: '#4aa3ff', purple: '#c475ff', red: '#ff5a5a',
+    };
+    for (const [name, hex] of Object.entries(supplied)) {
+      expect(token(name), `--gm-${name}`).toBe(hex);
+    }
+  });
+});

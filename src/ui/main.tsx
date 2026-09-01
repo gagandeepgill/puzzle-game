@@ -5,6 +5,7 @@ import { UpdateBar } from './UpdateBar.js';
 import './index.css';
 import './pixel/pixel.css';
 import './pixel/shell.css';
+import './pixel/game.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No #root element');

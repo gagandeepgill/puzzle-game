@@ -5,10 +5,23 @@
  * is filled; it never changes what a part does, what a drop scores, or what a
  * screen reader is told. If a skin needs a rule change to look right, the rule
  * is in the wrong place.
+ *
+ * Each one is added rather than replacing the last: `classic` is the original
+ * cockpit, `pixel` is the first pass at the Simple Pixel direction, and `game`
+ * is the rework against the reference sheet. A new design becomes a new entry
+ * here and a new view, so nothing already shipped is overwritten to make room
+ * for it.
  */
-export type GameSkin = 'classic' | 'pixel';
+export type GameSkin = 'classic' | 'pixel' | 'game';
 
-export const SKINS: readonly GameSkin[] = ['classic', 'pixel'];
+export const SKINS: readonly GameSkin[] = ['classic', 'pixel', 'game'];
+
+/** What the skin picker calls each one. */
+export const SKIN_LABEL: Record<GameSkin, string> = {
+  classic: 'Classic',
+  pixel: 'Pixel',
+  game: 'Game',
+};
 
 /**
  * Change this one line to ship a different skin by default.
