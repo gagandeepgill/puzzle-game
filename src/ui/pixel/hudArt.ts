@@ -130,15 +130,15 @@ export const CELL_ART = {
 /**
  * The one button frame, and the effects that play over a cell.
  *
- * `hit` is the one single frame left. Every part now has a delivered sequence
- * except Spring, whose six arrived with two overwritten, so `hit` covers it
- * until they are re-sent. `spark` and `pulse` covered coil, reso and prism
- * and are retired now that those have frames of their own.
+ * Only the score pop is left. `hit`, `spark` and `pulse` were single frames
+ * standing in for parts with no sequence, and every part in the game has one
+ * now — the last of them, Spring, on its second delivery. A part added later
+ * without frames falls back to the shared CSS motion in `pixel.css` rather
+ * than to a stand-in nothing else uses.
  */
 export const BUTTON_FRAME = `${BASE}/frames/button-frame.png`;
 export const CARD_FRAME = `${BASE}/frames/card-frame.png`;
 export const EFFECT_ART = {
-  hit: `${BASE}/effects/hit.png`,
   scorePop: `${BASE}/effects/score-pop-fx.png`,
 } as const;
 
@@ -153,12 +153,14 @@ export const EFFECT_ART = {
  * Gate has two, chosen by the outcome the engine already decided: a rejected
  * marble marks its cell `px-seized`, which only a gate ever does.
  *
- * Spring is absent. Its six arrived with two overwritten by the cell tiles in
- * the same download, and only five distinct images survive.
+ * Every part has one. Spring took two deliveries: the first arrived with two
+ * of its six overwritten by the cell tiles from the same download, which is
+ * the collision `partFrames.test.ts` now checks for by hashing every frame
+ * against both tiles.
  */
 export const PART_FRAMES: Record<string, number> = {
-  weight: 4, anvil: 4, coil: 4, prism: 6, wire: 4, reso: 4, fork: 4, bell: 6,
-  'gate-pass': 4, 'gate-fail': 4,
+  weight: 4, anvil: 4, coil: 4, prism: 6, spring: 6, wire: 4, reso: 4, fork: 4,
+  bell: 6, 'gate-pass': 4, 'gate-fail': 4,
 };
 
 /*
