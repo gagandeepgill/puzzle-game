@@ -74,6 +74,7 @@
   .game-skin { --cell: clamp(52px, min((100dvh - 340px) / 6, (100vw - 520px) / 5), 64px); }
 }
 
+
 /* The literal, not the token. `--gm-bg` is declared on `.game-skin`, which
    is a descendant of body, so body cannot read it: the var is unresolvable,
    the declaration is invalid at computed-value time, and the background falls
@@ -941,3 +942,46 @@ body:has(.game-skin) { background-color: #0a0f18; }
   }
   .gm-card.is-selected { transform: none; }
 }
+
+/*
+ * Wide desktops.
+ *
+ * The shell capped at 1180px and the cell at 64px, which on a 2560x1440
+ * screen left 690px of dead space either side and a 362px board adrift in the
+ * middle of it. Both caps rise in two steps rather than going fluid, because
+ * the board should grow with the screen and the draft cards should not become
+ * posters.
+ *
+ * The height subtrahend rises with the tier because everything around the
+ * board grows too. Measured at 2560x1440 with a 112px cell: the page is 1413
+ * tall and the board is 696 of it, so 740 is what the rest actually costs. A
+ * 2560x1080 ultrawide gets a smaller cell from the same formula rather than a
+ * page that scrolls.
+ *
+ * The floor is 64px, the cap the narrower tier already reaches. A short wide
+ * window would otherwise compute 57 and come out worse for being wider, which
+ * is the wrong way round.
+ *
+ * At the end of the file on purpose: a media query adds no specificity, and
+ * from further up these lost to the base `max-width` rules they exist to
+ * raise.
+ *
+ * `--rails-w` is the two rail columns plus the two grid gaps. It has to move
+ * with them, because the draft panel's width is measured from it.
+ */
+@media (min-width: 1600px) {
+  .game-skin { --cell: clamp(64px, min((100dvh - 700px) / 6, (100vw - 560px) / 5), 88px); }
+  .gm-play { grid-template-columns: 200px auto 216px; gap: 18px; }
+  .game-skin { --rails-w: 452px; }
+  .gm-shell { max-width: 1160px; }
+  .gm-card { max-width: 240px; }
+}
+
+@media (min-width: 2000px) {
+  .game-skin { --cell: clamp(64px, min((100dvh - 740px) / 6, (100vw - 640px) / 5), 112px); }
+  .gm-play { grid-template-columns: 240px auto 260px; gap: 22px; }
+  .game-skin { --rails-w: 544px; }
+  .gm-shell { max-width: 1320px; }
+  .gm-card { max-width: 280px; }
+}
+
