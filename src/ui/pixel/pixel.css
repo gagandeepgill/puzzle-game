@@ -18,16 +18,47 @@
  * ever moves to CSS variables, this section should follow it and shrink.
  */
 
+/**
+ * The palette, from the master prompt's section 10, with three corrections.
+ *
+ * Measured before adopting, against `--px-cell` which is the tightest of the
+ * three backgrounds. Three tokens did not clear their floor:
+ *
+ *   --px-purple  #a449e6  3.91:1  needs 4.5   (jam warning text)
+ *   --px-danger  #d94b56  4.26:1  needs 4.5
+ *   --px-edge    #263544  1.40:1  needs 3.0   (WCAG 1.4.11)
+ *
+ * `--px-edge` is the one that mattered. It borders every panel and every board
+ * cell, cells are buttons, and at 1.40:1 that boundary is invisible to a
+ * low-vision player. The cell fill cannot stand in for it either: #101a24 on
+ * #08111b is about 1.3:1, so without a visible border there is nothing to
+ * identify the control at all.
+ *
+ * Each was lifted to the least change that clears its floor, hue preserved.
+ * The supplied value is kept in the comment so the intent is still legible.
+ */
 .pixel-skin {
-  --px-bg: #0b0f18;
-  --px-panel: #121826;
-  --px-raised: #18203050;
-  --px-line: #2b3550;
-  --px-line-lit: #3d4a6b;
-  --px-blue: #4bc3f5;
-  --px-purple: #a06cff;
-  --px-green: #5fd08a;
-  --px-gold: #f0a63c;
+  --px-bg: #08111b;
+  --px-panel: #0d1722;
+  --px-cell: #101a24;
+  --px-text: #edf1ee;
+
+  /* #263544 -> 3.02:1 */
+  --px-edge: #4a6885;
+  --px-edge-dim: #263544;   /* the original, safe for purely decorative rules */
+
+  --px-blue: #19a5f4;
+  /* #a449e6 -> 4.50:1 */
+  --px-purple: #b24ff9;
+  --px-green: #7bd33e;
+  --px-orange: #f07808;
+  --px-gold: #f4b825;
+  /* #d94b56 -> 4.52:1 */
+  --px-danger: #e04e59;
+
+  /* Kept as aliases so existing rules in this file keep reading. */
+  --px-line: var(--px-edge);
+  --px-line-lit: var(--px-blue);
 }
 
 /* Flat, thin-bordered surfaces. The classic skin's bevels are a single light
@@ -39,8 +70,8 @@
   background-image: none;
 }
 .pixel-skin .bg-panel-lit { background-color: var(--px-panel); }
-.pixel-skin .bg-raised { background-color: #161d2c; }
-.pixel-skin .bg-machined { background-color: #1a2233; }
+.pixel-skin .bg-raised { background-color: #14202e; }
+.pixel-skin .bg-machined { background-color: var(--px-cell); }
 
 .pixel-skin .shadow-panel,
 .pixel-skin .shadow-raised,
@@ -50,6 +81,12 @@
 .pixel-skin .shadow-marble {
   box-shadow: none;
 }
+
+/* Section 11: one panel treatment, a flat fill with a thin border and a hard
+   offset shadow. No bevel, no nesting, no corner brackets. The offset shadow
+   is what gives a flat pixel panel weight without pretending to be lit.
+   It has to come after the reset above, which zeroes every shadow. */
+.pixel-skin .shadow-panel { box-shadow: 0 3px 0 rgba(0, 0, 0, .35); }
 
 /* One border weight everywhere. The brief asks for thin flat borders, and the
    fastest way to lose that is to leave the 1.5px accents the classic skin uses
@@ -71,9 +108,16 @@
 }
 .pixel-skin .ck-board button[aria-label^='Row'].px-filled {
   background-image: none;
-  background-color: #1a2233;
-  border-color: var(--px-line-lit);
+  background-color: var(--px-cell);
+  border-color: var(--px-edge);
 }
+
+/* The page itself. `.pixel-skin` sits on <main>, so this reaches past it to
+   paint the ground the board sits on; without it the classic #0E1013 shows
+   through everywhere the layout does not cover. `:has` is supported across
+   every browser this PWA targets, and the fallback is simply the old ground. */
+body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
+.pixel-skin { background-color: transparent; }
 
 /* Sprites. The whole point: no resampling at any cell size. */
 .px-sprite {
@@ -110,9 +154,12 @@
  * splits, the Echo Bell rings outward, and the Spring is the only one that
  * gets a real bounce, because it is the only one that mechanically bounces.
  *
- * Every part activation is 100-200ms, which is the band the direction gives
- * for interactions. The Echo Bell's ring is 320ms because it is an effect
- * rather than the activation itself, and effects sit in the 300-700ms band.
+ * Durations come from the master prompt's section 14, which gives a range per
+ * part. That table supersedes section 13's general "100-200ms for normal
+ * interaction": the two disagree, and Fork at 250-350ms and Bell at 300-400ms
+ * are only reachable under the specific one. Each sits mid-range so there is
+ * room to tune by eye without leaving the band, and a test asserts every one
+ * against its own row rather than against a single number.
  * There are no idle animations at all; every keyframe here fires once, on the
  * frame the engine says that part fired.
  *
@@ -146,7 +193,7 @@
   100% { transform: translate(0, 0); }
 }
 .px-activate[data-part='weight'] { animation: px-impact-soft 0.14s steps(4) 1; }
-.px-activate[data-part='anvil'] { animation: px-impact-hard 0.2s steps(5) 1; }
+.px-activate[data-part='anvil'] { animation: px-impact-hard 0.19s steps(5) 1; }
 
 /* Coil and Resonator: a pulse. Coil is the tighter, electrical one. */
 @keyframes px-pulse {
@@ -155,7 +202,7 @@
   100% { transform: scale(1); filter: brightness(1); }
 }
 .px-activate[data-part='coil'] { animation: px-pulse 0.18s steps(3) 1; }
-.px-activate[data-part='reso'] { animation: px-pulse 0.2s steps(4) 1; }
+.px-activate[data-part='reso'] { animation: px-pulse 0.28s steps(5) 1; }
 
 /* Tuning Fork: vibration. Horizontal only and sub-pixel-ish, which is what
    separates a vibration from a shake. */
@@ -166,7 +213,7 @@
   60% { transform: translateX(-4%); }
   80% { transform: translateX(3%); }
 }
-.px-activate[data-part='fork'] { animation: px-vibrate 0.18s steps(5) 1; }
+.px-activate[data-part='fork'] { animation: px-vibrate 0.3s steps(7) 1; }
 
 /* Prism: a flash that splits. The sprite brightens and widens briefly, which
    reads as one thing becoming two without needing particle elements. */
@@ -176,7 +223,7 @@
   60% { transform: scaleX(0.9); filter: brightness(1.4); }
   100% { transform: scaleX(1); filter: brightness(1); }
 }
-.px-activate[data-part='prism'] { animation: px-split 0.2s steps(4) 1; }
+.px-activate[data-part='prism'] { animation: px-split 0.25s steps(5) 1; }
 
 /* Spring: the one part that earns a real bounce, with overshoot. */
 @keyframes px-bounce {
@@ -186,7 +233,7 @@
   80% { transform: translateY(4%) scaleY(0.96); }
   100% { transform: translateY(0) scaleY(1); }
 }
-.px-activate[data-part='spring'] { animation: px-bounce 0.2s steps(5) 1; }
+.px-activate[data-part='spring'] { animation: px-bounce 0.23s steps(5) 1; }
 
 /* Copper Wire: a quick electrical brighten, no movement. It fires often, and
    a moving cue that fires often becomes noise. */
@@ -203,7 +250,7 @@
   40% { filter: brightness(2); transform: scale(1.12); }
   100% { filter: brightness(1); transform: scale(1); }
 }
-.px-activate[data-part='gate'] { animation: px-gate 0.16s steps(3) 1; }
+.px-activate[data-part='gate'] { animation: px-gate 0.21s steps(4) 1; }
 
 /* Echo Bell: ring motion. A pseudo-element ring expands and fades from the
    sprite's own box, capped at 1.65x so it stays inside the cell. */
@@ -216,7 +263,7 @@
   30% { transform: rotate(-7deg); }
   65% { transform: rotate(5deg); }
 }
-.px-activate[data-part='bell'] { animation: px-bell-nudge 0.2s steps(4) 1; }
+.px-activate[data-part='bell'] { animation: px-bell-nudge 0.35s steps(6) 1; }
 .px-ring-host { position: relative; }
 .px-ring-host.px-ringing::after {
   content: '';
@@ -274,4 +321,169 @@
     animation: none;
   }
   .px-sheet { background-position: 0 0; }
+}
+
+/**
+ * Layout, from the master prompt's sections 2, 3, 4, 7 and 22.
+ *
+ * The classic skin's desktop is a three-column cockpit with two full-height
+ * rails. Section 2 says not to create large competing sidebars and section 21
+ * puts the board first in reading order, so under this skin the rails become
+ * narrow columns and the board takes the space back.
+ *
+ * Nothing is hidden. Section 22 is explicit that clutter may go but
+ * information and controls may not, so every panel still renders and every
+ * control keeps its handler and its accessible name; they are just smaller and
+ * quieter than the board.
+ */
+@media (min-width: 1180px) {
+  .pixel-skin.ck {
+    /* 240 + board + 260, down from 300 + board + 348. The board absorbs all
+       148px of the difference. */
+    grid-template-columns: 240px minmax(0, 1fr) 260px;
+    max-width: 1400px;
+  }
+}
+
+/* Section 3: one slim header. No framed title block, no gradient. */
+.pixel-skin .ck-header header {
+  border-bottom: 1px solid var(--px-edge-dim);
+  padding-bottom: 0.25rem;
+}
+
+/* The chrome this skin adds costs vertical space, and the phone has none to
+   give: at 390x844 the taller quota track, the header rule and the offset
+   shadows together pushed the board's last row 1px below the fold. Both grow
+   only from md up, where the budget exists. */
+@media (min-width: 768px) {
+  .pixel-skin .ck-hud .bg-ground { height: 10px; }
+  .pixel-skin .ck-header header { padding-bottom: 0.5rem; }
+}
+.pixel-skin .ck-header h1 {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Section 4: the HUD is one compact row, and the quota is the loudest thing
+   in it. A taller bar with a flat fill rather than a gradient. */
+/* The quota track. Targeted by `.bg-ground`, which is the only one inside
+   the HUD, rather than by its `h-[8px]` class: the minifier strips the
+   backslashes out of an escaped arbitrary-value selector and `[8px]` then
+   parses as an attribute selector that matches nothing. */
+.pixel-skin .ck-hud .bg-ground {
+  height: 8px;
+  border: 1px solid var(--px-edge-dim);
+  background-color: var(--px-bg);
+  border-radius: 0;
+}
+.pixel-skin .ck-hud .bg-gradient-to-r {
+  background-image: none;
+  background-color: var(--px-green);
+  border-radius: 0;
+}
+
+/* Section 7: the board is the hero. Thin grid lines, dark fill, a slightly
+   brighter outer frame, and no heavy bevel anywhere. */
+.pixel-skin .ck-board .relative > div:nth-child(2) {
+  border-width: 2px;
+  border-color: var(--px-edge);
+}
+
+/* Section 7 again: 56-72px cells on desktop, against the classic skin's 90px
+   ceiling. The sprite stays 32-44px inside that, which is what keeps it
+   readable as pixel art rather than as a blown-up bitmap. */
+@media (min-width: 768px) {
+  .pixel-skin .ck-machine {
+    --cell: clamp(48px, min((100dvh - 300px) / 6, (100vw - 460px) / 5), 72px);
+    --glyph: calc(var(--cell) * 0.6);
+  }
+}
+@media (min-width: 1180px) {
+  .pixel-skin .ck-machine {
+    --cell: clamp(56px, min((100dvh - 260px) / 6, (100vw - 620px) / 5), 72px);
+  }
+}
+
+/* Section 16: score text rises 8-14px and fades, and must never sit on top of
+   the next board event. The classic float travels 26px. */
+@keyframes px-floatup {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-12px); }
+}
+.pixel-skin .animate-floatup { animation: px-floatup 0.38s steps(6) forwards; }
+
+/* Section 5: the jam is noticeable without being a panel, and pulses once. */
+@keyframes px-jam-pulse {
+  0%, 100% { opacity: 1; }
+  30% { opacity: 0.35; }
+  60% { opacity: 1; }
+}
+.pixel-skin .text-bad { color: var(--px-purple); }
+.pixel-skin .ck-hud p.text-bad { animation: px-jam-pulse 0.5s steps(4) 1; }
+
+/* Accent semantics from section 10, mapped onto the tokens that already carry
+   those meanings rather than onto new elements. */
+.pixel-skin .text-glow { color: var(--px-blue); }
+.pixel-skin .text-brass { color: var(--px-gold); }
+.pixel-skin .text-ok { color: var(--px-green); }
+.pixel-skin .text-ink { color: var(--px-text); }
+
+/**
+ * Draft cards, from section 9.
+ *
+ * Idle is a flat dark card. Hover brightens the border and lifts it 1px over
+ * 120ms. Selected takes a stronger border and a 1.05 scale, and holds there
+ * rather than bouncing, because a card you are holding should look held and
+ * not keep asking for attention.
+ *
+ * The lift is a transform, so it moves the card without moving anything around
+ * it. Disabled keeps its contrast readable rather than fading toward the
+ * background.
+ */
+.pixel-skin .ck-rail-a button[aria-pressed] {
+  transition: transform 120ms steps(2), border-color 120ms, background-color 120ms;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pixel-skin .ck-rail-a button[aria-pressed='false']:hover {
+    transform: translateY(-1px);
+    border-color: var(--px-blue);
+  }
+}
+/* Targeted by the class React toggles rather than by the ARIA attribute. Both
+   select the same element, but an attribute-value selector was losing here to
+   something else in the cascade, and the class-based approach is what the rest
+   of this file already uses successfully. */
+.pixel-skin .ck-rail-a .border-brass {
+  transform: scale(1.05);
+  border-color: var(--px-gold);
+}
+
+/**
+ * Blueprint acquisition, from section 6: a quick 200-300ms pop with a small
+ * cyan flash. One pass, no loop.
+ */
+@keyframes px-blueprint-pop {
+  0% { transform: scale(0.9); border-color: var(--px-blue); }
+  45% { transform: scale(1.06); border-color: var(--px-blue); }
+  100% { transform: scale(1); }
+}
+.pixel-skin .ck-rail-a .border-glow button {
+  animation: px-blueprint-pop 0.24s steps(4) 1;
+}
+
+/* Section 19: a visible 2px focus outline that does not rely on colour alone.
+   The classic skin already outlines in `ink`; against this darker ground the
+   blue accent reads better and still measures 6.47:1 on the cell. */
+.pixel-skin button:focus-visible,
+.pixel-skin [tabindex]:focus-visible {
+  outline: 2px solid var(--px-blue);
+  outline-offset: 2px;
+}
+
+/* Reduced motion covers the additions above too. The global rule clamps
+   durations, and these are the ones whose resting state must be the finished
+   state rather than the first frame. */
+@media (prefers-reduced-motion: reduce) {
+  .pixel-skin .ck-rail-a .border-brass { transform: none; }
+  .pixel-skin .ck-rail-a .border-glow button { animation: none; }
 }

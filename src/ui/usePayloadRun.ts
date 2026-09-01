@@ -171,6 +171,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; 
   const runIdRef = useRef(0);
 
   const dispatch = useCallback((action: Action) => {
+    if (action.type === 'selectOffer') sfx.select();
     if (action.type === 'placeSelected' || action.type === 'movePart') sfx.place();
     if (action.type === 'takeBlueprint') sfx.blueprint();
     setState((s) => reduce(s, action, rngRef.current));
@@ -466,7 +467,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; 
       if (!prefersReducedMotion()) setPlayback((p) => ({ ...p, shake: 3 }));
     }
     if (over && !prev.over) {
-      if (state.phase.kind === 'runOver' && state.phase.won) sfx.roundWon();
+      if (state.phase.kind === 'runOver' && state.phase.won) sfx.runWon();
       else sfx.runLost();
     }
     prevRef.current = { round: state.round, over };

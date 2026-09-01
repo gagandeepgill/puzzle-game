@@ -77,7 +77,7 @@ describe('the marble transition tracks whichever pacing is running', () => {
 describe('pixel part activation timing', () => {
   const css = readFileSync(new URL('../pixel/pixel.css', import.meta.url), 'utf8');
   const rules = [...css.matchAll(/px-activate\[data-part='([a-z]+)'\]\s*\{\s*animation:\s*[\w-]+\s+([\d.]+)s/g)]
-    .map(([, part, secs]) => ({ part, ms: Math.round(Number(secs) * 1000) }));
+    .map(([, part, secs]) => ({ part: String(part), ms: Math.round(Number(secs) * 1000) }));
 
   it('defines an effect for every part that has a sprite', () => {
     // A part with art but no effect would activate invisibly.
@@ -86,10 +86,20 @@ describe('pixel part activation timing', () => {
     );
   });
 
-  it('keeps every activation inside the 100-200ms the direction gives', () => {
+  it('keeps every activation inside its own row of the section 14 table', () => {
+    // Section 13 says 100-200ms for normal interaction and section 14 gives
+    // ranges up to 350ms. They disagree; the specific table wins, so each part
+    // is checked against its own row rather than one blanket number.
+    const BAND: Record<string, readonly [number, number]> = {
+      weight: [120, 160], anvil: [160, 220], coil: [160, 200], prism: [220, 280],
+      spring: [200, 260], wire: [80, 120], reso: [240, 320], fork: [250, 350],
+      gate: [180, 250], bell: [300, 400],
+    };
     for (const { part, ms } of rules) {
-      expect(ms, `${part} runs ${ms}ms`).toBeGreaterThanOrEqual(100);
-      expect(ms, `${part} runs ${ms}ms`).toBeLessThanOrEqual(200);
+      const band = BAND[part];
+      expect(band, `${part} has no band in the spec`).toBeDefined();
+      expect(ms, `${part} runs ${ms}ms, band is ${band![0]}-${band![1]}`).toBeGreaterThanOrEqual(band![0]);
+      expect(ms, `${part} runs ${ms}ms, band is ${band![0]}-${band![1]}`).toBeLessThanOrEqual(band![1]);
     }
   });
 

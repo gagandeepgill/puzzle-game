@@ -14,6 +14,7 @@
  * rather than restated here — adding a colour adds a case, and lightening a
  * surface fails here instead of in production.
  */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import config from '../../../tailwind.config.js';
 
@@ -131,5 +132,65 @@ describe('contrast floors', () => {
     // background is the binding constraint and the config should name it.
     const surfaces = new Set(worst.map((w) => w.on));
     expect(surfaces.size, `worst cases are spread across ${[...surfaces].join(', ')}`).toBe(1);
+  });
+});
+
+/**
+ * The pixel skin's palette.
+ *
+ * Lives in CSS custom properties rather than the Tailwind theme, so the suite
+ * above cannot see it. Read out of `pixel.css` and held to the same floors.
+ *
+ * Three of the supplied tokens did not clear them and were lifted: purple was
+ * 3.91:1, danger 4.26:1, and edge 1.40:1 against the 3.0 that WCAG 1.4.11
+ * wants of a component boundary. Edge is the border on every panel and every
+ * board cell, and cells are buttons.
+ */
+describe('pixel palette floors', () => {
+  const css = readFileSync(new URL('../pixel/pixel.css', import.meta.url), 'utf8');
+  // indexOf plus a regex literal, rather than a RegExp built from a template.
+  // An escaped `\s` inside a template literal is just `s`, which made the
+  // first version of this match nothing and fail on the first token.
+  const token = (name: string): Hex => {
+    const at = css.indexOf(`--px-${name}:`);
+    if (at < 0) throw new Error(`--px-${name} not declared in pixel.css`);
+    const m = /#[0-9a-fA-F]{6}/.exec(css.slice(at, at + 80));
+    if (!m) throw new Error(`--px-${name} has no hex value`);
+    return m[0].toLowerCase() as Hex;
+  };
+
+  // Every background the skin paints text or a border on.
+  const surfaces = (['bg', 'panel', 'cell'] as const).map((n) => [n, token(n)] as const);
+
+  const text = ['text', 'blue', 'purple', 'green', 'orange', 'gold', 'danger'] as const;
+
+  for (const name of text) {
+    it(`--px-${name} clears 4.5:1 on every pixel surface`, () => {
+      for (const [bgName, bg] of surfaces) {
+        const ratio = contrast(token(name), bg);
+        expect(
+          Number(ratio.toFixed(2)),
+          `--px-${name} on --px-${bgName} is ${ratio.toFixed(2)}:1`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+  }
+
+  it('--px-edge clears 3:1, because it is what identifies a board cell', () => {
+    for (const [bgName, bg] of surfaces) {
+      const ratio = contrast(token('edge'), bg);
+      expect(
+        Number(ratio.toFixed(2)),
+        `--px-edge on --px-${bgName} is ${ratio.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('keeps the supplied value recorded next to each correction', () => {
+    // The original hex stays in a comment so the design intent is still
+    // readable and the change is auditable rather than silent.
+    for (const original of ['#a449e6', '#d94b56', '#263544']) {
+      expect(css, original).toContain(original);
+    }
   });
 });
