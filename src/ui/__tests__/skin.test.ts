@@ -11,7 +11,9 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SKIN, SKINS, SKIN_LABEL, loadSkin, saveSkin } from '../pixel/skin.js';
 import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
-import { BOARD_FRAME, CARD_ART, LOGO_ART, MARBLE_ART, PLATE_ART, SCORE_BURST } from '../pixel/hudArt.js';
+import {
+  BOARD_FRAME, CARD_ART, ICON_ART, LOGO_ART, MARBLE_ART, PLATE_ART, SCORE_BURST,
+} from '../pixel/hudArt.js';
 import { PART_KEYS } from '../../game/types.js';
 
 // Resolved through the map, because the pack is half PNG and half WebP.
@@ -113,7 +115,8 @@ describe('pixel sprite coverage', () => {
  */
 describe('game HUD art', () => {
   const paths = [
-    ...Object.values(CARD_ART), LOGO_ART.src, BOARD_FRAME, MARBLE_ART, SCORE_BURST, PLATE_ART,
+    ...Object.values(CARD_ART), ...Object.values(ICON_ART),
+    LOGO_ART.src, BOARD_FRAME, MARBLE_ART, SCORE_BURST, PLATE_ART,
   ];
 
   it('every referenced file is on disk', () => {

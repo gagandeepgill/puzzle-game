@@ -1,13 +1,13 @@
 import { Board } from '../Board.js';
 import { Icon, UIIcon } from '../icons.js';
 import type { IconName } from '../icons.js';
-import { PixelPart, UI_SPRITE, hasPixelArt } from './PixelSprite.js';
+import { PixelPart, hasPixelArt } from './PixelSprite.js';
 import { BLUEPRINTS, PARTS } from '../../game/content.js';
 import { COLS, column } from '../../game/types.js';
 import type { CellIndex } from '../../game/types.js';
 import type { usePayloadRun } from '../usePayloadRun.js';
 import type { HeatTier } from '../../game/preview.js';
-import { LOGO_ART } from './hudArt.js';
+import { ICON_ART, LOGO_ART } from './hudArt.js';
 
 /**
  * The `game` theme: the rework against the reference sheet.
@@ -118,7 +118,7 @@ export function GameView({
           onClick={onToggleSheet}
           className="gm-btn gm-btn-icon"
         >
-          <UIIcon name="sliders" size={14} />
+          <img src={ICON_ART.settings} alt="" aria-hidden className="gm-icon-sm" width={32} height={32} />
           <span className="sr-only">Settings</span>
         </button>
       </header>
@@ -228,7 +228,7 @@ export function GameView({
             <span className="gm-label">Jam</span>
             {run.jam ? (
               <div className="gm-jam-body">
-                <img src={UI_SPRITE.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
+                <img src={ICON_ART.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
                 <span>
                   <b className="gm-jam-name">{run.jam.name}</b>
                   <span className="gm-note">{run.jam.rule}</span>
@@ -242,12 +242,12 @@ export function GameView({
           <div className="gm-panel">
             <span className="gm-label gm-label-icon">
               <img
-                src={UI_SPRITE.blueprints}
+                src={ICON_ART.blueprints}
                 alt=""
                 aria-hidden
-                className="gm-icon"
-                width={16}
-                height={16}
+                className="gm-icon-sm"
+                width={32}
+                height={32}
               />
               Blueprints
             </span>
@@ -294,7 +294,7 @@ export function GameView({
                       which does not exist here, so this carries the part's real
                       effect badge instead: +3, ×2. Same position, real data. */}
                   <span aria-hidden className={`gm-card-badge${on ? ' is-check' : ''}`}>
-                    {on ? <UIIcon name="check" size={12} /> : PARTS[key].badge}
+                    {on ? <img src={ICON_ART.check} alt="" aria-hidden className="gm-icon-xs" width={32} height={32} /> : PARTS[key].badge}
                   </span>
                   {hasPixelArt(key)
                     ? <PixelPart part={key} size="32px" />

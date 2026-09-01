@@ -202,6 +202,10 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-jam-body > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .gm-jam-name { font-size: 13px; font-weight: 700; color: var(--gm-red); }
 .gm-icon { image-rendering: pixelated; flex: none; }
+/* The pack's icons are 64px crops of 32x32 art. Sized here rather than by the
+   width attribute so one rule moves all of them with the type scale. */
+.gm-icon-sm { image-rendering: pixelated; flex: none; width: 18px; height: 18px; }
+.gm-icon-xs { image-rendering: pixelated; flex: none; width: 13px; height: 13px; }
 /* Only a jam that exists gets the flash. Unconditional, this fired on every
    mount and the box announced a jam that was not there. */
 .gm-jam.is-active { animation: gm-jam-in var(--px-t-jam, 600ms) steps(6) 1; }

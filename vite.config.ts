@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -13,7 +13,29 @@ const { version } = JSON.parse(readFileSync('./package.json', 'utf8')) as { vers
 // Payload's entry is app/index.html, so it emits to dist/app/. Nothing in the
 // repo is a folder pretending to be a website; dist/ is the website.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    /**
+     * Keep the design sources in the repo and out of the build.
+     *
+     * `public/assets/pixel/hud-sources/` holds the ten sheets the pixel art is
+     * cropped from. They belong beside the crops, which is why they live under
+     * `public/`, but Vite copies that directory verbatim with no
+     * tree-shaking, and nothing in the app requests a sheet: they are
+     * 1448x1086 contact sheets and what the game draws with is cropped out of
+     * them into `hud/`. Left in, they were 10.6MB of an 13MB build.
+     *
+     * Dropped after the copy rather than excluded from it, because
+     * `publicDir` is all-or-nothing.
+     */
+    {
+      name: 'drop-hud-sources',
+      apply: 'build' as const,
+      closeBundle() {
+        rmSync('dist/assets/pixel/hud-sources', { recursive: true, force: true });
+      },
+    },
+  ],
   define: { __APP_VERSION__: JSON.stringify(version) },
   // Relative, so the same build works at a domain root and under a subpath.
   base: './',
