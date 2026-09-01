@@ -54,7 +54,12 @@
   .game-skin { --cell: clamp(52px, min((100dvh - 340px) / 6, (100vw - 520px) / 5), 64px); }
 }
 
-body:has(.game-skin) { background-color: var(--gm-bg); }
+/* The literal, not the token. `--gm-bg` is declared on `.game-skin`, which
+   is a descendant of body, so body cannot read it: the var is unresolvable,
+   the declaration is invalid at computed-value time, and the background falls
+   back to transparent. It looked fine in the preview pane only because that
+   pane paints its own dark ground behind the page. */
+body:has(.game-skin) { background-color: #0a0f18; }
 
 .gm-shell {
   max-width: 1180px;
