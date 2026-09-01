@@ -47,21 +47,34 @@
   --px-edge: #4a6885;
   --px-edge-dim: #263544;   /* the original, safe for purely decorative rules */
 
-  /* Animation timings as named constants, so they can be tuned after real
-     gameplay rather than hunted through keyframes. Each sits mid-range of
-     the band the layout reference gives it, listed in the comment. */
-  --px-t-weight: 140ms;   /* 120-160 */
-  --px-t-anvil: 270ms;    /* 220-320 */
-  --px-t-coil: 180ms;     /* 150-300 */
-  --px-t-prism: 250ms;    /* 220-280 */
-  --px-t-spring: 320ms;   /* 280-360, the strongest bounce in the skin */
-  --px-t-wire: 100ms;     /* 80-120, kept short because it fires often */
-  --px-t-reso: 280ms;     /* 240-320 */
-  --px-t-fork: 300ms;     /* 250-350 */
-  --px-t-gate: 210ms;     /* 180-250 */
-  --px-t-bell: 300ms;     /* 250-350 */
-  --px-t-score: 320ms;    /* 300-350 */
-  --px-t-jam: 600ms;      /* 600, one pass when introduced */
+  /* Mirrors of PIXEL_MOTION in motion.ts, which is the source. CSS cannot
+     import a TypeScript value, so motion.test.ts asserts the two agree
+     rather than trusting them to be kept in step by hand. */
+  --px-t-weight: 150ms;
+  --px-t-anvil: 220ms;
+  --px-t-coil: 180ms;
+  --px-t-prism: 260ms;
+  --px-t-spring: 260ms;
+  --px-t-wire: 110ms;
+  --px-t-reso: 300ms;
+  --px-t-fork: 300ms;
+  --px-t-gate: 220ms;
+  --px-t-bell: 350ms;
+  --px-t-score: 300ms;
+  --px-t-jam: 600ms;
+
+  --px-panel-alt: #101a24;
+  --px-muted: #8f98ab;      /* 6.06:1 on panel-alt */
+  /* #506174 measured 2.76:1 on panel-alt, under the 3.0 a border needs. */
+  --px-border-bright: #55677b;
+  --px-cyan: #6fd3d9;
+  /* #d94b56 measured 4.26:1. The same lift as --px-danger, which is this
+     colour under a different name across the two specs. */
+  --px-red: #e04e59;
+  /* Draft card idle border. #72598a measured 2.94:1, and a card is a button,
+     so its boundary needs 3.0. */
+  --px-card-edge: #745b8c;
+  --px-card-edge-hover: #a779d2;
 
   --px-blue: #19a5f4;
   /* #a449e6 -> 4.50:1 */

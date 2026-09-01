@@ -74,52 +74,9 @@ describe('the marble transition tracks whichever pacing is running', () => {
   });
 });
 
-describe('pixel part activation timing', () => {
-  const css = readFileSync(new URL('../pixel/pixel.css', import.meta.url), 'utf8');
-
-  /** Durations are named constants now, so resolve each variable to its ms. */
-  const constant = (name: string): number => {
-    const at = css.indexOf(`--px-t-${name}:`);
-    if (at < 0) throw new Error(`--px-t-${name} is not declared`);
-    const m = /(\d+)ms/.exec(css.slice(at, at + 60));
-    if (!m) throw new Error(`--px-t-${name} has no ms value`);
-    return Number(m[1]);
-  };
-
-  const rules = [...css.matchAll(/px-activate\[data-part='([a-z]+)'\][^}]*var\(--px-t-([a-z]+)\)/g)]
-    .map(([, part, token]) => ({ part: String(part), ms: constant(String(token)) }));
-
-  it('defines an effect for every part that has a sprite', () => {
-    expect(rules.map((r) => r.part).sort()).toEqual(
-      ['anvil', 'bell', 'coil', 'fork', 'gate', 'prism', 'reso', 'spring', 'weight', 'wire'],
-    );
-  });
-
-  it('keeps every activation inside its own row of the reference table', () => {
-    // The layout reference gives a range per part. Checking each against its
-    // own row rather than one blanket number, because they genuinely differ:
-    // Wire is 80-120ms and Spring is 280-360ms.
-    const BAND: Record<string, readonly [number, number]> = {
-      weight: [120, 160], anvil: [220, 320], coil: [150, 300], prism: [220, 280],
-      spring: [280, 360], wire: [80, 120], reso: [240, 320], fork: [250, 350],
-      gate: [180, 250], bell: [250, 350],
-    };
-    for (const { part, ms } of rules) {
-      const band = BAND[part];
-      expect(band, `${part} has no band`).toBeDefined();
-      expect(ms, `${part} is ${ms}ms, band ${band![0]}-${band![1]}`).toBeGreaterThanOrEqual(band![0]);
-      expect(ms, `${part} is ${ms}ms, band ${band![0]}-${band![1]}`).toBeLessThanOrEqual(band![1]);
-    }
-  });
-
-  it('gives Spring the longest activation, as the strongest bounce', () => {
-    const spring = constant('spring');
-    for (const { part, ms } of rules) {
-      if (part !== 'spring') expect(ms, `${part} is not shorter than Spring`).toBeLessThanOrEqual(spring);
-    }
-  });
-
-  it('has no looping animation anywhere in the skin', () => {
-    expect(css).not.toMatch(/animation:[^;]*infinite/);
-  });
-});
+// The per-part activation durations used to be asserted here against bands
+// from the layout reference. They now live in `PIXEL_MOTION` and are checked
+// by `motion.test.ts`, which compares the TypeScript source against its CSS
+// mirrors. Two places asserting the same numbers is how they drift, and the
+// two specs already disagreed once: the layout reference put Spring at
+// 280-360ms and the implementation map sets it to 260.

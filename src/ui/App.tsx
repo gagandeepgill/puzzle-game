@@ -8,6 +8,7 @@ import { usePayloadRun } from './usePayloadRun.js';
 import { isMuted, setMuted, setSoundTheme } from './audio.js';
 import { loadSkin, saveSkin } from './pixel/skin.js';
 import { PixelPart, hasPixelArt } from './pixel/PixelSprite.js';
+import { PixelGameView } from './pixel/PixelGameView.js';
 import type { GameSkin } from './pixel/skin.js';
 import { isCockpit, watchCockpit } from './breakpoints.js';
 import { PARTS, BLUEPRINTS } from '../game/content.js';
@@ -197,6 +198,107 @@ export function App() {
     const t = setTimeout(() => setResetArmed(false), 2500);
     return () => clearTimeout(t);
   }, [resetArmed]);
+
+  /**
+   * The settings controls, built once and rendered by whichever view is up.
+   * Both skins need the same choices, and duplicating them is how a control
+   * ends up existing in one skin and not the other.
+   */
+  const settingsControls = (
+    <>
+      <div role="group" aria-label="Mode" className="flex flex-wrap gap-1.5">
+        <Tab on={state.mode === 'daily'} onClick={() => setMode('daily')} icon="calendar">Daily</Tab>
+        <Tab on={state.mode === 'free'} onClick={() => setMode('free')} icon="infinity">Free Play</Tab>
+      </div>
+      <div role="group" aria-label="Difficulty" className="flex flex-wrap gap-1.5">
+        <Tab on={state.difficulty.key === 'easy'} onClick={() => setDifficulty('easy')} icon="sun">Easy · 4</Tab>
+        <Tab on={state.difficulty.key === 'hard'} onClick={() => setDifficulty('hard')} icon="flame">Hard · 8</Tab>
+      </div>
+      <div role="group" aria-label="Skin" className="flex flex-wrap gap-1.5">
+        <Tab on={!pixel} onClick={() => { setSkin('classic'); saveSkin('classic'); }} icon="sliders">Classic</Tab>
+        <Tab on={pixel} onClick={() => { setSkin('pixel'); saveSkin('pixel'); }} icon="sliders">Pixel</Tab>
+      </div>
+      <button
+        type="button"
+        aria-pressed={mute}
+        onClick={() => { setMuted(!mute); setMute(!mute); }}
+        className={`text-body font-semibold text-steel hover:text-ink rounded-[10px] py-2 min-h-[38px] flex items-center justify-center gap-2 ${RAISED}`}
+      >
+        <UIIcon name={mute ? 'soundOff' : 'soundOn'} size={15} />
+        {mute ? 'Sound off' : 'Sound on'}
+      </button>
+      <p className="text-meta text-steel">
+        {state.mode === 'daily' ? (
+          <>
+            <b className="text-ink">Day #{run.day}{state.variant && ` — ${state.variant.name}`}</b>{' '}
+            {state.variant?.desc} Everyone gets this same run today.
+          </>
+        ) : (
+          <>
+            <b className="text-ink">{state.difficulty.name}</b> — {state.difficulty.rounds} rounds.
+            Unseeded: every run reshuffles.
+          </>
+        )}
+      </p>
+    </>
+  );
+
+  const resultModal = state.phase.kind === 'runOver' && !modalDismissed ? (
+    <ResultModal
+      state={state}
+      won={state.phase.won}
+      record={run.record}
+      recordIsThisRun={run.recordIsThisRun}
+      streak={run.streak}
+      quota={run.quota}
+      onPlayAgain={() => { setModalDismissed(false); run.restart(); }}
+      onSwitchDifficulty={() => {
+        setModalDismissed(false);
+        run.restart({ difficulty: state.difficulty.key === 'easy' ? 'hard' : 'easy' });
+      }}
+      onDismiss={() => setModalDismissed(true)}
+    />
+  ) : null;
+
+  /**
+   * Pixel is its own page, not the classic one repainted.
+   *
+   * The two compositions differ enough that CSS could not bridge them: classic
+   * is a three-column cockpit with full-height rails, pixel is a centred shell
+   * with a thin header and the board as the hero. State, playback, scoring and
+   * the engine are shared unchanged; only the presentation forks here.
+   */
+  if (pixel) {
+    return (
+      <>
+        <main id="app-root" className="pixel-skin">
+          <PixelGameView
+            run={run}
+            heat={heat}
+            forkReach={reach}
+            path={path}
+            movable={movable}
+            placeable={placeable}
+            totals={totals}
+            canMove={canMove}
+            moving={moving}
+            moveFrom={moveFrom}
+            resetArmed={resetArmed}
+            sheetOpen={sheetOpen}
+            onCellPress={onCellPress}
+            onPeek={setPeekColumn}
+            onToggleMove={() => {
+              if (moving) { setMoving(false); setMoveFrom(null); } else setMoving(true);
+            }}
+            onReset={() => (resetArmed ? startOver() : setResetArmed(true))}
+            onToggleSheet={() => setSheetOpen((o) => !o)}
+            settings={settingsControls}
+          />
+        </main>
+        {resultModal}
+      </>
+    );
+  }
 
   return (
     // Safe-area padding matters only once installed, where there is no browser
