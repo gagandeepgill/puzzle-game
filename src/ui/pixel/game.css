@@ -172,6 +172,11 @@ body:has(.game-skin) { background-color: var(--gm-bg); }
      cell and put the draft cards 118px below the fold, 430 gives 62px and
      brings their names on screen. The rule text is still one short scroll. */
   --cell: clamp(44px, min((100dvh - 430px) / 6, (100vw - 40px) / 5), 64px);
+  /* The board's outer width, named once. The drop buttons above it are sized
+     from the same value, and two copies of the arithmetic would desync the
+     moment either changed. 42px is the board's own inset: 2px frame, 1px panel
+     border and 8px padding on each side. */
+  --board-w: calc(var(--cell) * 5 + 42px);
   --glyph: calc(var(--cell) * 0.66);
   --badge: clamp(9px, calc(var(--cell) * 0.16), 12px);
 }
@@ -180,14 +185,14 @@ body:has(.game-skin) { background-color: var(--gm-bg); }
 }
 
 /* Sized and padded to the board rather than to itself, so each button sits
-   exactly over the column it drops down. The 22px is the board's own inset:
-   2px frame, 1px panel border and 8px padding on each side. The gap matches
-   the grid's. Getting this wrong is invisible in code and obvious on screen. */
+   exactly over the column it drops down. The padding is half the board's
+   inset per side and the gap matches its grid's. Getting this wrong is
+   invisible in code and obvious on screen. */
 .gm-drops {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 6px;
-  width: calc(var(--cell) * 5 + 42px);
+  width: var(--board-w);
   max-width: 100%;
   padding-inline: 11px;
 }
@@ -213,7 +218,7 @@ body:has(.game-skin) { background-color: var(--gm-bg); }
    focal object rather than one more panel. */
 .gm-board {
   position: relative;
-  width: calc(var(--cell) * 5 + 42px);
+  width: var(--board-w);
   max-width: 100%;
   border: 2px solid var(--gm-gold);
   border-radius: 2px;
