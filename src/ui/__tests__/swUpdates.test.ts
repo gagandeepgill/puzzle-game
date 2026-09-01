@@ -13,11 +13,11 @@
  * of it. That is why both halves are asserted here rather than trusted to a
  * comment.
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const sw = readFileSync(new URL('../../../public/sw.js', import.meta.url), 'utf8');
-const dist = new URL('../../../dist/sw.js', import.meta.url);
+const config = readFileSync(new URL('../../../vite.config.ts', import.meta.url), 'utf8');
 
 describe('service worker updates', () => {
   it('takes its cache version from the build, not from a literal', () => {
@@ -60,12 +60,16 @@ describe('service worker updates', () => {
     expect(sw).toContain("'payload:skip-waiting'");
   });
 
-  it.runIf(existsSync(dist))('the built worker has a real version stamped in', () => {
-    const built = readFileSync(dist, 'utf8');
-    expect(built, 'the token was never replaced').not.toContain('__SW_VERSION__');
-    const m = /const CACHE_VERSION = '([^']+)'/.exec(built);
-    expect(m?.[1], 'no version in the built worker').toBeTruthy();
-    expect(m?.[1]?.length, 'the stamp looks too short to be a content hash')
-      .toBeGreaterThan(4);
+  it('has a build step that replaces the token', () => {
+    // Asserted against the config, not against dist/. An earlier version of
+    // this read dist/sw.js — but the deploy runs `npm test && npm run build`,
+    // so the tests see the *previous* build, and on a Netlify cache that was
+    // the old worker with 'v3' in it. It failed the deploy in 15 seconds and
+    // was testing an artefact that no longer existed by the time it mattered.
+    //
+    // The plugin throws if the token is missing, so the build is what proves
+    // the replacement happened. This proves the plugin is still wired up.
+    expect(config).toContain("name: 'stamp-sw-version'");
+    expect(config).toContain('__SW_VERSION__');
   });
 });
