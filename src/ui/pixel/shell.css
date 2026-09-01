@@ -446,6 +446,7 @@
 }
 .px-card-name { font-size: 12px; }
 
+/**
  * Gate outcomes, from the animation spec: pass reads as opening, fail as a
  * short reject.
  *
