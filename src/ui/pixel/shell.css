@@ -1,0 +1,386 @@
+/**
+ * The pixel shell.
+ *
+ * Its own vocabulary rather than overrides of the classic skin's Tailwind
+ * classes. The previous attempt repainted the cockpit and could never match
+ * the reference composition, because the composition was the thing that
+ * differed. Nothing in this file touches a `ck-*` class, so Classic is
+ * untouched by construction rather than by care.
+ *
+ * Every colour here reads a `--px-*` token from `pixel.css`, including the
+ * three that were lifted to clear their contrast floors.
+ */
+
+.px-shell {
+  --px-gap: 14px;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding: 12px max(10px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--px-gap);
+  color: var(--px-text);
+}
+
+/* ---- header: thin, two numbers, nothing else competing ---- */
+
+.px-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--px-edge-dim);
+  flex-wrap: wrap;
+}
+.px-title {
+  font-family: theme('fontFamily.display');
+  font-weight: 700;
+  font-size: clamp(20px, 2.4vw, 26px);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-right: auto;
+}
+.px-title span { color: var(--px-gold); }
+
+.px-header-stats { display: flex; gap: 18px; }
+.px-hstat { display: flex; align-items: baseline; gap: 6px; }
+.px-hstat-label {
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--px-muted);
+  font-weight: 700;
+}
+.px-hstat-num { font-size: 16px; font-variant-numeric: tabular-nums; font-weight: 700; }
+.px-gold { color: var(--px-gold); }
+.px-blue { color: var(--px-blue); }
+.px-danger { color: var(--px-danger); }
+
+.px-header-controls { display: flex; gap: 6px; }
+
+/* ---- the gameplay row: narrow rail, board, narrow rail ---- */
+
+.px-play {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--px-gap);
+  align-items: start;
+}
+
+@media (min-width: 860px) {
+  .px-play {
+    /* The rails are deliberately small, and the whole row is capped and centred
+       rather than spread across the shell. Letting it fill 1180px put 300px of
+       dead space between the board and each rail, which read as a dashboard
+       with a board in it rather than a board with supporting panels. Capped,
+       the rails hug the board and it takes about 40% of the row. */
+    /* The middle column sizes to the board rather than taking the slack, and
+       the whole row centres. That is what puts the rails right beside the
+       board instead of pinned to the shell edges with 300px of nothing
+       between, which is the single biggest difference from the reference. */
+    grid-template-columns: 168px auto 178px;
+    justify-content: center;
+  }
+}
+
+.px-rail { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+/* ---- panels: flat, thin, square ---- */
+
+.px-panel {
+  background: var(--px-panel);
+  border: 1px solid var(--px-edge);
+  border-radius: 2px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.px-empty { opacity: .72; }
+
+.px-stat-label {
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--px-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.px-stat { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.px-stat-value {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.px-note { font-size: 11.5px; line-height: 1.45; color: var(--px-muted); }
+
+.px-quota-num { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.px-quota-num b { color: var(--px-gold); }
+
+.px-bar {
+  height: 8px;
+  background: var(--px-bg);
+  border: 1px solid var(--px-edge-dim);
+  margin-top: 2px;
+}
+.px-bar-fill {
+  height: 100%;
+  background: var(--px-green);
+  transition: width 300ms ease-out;
+}
+
+.px-pips { display: inline-flex; gap: 3px; }
+.px-pip { width: 7px; height: 7px; background: var(--px-green); display: inline-block; }
+
+.px-tick { color: var(--px-green); animation: px-tick var(--px-t-score) steps(5) 1; }
+@keyframes px-tick { from { opacity: 0; transform: translateY(6px); } }
+
+.px-jam-name { font-size: 13px; font-weight: 700; color: var(--px-purple); }
+.px-jam { animation: px-jam-in var(--px-t-jam) steps(6) 1; }
+@keyframes px-jam-in {
+  0%, 100% { border-color: var(--px-edge); }
+  20%, 60% { border-color: var(--px-purple); }
+}
+
+.px-bplist { display: flex; flex-direction: column; gap: 5px; }
+.px-bplist li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--px-blue);
+}
+
+/* ---- the board, the hero ---- */
+
+.px-boardwrap {
+  /* Explicit, because a grid item that does not stretch centres its children
+     against its own content width rather than the column's. */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  /* Cells from the reference: tight, square, 52-64px. */
+  --cell: clamp(44px, min((100dvh - 300px) / 6, (100vw - 40px) / 5), 64px);
+  --glyph: calc(var(--cell) * 0.66);
+  --badge: clamp(9px, calc(var(--cell) * 0.16), 12px);
+}
+@media (min-width: 860px) {
+  .px-boardwrap { --cell: clamp(52px, min((100dvh - 300px) / 6, (100vw - 460px) / 5), 64px); }
+}
+
+.px-drops {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  width: calc(var(--cell) * 5 + 4px * 4 + 20px);
+  max-width: 100%;
+  padding-inline: 10px;
+}
+.px-drop {
+  min-height: 40px;
+  background: var(--px-panel);
+  border: 1px solid var(--px-edge);
+  border-radius: 2px;
+  color: var(--px-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  transition: border-color 120ms, color 120ms, background-color 120ms;
+}
+.px-drop-num { font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.px-drop-best { color: var(--px-gold); border-color: var(--px-gold); }
+.px-drop:disabled { opacity: .35; cursor: not-allowed; }
+@media (hover: hover) and (pointer: fine) {
+  .px-drop:enabled:hover { border-color: var(--px-blue); color: var(--px-text); }
+}
+
+/* Sized to exactly five cells rather than left to shrink to content. The
+   Board component has no intrinsic width, so without this it collapsed and
+   sat left of its column instead of centred under the header. 42px is the
+   panel chrome: 8px padding each side, a 1px border each side, and the four
+   6px gaps between the five columns. */
+.px-board {
+  position: relative;
+  width: calc(var(--cell) * 5 + 42px);
+  max-width: 100%;
+}
+.px-cleared {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  font-family: theme('fontFamily.display');
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--px-gold);
+  pointer-events: none;
+  animation: px-cleared 750ms steps(8) 1;
+}
+@keyframes px-cleared { from { opacity: 0; transform: translateY(-50%) scale(.8); } }
+
+.px-skip { align-self: center; }
+
+/* ---- draft, under the board ---- */
+
+.px-draft {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.px-draft-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.px-draft-title {
+  font-family: theme('fontFamily.display');
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--px-gold);
+}
+.px-draft-hint { text-align: center; }
+
+.px-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.px-card {
+  background: var(--px-panel);
+  border: 2px solid var(--px-card-edge);
+  border-radius: 2px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  transition: transform 120ms steps(2), border-color 120ms, background-color 120ms;
+}
+.px-card-name { font-size: 12.5px; font-weight: 700; text-align: center; }
+.px-card-rule {
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--px-muted);
+}
+@media (hover: hover) and (pointer: fine) {
+  .px-card:hover { border-color: var(--px-card-edge-hover); transform: translateY(-2px); }
+}
+/* Two classes rather than one. The single-class version matched the element,
+   was the only rule setting these properties, and still did not apply, with
+   reduced motion off and the custom property resolving. Not explained. Raising
+   specificity above the `border` shorthand on `.px-card` makes it
+   deterministic, which is what matters for a state a player has to see. */
+.px-card.px-card-on {
+  border-color: var(--px-green);
+  background: #0f2018;
+  transform: scale(1.04);
+}
+.px-card:disabled { opacity: .5; }
+
+/* ---- readout strip ---- */
+
+.px-readout {
+  border-top: 1px solid var(--px-edge-dim);
+  padding-top: 8px;
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.px-readout-lines {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--px-muted);
+}
+
+/* ---- buttons ---- */
+
+.px-btn {
+  background: var(--px-panel);
+  border: 1px solid var(--px-edge);
+  border-radius: 2px;
+  color: var(--px-text);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: border-color 120ms, background-color 120ms, color 120ms;
+}
+.px-btn-sm { min-height: 30px; font-size: 11.5px; }
+@media (hover: hover) and (pointer: fine) {
+  .px-btn:hover { border-color: var(--px-blue); }
+}
+.px-btn:active { transform: translateY(1px); }
+.px-btn-on { border-color: var(--px-blue); color: var(--px-blue); }
+.px-btn-danger { border-color: var(--px-danger); color: var(--px-danger); }
+
+.px-settings { gap: 8px; }
+
+/* ---- mobile order, from the spec: header, HUD row, jam, board, blueprints,
+        draft. The HUD becomes one row of three rather than a stacked rail. ---- */
+
+@media (max-width: 859px) {
+  .px-rail-hud {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .px-rail-hud > .px-panel { flex: 1 1 0; min-width: 96px; }
+  .px-rail-hud > .px-btn { flex: 1 1 100%; }
+  .px-play { display: flex; flex-direction: column; }
+  .px-rail-support { flex-direction: row; }
+  .px-rail-support > .px-panel { flex: 1 1 0; }
+  /* Jam above the board, blueprints below it, per the mobile priority list. */
+  .px-rail-hud { order: 1; }
+  .px-boardwrap { order: 3; }
+  .px-rail-support { order: 4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-card, .px-btn, .px-bar-fill, .px-tick, .px-jam, .px-cleared { animation: none; transition: none; }
+  .px-card.px-card-on { transform: none; }
+}
+
+/**
+ * Board placement feedback, from the reference's board-hover and
+ * board-invalid examples.
+ *
+ * Layered on top of the placement preview the game already computes, not
+ * instead of it: the heat map still shades what a placement is worth and the
+ * cell's accessible name still says it in words. These add the green and red
+ * the reference shows.
+ *
+ * Both are gated on `.is-placing`, which is only set while a part is actually
+ * selected. Without that gate every empty cell turned red on hover during
+ * normal play, since "not installable" is also true when you are holding
+ * nothing. In this game a held part can go in any empty cell, so valid is
+ * every empty one and invalid is every occupied one.
+ */
+.px-board.is-placing button[aria-label*='press to install']:hover {
+  border-color: var(--px-green);
+  box-shadow: inset 0 0 0 1px var(--px-green);
+}
+.px-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):hover {
+  border-color: var(--px-red);
+  box-shadow: inset 0 0 0 1px var(--px-red);
+}
