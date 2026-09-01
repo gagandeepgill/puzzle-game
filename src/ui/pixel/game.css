@@ -165,7 +165,13 @@ body:has(.game-skin) { background-color: #0a0f18; }
 
 .gm-box, .gm-panel {
   background: var(--gm-panel);
-  /* 2px borders and 2px radius on every panel, from the sheet's notes. */
+  /* 2px borders and 2px radius on every panel, from the sheet's notes.
+  
+     Not the pack's panel frame. It was tried here and taken back out: that
+     frame is authored at 461x376 with a notched top edge and a status lamp,
+     and 9-sliced down to a 150x56 stat box the notch tiles into a scalloped
+     strip along every panel. It is used on the settings sheet instead, which
+     is the one surface in this skin big enough to carry it. */
   border: 2px solid var(--gm-border);
   border-radius: 2px;
   padding: var(--u) calc(var(--u) * 1.25);
@@ -176,13 +182,24 @@ body:has(.game-skin) { background-color: #0a0f18; }
 }
 .gm-box-body { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
+/* The pack's track and fill. Sliced rather than stretched: both have rounded
+   caps, and stretching one across a 200px bar smears it. The fill keeps its
+   own caps at the end of the filled portion, which is what a partly-full bar
+   should look like. */
 .gm-bar {
   width: 100%;
-  height: 10px;
-  background: var(--gm-bg);
-  border: 1px solid var(--gm-border);
+  height: 14px;
+  border: 7px solid transparent;
+  border-image: url('/assets/pixel/hud/panels/bar-track.png') 14 fill / 7px / 0 round;
+  padding: 0;
 }
-.gm-bar-fill { height: 100%; background: var(--gm-green); transition: width 300ms ease-out; }
+.gm-bar-fill {
+  height: 100%;
+  min-width: 0;
+  border: 7px solid transparent;
+  border-image: url('/assets/pixel/hud/panels/bar-fill.png') 14 fill / 7px / 0 round;
+  transition: width 300ms ease-out;
+}
 
 /* Filled and empty pips: how many drops remain against how many the round
    began with, which is more than a bare count tells you. */
@@ -391,11 +408,23 @@ body:has(.game-skin) { background-color: #0a0f18; }
   flex-direction: column;
   gap: 8px;
 }
+/* The pack's divider, under the draft title. Decorative, so it is a
+   background rather than an element in the tree. */
+.gm-draft-head::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -6px;
+  height: 8px;
+  background: url('/assets/pixel/hud/panels/divider.png') center / auto 100% no-repeat;
+  pointer-events: none;
+}
+
 /* 4.9 draft title bar: the title is a panel with the skip control in it,
    rather than a heading floating above the cards. */
 .gm-draft-head {
   /* Row, restated. `.gm-panel` stacks its children, and inheriting that here
      put the skip control on a line of its own under the title. */
+  position: relative;
   display: flex; flex-direction: row;
   align-items: center; justify-content: space-between;
   gap: calc(var(--u) * 1.25);
@@ -565,10 +594,15 @@ body:has(.game-skin) { background-color: #0a0f18; }
 
 /* ---- buttons ---- */
 
+/* The pack's button frames, 9-sliced. Blue rests, gold marks an active or
+   important state, which is the sheet's own rule for gold, and the press is
+   the sheet's third column rather than a CSS darkening. 8px slices at an 8px
+   border is 1:1, which is why the files are stored at a quarter of source. */
 .gm-btn {
-  background: var(--gm-panel);
-  border: 2px solid var(--gm-border);
-  border-radius: 2px;
+  background: transparent;
+  border: 8px solid transparent;
+  border-image: url('/assets/pixel/hud/buttons/btn.png') 8 / 8px / 0 round;
+  border-radius: 0;
   color: var(--gm-text);
   font-size: 12px;
   font-weight: 700;
@@ -582,16 +616,37 @@ body:has(.game-skin) { background-color: #0a0f18; }
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   transition: border-color 120ms, color 120ms;
 }
-.gm-btn-icon { padding: 0 calc(var(--u) * 1.25); min-width: 36px; }
-@media (hover: hover) and (pointer: fine) {
-  .gm-btn:hover { border-color: var(--gm-blue); }
+.gm-btn-icon {
+  padding: 0;
+  min-width: 40px;
+  border-image: url('/assets/pixel/hud/buttons/btn-icon.png') 12 / 10px / 0 round;
+  border-width: 10px;
 }
-.gm-btn:active { transform: translateY(1px); }
-.gm-btn-on { border-color: var(--gm-green); color: var(--gm-green); }
-.gm-btn-danger { border-color: var(--gm-red); color: var(--gm-red); }
+@media (hover: hover) and (pointer: fine) {
+  .gm-btn:hover { filter: brightness(1.25); }
+}
+.gm-btn:active {
+  transform: translateY(1px);
+  border-image-source: url('/assets/pixel/hud/buttons/btn-down.png');
+}
+.gm-btn-on {
+  border-image-source: url('/assets/pixel/hud/buttons/btn-on.png');
+  color: var(--gm-gold);
+}
+/* No red frame in the pack, so the armed reset keeps a colour rather than a
+   frame. It is the one state that has to read as a warning. */
+.gm-btn-danger { color: var(--gm-red); }
 
 .gm-settings button { border-radius: 2px; }
-.gm-settings { gap: 8px; }
+/* The pack's panel frame, at the size it was drawn for. The notched top edge
+   and the corner lamp read as intended across a full-width sheet, where on a
+   stat box they tiled. */
+.gm-settings {
+  gap: 8px;
+  border: 14px solid transparent;
+  border-image: url('/assets/pixel/hud/panels/panel.png') 20 / 14px / 0 round;
+  border-radius: 0;
+}
 
 /* ---- mobile: the sheet's stacked order ---- */
 

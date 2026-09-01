@@ -43,6 +43,65 @@ export const BOARD_FRAME = `${BASE}/board/frame.png`;
 export const MARBLE_ART = `${BASE}/board/marble.png`;
 
 /**
+ * The quota bar, and the divider under a section title.
+ *
+ * The bar is two pieces because a track and a fill have to move
+ * independently. Both are 9-sliced rather than stretched: they have rounded
+ * caps, and stretching a cap to a 200px bar smears it into a lozenge, while
+ * slicing keeps the caps their drawn size and repeats only the straight
+ * middle. The fill's own caps then sit at the ends of the filled portion,
+ * which is what a partly-full bar should look like.
+ *
+ * pixel_sci_fi_hud_icon_set: track 557,562 275x134, fill 93,564 276x132,
+ * divider 926,570 472x118.
+ */
+export const BAR_ART = {
+  track: `${BASE}/panels/bar-track.png`,
+  fill: `${BASE}/panels/bar-fill.png`,
+} as const;
+
+export const DIVIDER_ART = `${BASE}/panels/divider.png`;
+
+/**
+ * The HUD panel frame, as a 9-slice.
+ *
+ * Corner brackets and a status lamp. The slice is 20px rather than something
+ * smaller for one reason: the lamp sits 20px in from the right edge, so a
+ * narrower slice would drop it into the repeating top edge and tile lamps
+ * across every panel. At 20 it falls inside the top-right corner, which does
+ * not repeat, and each panel gets exactly one.
+ *
+ * Quartered from the source so a 20px slice renders at a 10px border.
+ *
+ * pixel_art_sci_fi_hud_panel_set: 925,35 461x376.
+ */
+export const PANEL_ART = `${BASE}/panels/panel.png`;
+
+/**
+ * Button frames, as 9-slices.
+ *
+ * Blue is the resting state and gold marks an active or important one, which
+ * is the sheet's own rule for gold. The pressed frame is the third column of
+ * each row rather than a CSS darkening, so the press is authored art.
+ *
+ * The sheet also draws S / E / 1 keycaps beside these. They stay unused: the
+ * game has no keyboard shortcut to label, and drawing one would promise a
+ * binding that does not exist.
+ *
+ * Quartered from the source so an 8px slice renders at an 8px border.
+ */
+export const BUTTON_ART = {
+  /** pixel_ui_button_and_keycap_sprite_sheet: 32,329 431x146 */
+  idle: `${BASE}/buttons/btn.png`,
+  /** 32,98 431x148 */
+  active: `${BASE}/buttons/btn-on.png`,
+  /** 986,100 428x153 */
+  pressed: `${BASE}/buttons/btn-down.png`,
+  /** 56,552 195x188, the square one, for the header's icon buttons */
+  icon: `${BASE}/buttons/btn-icon.png`,
+} as const;
+
+/**
  * HUD icons.
  *
  * From `neon_pixel_ui_icon_sheet.png` rather than `pixel_sci_fi_hud_icon_set`,

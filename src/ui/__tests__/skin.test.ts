@@ -12,7 +12,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SKIN, SKINS, SKIN_LABEL, loadSkin, saveSkin } from '../pixel/skin.js';
 import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
 import {
-  BOARD_FRAME, CARD_ART, ICON_ART, LOGO_ART, MARBLE_ART, PLATE_ART, SCORE_BURST,
+  BAR_ART, BOARD_FRAME, BUTTON_ART, CARD_ART, DIVIDER_ART, ICON_ART, LOGO_ART, MARBLE_ART,
+  PANEL_ART, PLATE_ART, SCORE_BURST,
 } from '../pixel/hudArt.js';
 import { PART_KEYS } from '../../game/types.js';
 
@@ -115,8 +116,9 @@ describe('pixel sprite coverage', () => {
  */
 describe('game HUD art', () => {
   const paths = [
-    ...Object.values(CARD_ART), ...Object.values(ICON_ART),
-    LOGO_ART.src, BOARD_FRAME, MARBLE_ART, SCORE_BURST, PLATE_ART,
+    ...Object.values(CARD_ART), ...Object.values(ICON_ART), ...Object.values(BUTTON_ART),
+    ...Object.values(BAR_ART),
+    LOGO_ART.src, BOARD_FRAME, MARBLE_ART, SCORE_BURST, PLATE_ART, PANEL_ART, DIVIDER_ART,
   ];
 
   it('every referenced file is on disk', () => {
