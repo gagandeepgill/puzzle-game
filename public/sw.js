@@ -5,12 +5,18 @@
  * shell is precached and served cache-first — once installed, everything works
  * offline forever, including on a plane.
  *
- * Bump CACHE_VERSION on every deploy. The new worker installs in the background
- * and takes over only once every tab is closed; it deliberately does NOT call
- * skipWaiting(), because swapping the shell out from under someone mid-run would
- * lose their game.
+ * CACHE_VERSION is stamped at build time from the hash of the emitted app
+ * bundle, so it changes exactly when the app changes. It used to be a literal
+ * with a comment asking whoever deployed to remember; it read 'v3' from the
+ * day it was written until the day this replaced it, across every deploy in
+ * between. An unchanged version means an unchanged sw.js, which means the
+ * browser sees no new worker, which means the update prompt never fires.
+ *
+ * The new worker installs in the background and takes over only once every tab
+ * is closed; it deliberately does NOT call skipWaiting(), because swapping the
+ * shell out from under someone mid-run would lose their game.
  */
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = '__SW_VERSION__';
 const SHELL_CACHE = `arcade-shell-${CACHE_VERSION}`;
 const FONT_CACHE = `arcade-fonts-${CACHE_VERSION}`;
 
@@ -92,13 +98,29 @@ self.addEventListener('fetch', (event) => {
 
   if (url.origin !== self.location.origin) return;
 
-  // Navigations: cache-first, falling back to the hub so a deep link still
-  // opens something useful when offline.
+  /*
+   * Navigations: network first, cache as the offline fallback.
+   *
+   * This was cache-first, and that is what stopped every returning player
+   * receiving updates. A page is the document that names the hashed bundles;
+   * serving a cached one hands back the old filenames, whose contents are also
+   * cached, so the app pins itself to the build a visitor first saw. New
+   * deploys landed and nobody downstream ever saw one.
+   *
+   * The hashed assets below stay cache-first, which is safe precisely because
+   * their names change with their contents. Only the document has to be fresh.
+   */
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match(request).then((hit) =>
-        hit || fetch(request).catch(() => caches.match('index.html'))
-      )
+      fetch(request)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(SHELL_CACHE).then((c) => c.put(request, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(request).then((hit) => hit || caches.match('index.html')))
     );
     return;
   }

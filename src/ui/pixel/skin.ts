@@ -26,11 +26,15 @@ export const SKIN_LABEL: Record<GameSkin, string> = {
 /**
  * Change this one line to ship a different skin by default.
  *
- * Pixel, as of the sprite pack completing. A player who has already chosen a
- * skin is unaffected: this is only the fallback when storage holds nothing
- * usable, so nobody who picked Classic gets moved off it.
+ * Game, as of the HUD pack landing: it is the one built against the reference
+ * mockups, and leaving it behind the settings sheet meant nobody saw it
+ * without going looking.
+ *
+ * A player who has already chosen a skin is unaffected. This is only the
+ * fallback when storage holds nothing usable, so nobody who picked Classic or
+ * Pixel gets moved off it, and both are still one tap away in settings.
  */
-export const DEFAULT_SKIN: GameSkin = 'pixel';
+export const DEFAULT_SKIN: GameSkin = 'game';
 
 const KEY = 'payload.skin.v1';
 
