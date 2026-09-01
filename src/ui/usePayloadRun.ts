@@ -36,6 +36,16 @@ export interface FloatLabel {
   readonly text: string;
   /** A Tailwind text colour class. */
   readonly tone: string;
+  /**
+   * How big the pop should read, from what it is worth.
+   *
+   * The reference sheet draws its score pops at three sizes, small for a +10
+   * and largest for a +100, so a good hit is legible from the size before the
+   * digits are. The magnitude is already in `text`, but only as characters,
+   * and CSS cannot measure a string — so it is decided once here and the
+   * renderer just applies it. Skins that do not want it ignore it.
+   */
+  readonly pop: 'sm' | 'md' | 'lg';
 }
 
 /** One drop, as the round log lists it. */
@@ -133,6 +143,24 @@ function toneFor(text: string): string {
   if (text.startsWith('+')) return 'text-ok';
   if (text === 'SPLIT' || text === '↑↑') return 'text-glow';
   return 'text-bad';
+}
+
+/**
+ * The three tiers the sheet's score pops use.
+ *
+ * Thresholds are on the label's own number rather than on the running total,
+ * because the pop is about this hit and not about the run. A multiplier is
+ * scored on the multiplier itself: a ×3 is a bigger moment than a ×2 even
+ * though the character count is the same.
+ */
+export function popFor(text: string): FloatLabel['pop'] {
+  // The class strips the sign along with everything else, so a loss arrives
+  // here as its own size and is tiered like a gain. That is deliberate: -30
+  // is as big a moment as +30, in the other direction.
+  const n = Number(text.replace(/[^0-9.]/g, ''));
+  if (!Number.isFinite(n) || n === 0) return 'md';
+  if (text.startsWith('×')) return n >= 4 ? 'lg' : n >= 3 ? 'md' : 'sm';
+  return n >= 20 ? 'lg' : n >= 8 ? 'md' : 'sm';
 }
 
 export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; pace?: Pace }) {
@@ -300,7 +328,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; 
     };
 
     const float = (cell: CellIndex, text: string) => {
-      labels = [...labels, { id: labelId++, cell, text, tone: toneFor(text) }];
+      labels = [...labels, { id: labelId++, cell, text, tone: toneFor(text), pop: popFor(text) }];
     };
 
     const byMarble = chunkByMarble(result.events);

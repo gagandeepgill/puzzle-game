@@ -251,7 +251,12 @@ export function Board({
             style={cellBox(l.cell)}
             className="absolute flex items-start justify-center"
           >
-            <span className={`animate-floatup font-bold text-body drop-shadow-[0_1px_2px_rgba(0,0,0,.8)] ${l.tone}`}>
+            {/* `data-pop` is presentation a skin may or may not use: classic
+                and pixel ignore it, the game skin sizes the pop by it. */}
+            <span
+              data-pop={l.pop}
+              className={`animate-floatup font-bold text-body drop-shadow-[0_1px_2px_rgba(0,0,0,.8)] ${l.tone}`}
+            >
               {l.text}
             </span>
           </div>
