@@ -45,7 +45,7 @@
 .px-header-stats { display: flex; gap: 18px; }
 .px-hstat { display: flex; align-items: baseline; gap: 6px; }
 .px-hstat-label {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--px-muted);
@@ -100,7 +100,7 @@
 .px-empty { opacity: .72; }
 
 .px-stat-label {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: .12em;
   text-transform: uppercase;
   font-weight: 700;
@@ -248,7 +248,7 @@
 .px-draft-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .px-draft-title {
   font-family: theme('fontFamily.display');
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -384,3 +384,64 @@
   border-color: var(--px-red);
   box-shadow: inset 0 0 0 1px var(--px-red);
 }
+
+/**
+ * Type, from the reference's LAYOUT SPEC & TOKENS panel.
+ *
+ * Press Start 2P for the wordmark only, Pixelify Sans for headers and labels,
+ * and body copy left on Outfit. That split is deliberate: Press Start 2P is
+ * extremely wide and has no lowercase distinction to speak of, so a part rule
+ * set in it would be unreadable at 11px. The reference asks for it as the
+ * title face and the earlier master prompt says readability beats novelty.
+ *
+ * Both load from the request already in `app/index.html`, so this adds no new
+ * origin and no new round trip, and `sw.js` caches Google Fonts by origin
+ * rather than by family, so offline keeps working with no change there.
+ *
+ * Fallbacks are declared and matter: if either face fails, the shell falls
+ * back to the arcade's existing pairing rather than to a system serif.
+ */
+.px-title {
+  font-family: 'Press Start 2P', 'Fraunces', Georgia, serif;
+  /* Press Start 2P has no descenders to speak of and huge sidebearings, so it
+     needs to sit smaller and tighter than the display face it replaces. */
+  font-size: clamp(13px, 1.6vw, 18px);
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+
+.px-hstat-label,
+.px-stat-label,
+.px-draft-title,
+.px-card-name,
+.px-jam-name {
+  font-family: 'Pixelify Sans', 'Outfit', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Numbers stay tabular everywhere they change in place, which is every number
+   in the HUD. Pixelify Sans carries tabular figures; the fallback stack does
+   too, so the layout does not twitch on a drop either way. */
+.px-hstat-num,
+.px-stat-value,
+.px-quota-num,
+.px-drop-num {
+  font-family: 'Pixelify Sans', 'Outfit', 'Segoe UI', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/**
+ * Pixel faces need sizes on their own grid.
+ *
+ * Pixelify Sans at 10px resampled badly enough that the C lost its aperture
+ * and read as an O: the header said SOORE and the draft said OHOOSE. Snapped
+ * to 12 and 16, where the stems land on whole pixels, and the tracking is
+ * reduced because a pixel face already carries its own sidebearings.
+ */
+.px-hstat-label,
+.px-stat-label {
+  letter-spacing: .06em;
+}
+.px-draft-title {
+  letter-spacing: .04em;
+}
+.px-card-name { font-size: 12px; }
