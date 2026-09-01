@@ -94,3 +94,38 @@ describe('pixel motion discipline', () => {
     expect(Math.max(...travel)).toBeGreaterThanOrEqual(20);
   });
 });
+
+/**
+ * Where the mirrors are declared, not just what they say.
+ *
+ * The part animations are not scoped to a skin — `PixelPart` adds
+ * `.px-activate` whichever skin is wearing it — so their durations cannot be
+ * scoped either. While the block sat inside `.pixel-skin`, every part in the
+ * game skin got the class and an undefined duration, which makes the whole
+ * `animation` shorthand invalid at computed-value time. Parts fired without
+ * moving and nothing failed anywhere, which is why this is a test and not a
+ * comment.
+ */
+describe('motion mirrors are reachable from every skin', () => {
+  /** The declaration block a property sits in, by its selector. */
+  function selectorFor(prop: string): string {
+    const at = css.indexOf(`${prop}:`);
+    expect(at, `${prop} is not declared`).toBeGreaterThan(-1);
+    const open = css.lastIndexOf('{', at);
+    const start = css.lastIndexOf('}', open) + 1;
+    return css.slice(start, open).replace(/\/\*[\s\S]*?\*\//g, '').trim();
+  }
+
+  for (const prop of Object.values(MOTION_VAR)) {
+    it(`${prop} is on :root, so an unscoped animation can read it`, () => {
+      expect(selectorFor(prop as string)).toBe(':root');
+    });
+  }
+
+  it('the animations that read them are unscoped too', () => {
+    // If these ever gain a skin prefix, the :root requirement above stops
+    // being the thing that matters and this test should change with it.
+    expect(css).toContain(".px-activate[data-part='weight']");
+    expect(css).not.toContain('.pixel-skin .px-activate[');
+  });
+});
