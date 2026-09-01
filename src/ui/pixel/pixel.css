@@ -47,6 +47,22 @@
   --px-edge: #4a6885;
   --px-edge-dim: #263544;   /* the original, safe for purely decorative rules */
 
+  /* Animation timings as named constants, so they can be tuned after real
+     gameplay rather than hunted through keyframes. Each sits mid-range of
+     the band the layout reference gives it, listed in the comment. */
+  --px-t-weight: 140ms;   /* 120-160 */
+  --px-t-anvil: 270ms;    /* 220-320 */
+  --px-t-coil: 180ms;     /* 150-300 */
+  --px-t-prism: 250ms;    /* 220-280 */
+  --px-t-spring: 320ms;   /* 280-360, the strongest bounce in the skin */
+  --px-t-wire: 100ms;     /* 80-120, kept short because it fires often */
+  --px-t-reso: 280ms;     /* 240-320 */
+  --px-t-fork: 300ms;     /* 250-350 */
+  --px-t-gate: 210ms;     /* 180-250 */
+  --px-t-bell: 300ms;     /* 250-350 */
+  --px-t-score: 320ms;    /* 300-350 */
+  --px-t-jam: 600ms;      /* 600, one pass when introduced */
+
   --px-blue: #19a5f4;
   /* #a449e6 -> 4.50:1 */
   --px-purple: #b24ff9;
@@ -192,8 +208,8 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   85% { transform: translate(-2%, 0); }
   100% { transform: translate(0, 0); }
 }
-.px-activate[data-part='weight'] { animation: px-impact-soft 0.14s steps(4) 1; }
-.px-activate[data-part='anvil'] { animation: px-impact-hard 0.19s steps(5) 1; }
+.px-activate[data-part='weight'] { animation: px-impact-soft var(--px-t-weight) steps(4) 1; }
+.px-activate[data-part='anvil'] { animation: px-impact-hard var(--px-t-anvil) steps(6) 1; }
 
 /* Coil and Resonator: a pulse. Coil is the tighter, electrical one. */
 @keyframes px-pulse {
@@ -201,8 +217,8 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   40% { transform: scale(1.18); filter: brightness(1.7); }
   100% { transform: scale(1); filter: brightness(1); }
 }
-.px-activate[data-part='coil'] { animation: px-pulse 0.18s steps(3) 1; }
-.px-activate[data-part='reso'] { animation: px-pulse 0.28s steps(5) 1; }
+.px-activate[data-part='coil'] { animation: px-pulse var(--px-t-coil) steps(4) 1; }
+.px-activate[data-part='reso'] { animation: px-pulse var(--px-t-reso) steps(5) 1; }
 
 /* Tuning Fork: vibration. Horizontal only and sub-pixel-ish, which is what
    separates a vibration from a shake. */
@@ -213,7 +229,7 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   60% { transform: translateX(-4%); }
   80% { transform: translateX(3%); }
 }
-.px-activate[data-part='fork'] { animation: px-vibrate 0.3s steps(7) 1; }
+.px-activate[data-part='fork'] { animation: px-vibrate var(--px-t-fork) steps(7) 1; }
 
 /* Prism: a flash that splits. The sprite brightens and widens briefly, which
    reads as one thing becoming two without needing particle elements. */
@@ -223,7 +239,7 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   60% { transform: scaleX(0.9); filter: brightness(1.4); }
   100% { transform: scaleX(1); filter: brightness(1); }
 }
-.px-activate[data-part='prism'] { animation: px-split 0.25s steps(5) 1; }
+.px-activate[data-part='prism'] { animation: px-split var(--px-t-prism) steps(5) 1; }
 
 /* Spring: the one part that earns a real bounce, with overshoot. */
 @keyframes px-bounce {
@@ -233,7 +249,7 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   80% { transform: translateY(4%) scaleY(0.96); }
   100% { transform: translateY(0) scaleY(1); }
 }
-.px-activate[data-part='spring'] { animation: px-bounce 0.23s steps(5) 1; }
+.px-activate[data-part='spring'] { animation: px-bounce var(--px-t-spring) steps(6) 1; }
 
 /* Copper Wire: a quick electrical brighten, no movement. It fires often, and
    a moving cue that fires often becomes noise. */
@@ -242,7 +258,7 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   30% { filter: brightness(2.4); }
   60% { filter: brightness(1.3); }
 }
-.px-activate[data-part='wire'] { animation: px-zap 0.1s steps(3) 1; }
+.px-activate[data-part='wire'] { animation: px-zap var(--px-t-wire) steps(3) 1; }
 
 /* Gilded Gate: a single decisive flash. */
 @keyframes px-gate {
@@ -250,7 +266,7 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   40% { filter: brightness(2); transform: scale(1.12); }
   100% { filter: brightness(1); transform: scale(1); }
 }
-.px-activate[data-part='gate'] { animation: px-gate 0.21s steps(4) 1; }
+.px-activate[data-part='gate'] { animation: px-gate var(--px-t-gate) steps(4) 1; }
 
 /* Echo Bell: ring motion. A pseudo-element ring expands and fades from the
    sprite's own box, capped at 1.65x so it stays inside the cell. */
@@ -263,7 +279,7 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   30% { transform: rotate(-7deg); }
   65% { transform: rotate(5deg); }
 }
-.px-activate[data-part='bell'] { animation: px-bell-nudge 0.35s steps(6) 1; }
+.px-activate[data-part='bell'] { animation: px-bell-nudge var(--px-t-bell) steps(6) 1; }
 .px-ring-host { position: relative; }
 .px-ring-host.px-ringing::after {
   content: '';
@@ -336,13 +352,54 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
  * control keeps its handler and its accessible name; they are just smaller and
  * quieter than the board.
  */
+/**
+ * The page composition from the layout reference.
+ *
+ * Header across the top. Quota, Drops and Banked on the left. Board centred and
+ * dominant. Jam and Blueprints as narrow supporting panels on the right. Draft
+ * directly under the board, which is where the choice belongs: you are choosing
+ * a part to put on the thing right above it.
+ *
+ * The reference reserves no room for the parts reference or the drop breakdown,
+ * so those sit under the draft rather than being deleted. Section 22 of the
+ * master prompt allows removing clutter but not information.
+ */
+@media (min-width: 900px) {
+  .pixel-skin.ck {
+    max-width: 1180px;
+    grid-template-columns: 210px minmax(0, 1fr) 210px;
+    grid-template-rows: auto auto auto auto;
+    /* Every named area has to form a single rectangle. An earlier version put
+       `rail-b` at both ends of one row with `draft` between them, which is not
+       rectangular, so the browser discarded the whole declaration and the
+       layout silently fell back to the classic one. */
+    grid-template-areas:
+      "header header header"
+      "hud    board  side"
+      "hud    draft  side"
+      "rail-b rail-b rail-b";
+    column-gap: 1.5rem;
+  }
+}
+
 @media (min-width: 1180px) {
   .pixel-skin.ck {
-    /* 240 + board + 260, down from 300 + board + 348. The board absorbs all
-       148px of the difference. */
-    grid-template-columns: 240px minmax(0, 1fr) 260px;
-    max-width: 1400px;
+    max-width: 1240px;
+    grid-template-columns: 220px minmax(0, 1fr) 220px;
   }
+}
+
+/* The draft sits under the board and runs a little wider than it, which is
+   what the reference shows: three cards need more room than five cells.
+   Capped so it does not stretch to the full column on a wide monitor.
+
+   Not `calc(var(--cell) * 5 + ...)`. `--cell` is declared on `.ck-machine`,
+   which is the board, so reading it here produced an invalid length and the
+   whole max-width was dropped. */
+.pixel-skin .ck-draft {
+  width: 100%;
+  max-width: 640px;
+  margin-inline: auto;
 }
 
 /* Section 3: one slim header. No framed title block, no gradient. */
@@ -402,15 +459,18 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
 /* Section 7 again: 56-72px cells on desktop, against the classic skin's 90px
    ceiling. The sprite stays 32-44px inside that, which is what keeps it
    readable as pixel art rather than as a blown-up bitmap. */
+/* The reference states these outright: 64px cells, 4px gaps, 8px board
+   padding, a 2px frame. The ceiling is 64 rather than a range, because the
+   sprites are 32x32 and 64 is the only whole multiple that keeps them exact. */
 @media (min-width: 768px) {
   .pixel-skin .ck-machine {
-    --cell: clamp(48px, min((100dvh - 300px) / 6, (100vw - 460px) / 5), 72px);
-    --glyph: calc(var(--cell) * 0.6);
+    --cell: clamp(48px, min((100dvh - 320px) / 6, (100vw - 460px) / 5), 64px);
+    --glyph: calc(var(--cell) * 0.62);
   }
 }
-@media (min-width: 1180px) {
+@media (min-width: 900px) {
   .pixel-skin .ck-machine {
-    --cell: clamp(56px, min((100dvh - 260px) / 6, (100vw - 620px) / 5), 72px);
+    --cell: clamp(52px, min((100dvh - 340px) / 6, (100vw - 560px) / 5), 64px);
   }
 }
 
@@ -420,7 +480,7 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   from { opacity: 1; transform: translateY(0); }
   to { opacity: 0; transform: translateY(-12px); }
 }
-.pixel-skin .animate-floatup { animation: px-floatup 0.38s steps(6) forwards; }
+.pixel-skin .animate-floatup { animation: px-floatup var(--px-t-score) steps(6) forwards; }
 
 /* Section 5: the jam is noticeable without being a panel, and pulses once. */
 @keyframes px-jam-pulse {
@@ -429,7 +489,7 @@ body:has(.pixel-skin) { background-color: var(--px-bg, #08111b); }
   60% { opacity: 1; }
 }
 .pixel-skin .text-bad { color: var(--px-purple); }
-.pixel-skin .ck-hud p.text-bad { animation: px-jam-pulse 0.5s steps(4) 1; }
+.pixel-skin .ck-hud p.text-bad { animation: px-jam-pulse var(--px-t-jam) steps(6) 1; }
 
 /* Accent semantics from section 10, mapped onto the tokens that already carry
    those meanings rather than onto new elements. */

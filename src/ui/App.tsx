@@ -319,6 +319,49 @@ export function App() {
 
       </div>
 
+      {/* Jam and Blueprints are their own supporting panels rather than lines
+          inside the HUD, which is what the layout reference shows and what
+          lets the grid put them beside the board on a wide screen. They stay
+          in DOM order after the HUD, so the tab order is unchanged. */}
+      <div className="ck-side flex flex-col gap-2.5">
+        {run.jam && (
+          <div className={`${PANEL} px-3 py-2.5 flex flex-col gap-1`}>
+            <h2 className="text-label font-bold uppercase tracking-[.08em] text-bad flex items-center gap-1.5">
+              <UIIcon name="alert" size={13} />
+              Jam
+            </h2>
+            <p className="text-meta font-bold text-bad">{run.jam.name}</p>
+            <p className="text-meta text-steel">{run.jam.rule}</p>
+          </div>
+        )}
+
+        {/* Blueprints are permanent and change the arithmetic, so they have to
+            stay visible after their draft panel closes. Gravity Well in
+            particular is otherwise invisible. */}
+        {state.blueprints.size > 0 && (
+          <div className={`${PANEL} px-3 py-2.5 flex flex-col gap-1.5`}>
+            <h2 className="text-label font-bold uppercase tracking-[.08em] text-glow">
+              Blueprints
+            </h2>
+            <ul aria-label="Blueprints in effect" className="flex flex-wrap gap-1 md:flex-col">
+              {[...state.blueprints].map((key) => (
+                <li
+                  key={key}
+                  aria-label={`${BLUEPRINTS[key].name}. ${BLUEPRINTS[key].rule}`}
+                  className="text-micro font-semibold text-glow border border-glow/50 bg-glow/[0.07] rounded-full px-2 py-0.5 md:rounded-lg md:w-full md:px-2.5 md:py-1.5"
+                >
+                  <Icon name={BLUEPRINTS[key].glyph as IconName} size={13} className="inline-block -mt-px mr-1 align-text-bottom" />
+                  {BLUEPRINTS[key].name}
+                  <span aria-hidden className="hidden md:block text-micro font-normal text-steel leading-snug mt-0.5">
+                    {BLUEPRINTS[key].rule}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
       <div className="ck-hud flex flex-col gap-2.5">
       <div className={`${PANEL} px-3 py-2 md:py-2.5`}>
         <div className="flex justify-between items-baseline gap-2 text-body text-steel tabular-nums">
@@ -345,36 +388,21 @@ export function App() {
               </b>
             )}
           </span>
-          <span>Drops left <b className="text-brass font-bold text-body">{state.dropsLeft}</b></span>
+          {/* Dots as well as the number, which is what the reference shows.
+              The number stays because it is the accessible reading and because
+              a high drop count would otherwise be a row of indistinguishable
+              pips. Dots are decoration on top of it, not instead of it. */}
+          <span className="flex items-center gap-1.5">
+            Drops
+            <span aria-hidden className="hidden md:flex items-center gap-[3px]">
+              {Array.from({ length: Math.min(state.dropsLeft, 6) }, (_, i) => (
+                <i key={i} className="ck-drop-pip" />
+              ))}
+            </span>
+            <b className="text-brass font-bold text-body">{state.dropsLeft}</b>
+          </span>
           <span>Banked <b className="text-ink font-bold text-body">{state.total}</b></span>
         </div>
-        {run.jam && (
-          <p className="mt-1.5 md:mt-2 text-meta font-bold text-bad flex items-start gap-1.5">
-            <UIIcon name="alert" size={14} className="mt-px" />
-            <span>JAM — {run.jam.name}: {run.jam.rule}</span>
-          </p>
-        )}
-
-        {/* Blueprints are permanent and change the arithmetic, so they have to
-            stay visible after their draft panel closes. Gravity Well in
-            particular is otherwise invisible. */}
-        {state.blueprints.size > 0 && (
-          <ul aria-label="Blueprints in effect" className="flex flex-wrap gap-1 mt-1.5 md:mt-2 cockpit:flex-col">
-            {[...state.blueprints].map((key) => (
-              <li
-                key={key}
-                aria-label={`${BLUEPRINTS[key].name}. ${BLUEPRINTS[key].rule}`}
-                className="text-micro font-semibold text-glow border border-glow/50 bg-glow/[0.07] rounded-full px-2 py-0.5 cockpit:rounded-lg cockpit:w-full cockpit:px-2.5 cockpit:py-1.5"
-              >
-                <Icon name={BLUEPRINTS[key].glyph as IconName} size={13} className="inline-block -mt-px mr-1 align-text-bottom" />
-                {BLUEPRINTS[key].name}
-                <span aria-hidden className="hidden cockpit:block text-micro font-normal text-steel leading-snug mt-0.5">
-                  {BLUEPRINTS[key].rule}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
 
       {/* Written once per drop, after it resolves. Deriving it from render-time
@@ -464,14 +492,14 @@ export function App() {
         {playback.announcement}
       </p>
 
-      <div className="ck-rail-a flex flex-col gap-2.5">
+      <div className="ck-draft flex flex-col gap-2.5">
       {/* Compact on purpose. At the original sizes this panel ran 228px tall,
           which pushed the board 59% down a 375x812 phone and let it overflow
           by 70px — you could not see the machine you were drafting for. */}
       {drafting && (
         <div className="bg-panel-lit border border-brass rounded-[13px] shadow-panel p-2.5 flex flex-col gap-1.5 md:gap-2">
           <div className="flex justify-between items-center gap-2">
-            <h2 className="font-display text-lead font-bold text-brass">Draft a part</h2>
+            <h2 className="font-display text-lead font-bold text-brass uppercase tracking-[.06em]">Draft: choose 1 part</h2>
             <button
               type="button"
               onClick={() => run.dispatch({ type: 'skipDraft' })}

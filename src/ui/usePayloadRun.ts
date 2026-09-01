@@ -107,7 +107,7 @@ const fallMs = (step: number) => Math.round(40 + 46 * Math.pow(0.72, Math.max(0,
 /**
  * The pixel skin's pacing.
  *
- * Its animation direction asks for 120-180ms per board step. The classic curve
+ * Its animation direction asks for 140-170ms per board step. The classic curve
  * runs 86 down to 49, so the two genuinely disagree rather than one being a
  * refinement of the other. Scoping it to the skin honours both: classic keeps
  * the timing tuned and measured in #53, and pixel gets the pacing its own
@@ -115,9 +115,9 @@ const fallMs = (step: number) => Math.round(40 + 46 * Math.pow(0.72, Math.max(0,
  *
  * Same shape, different band. It still accelerates and still resets to the top
  * of the curve when a part fires, because that rhythm is what reads as a
- * contraption; only the range moves. 175, 158, 144, 133, 125, 118.
+ * contraption; only the range moves. 170, 162, 156, 150, 146, 143.
  */
-const fallMsPixel = (step: number) => Math.round(105 + 70 * Math.pow(0.78, Math.max(0, step - 1)));
+const fallMsPixel = (step: number) => Math.round(130 + 40 * Math.pow(0.80, Math.max(0, step - 1)));
 
 /** Which pacing a skin uses. Presentation, so it lives with the skins. */
 export type Pace = 'classic' | 'pixel';

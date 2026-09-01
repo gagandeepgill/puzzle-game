@@ -206,8 +206,9 @@
       grid-template-rows: auto auto auto 1fr;
       grid-template-areas:
         "header header"
-        "hud    rail-a"
-        "board  rail-a"
+        "hud    draft"
+        "board  draft"
+        "board  side"
         "board  rail-b";
       align-items: start;
       column-gap: 1.25rem;
@@ -227,7 +228,8 @@
       grid-template-rows: auto auto 1fr;
       grid-template-areas:
         "header header header"
-        "hud    board  rail-a"
+        "hud    board  draft"
+        "hud    board  side"
         "hud    board  rail-b";
     }
   }
@@ -235,13 +237,41 @@
   .ck-header { grid-area: header; }
   .ck-hud { grid-area: hud; }
   .ck-board { grid-area: board; }
-  .ck-rail-a { grid-area: rail-a; }
+  /* An empty container still contributes a flex gap, and on a phone that is
+     real height: with no jam and no blueprints yet, `.ck-side` was costing
+     10px and pushing the board's last row off the fold. */
+  .ck-side:empty, .ck-draft:empty { display: none; }
+
+  /* Phone order, from the layout spec: header, HUD, jam, board, draft, then
+     everything else. DOM order stays as it is so the tab order is unchanged;
+     only the visual order moves. */
+  .ck-header { order: 0; }
+  .ck-hud { order: 1; }
+  .ck-side { order: 2; }
+  .ck-board { order: 3; }
+  .ck-draft { order: 4; }
+  .ck-rail-b { order: 5; }
+
+  .ck-draft { grid-area: draft; }
+  .ck-side { grid-area: side; }
   .ck-rail-b { grid-area: rail-b; }
+
+  /* Drop pips. A count the reference draws as dots; the number stays next to
+     them, so this is decoration on top of the reading rather than instead of
+     it. Capped at six, because a row of nine identical dots stops being a
+     count you can read at a glance. */
+  .ck-drop-pip {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: theme('colors.ok');
+    display: inline-block;
+  }
 
   /* The rails scroll inside themselves so the page never does. A board sized
      to the viewport height is a broken promise the moment the page scrolls. */
   @media (min-width: 768px) {
-    .ck-hud, .ck-rail-a, .ck-rail-b { align-self: start; }
+    .ck-hud, .ck-draft, .ck-side, .ck-rail-b { align-self: start; }
     .ck-rail-b { overflow-y: auto; max-height: calc(100dvh - 22rem); }
   }
 }
