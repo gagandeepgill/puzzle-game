@@ -1,7 +1,7 @@
 import { Board } from '../Board.js';
 import { Icon, UIIcon } from '../icons.js';
 import type { IconName } from '../icons.js';
-import { PixelPart, hasPixelArt } from './PixelSprite.js';
+import { PixelPart, UI_SPRITE, hasPixelArt } from './PixelSprite.js';
 import { BLUEPRINTS, PARTS } from '../../game/content.js';
 import { COLS, column } from '../../game/types.js';
 import type { CellIndex } from '../../game/types.js';
@@ -111,7 +111,7 @@ export function GameView({
           onClick={onToggleSheet}
           className="gm-btn gm-btn-icon"
         >
-          <img src={ICON_ART.settings} alt="" aria-hidden className="gm-icon-sm" width={32} height={32} />
+          <img src={UI_SPRITE.settings} alt="" aria-hidden className="gm-icon-sm" width={32} height={32} />
           <span className="sr-only">Settings</span>
         </button>
       </header>
@@ -221,7 +221,7 @@ export function GameView({
           {run.jam ? (
             <div className="gm-jam-body">
               <span className="gm-well">
-                <img src={ICON_ART.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
+                <img src={UI_SPRITE.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
               </span>
               <b className="gm-jam-name">{run.jam.name}</b>
               <span className="gm-note">{run.jam.rule}</span>
@@ -234,7 +234,7 @@ export function GameView({
         <div className="gm-panel gm-bp">
           <span className="gm-label gm-label-icon">
             <img
-              src={ICON_ART.blueprints}
+              src={UI_SPRITE.blueprints}
               alt=""
               aria-hidden
               className="gm-icon-sm"
@@ -244,7 +244,7 @@ export function GameView({
             Blueprints
           </span>
           <span aria-hidden className="gm-well gm-bp-well">
-            <img src={ICON_ART.blueprints} alt="" className="gm-icon" width={32} height={32} />
+            <img src={UI_SPRITE.blueprints} alt="" className="gm-icon" width={32} height={32} />
           </span>
           {state.blueprints.size === 0 ? (
             <span className="gm-note">None yet.</span>

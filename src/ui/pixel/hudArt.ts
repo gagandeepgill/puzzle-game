@@ -31,18 +31,6 @@ const BASE = '/assets/pixel/hud';
 export const BOARD_FRAME = `${BASE}/board/frame.png`;
 
 /**
- * The marble in flight.
- *
- * Every mockup draws it as a silver sphere. `PixelMarble` is shared with the
- * pixel skin, which uses a blue tile, so this is swapped in `game.css` rather
- * than in the component: changing the component would change a skin that has
- * already shipped.
- *
- * pixel_sci_fi_hud_icon_set: 590,129 252x259.
- */
-export const MARBLE_ART = `${BASE}/board/marble.png`;
-
-/**
  * The quota bar, and the divider under a section title.
  *
  * The bar is two pieces because a track and a fill have to move
@@ -104,61 +92,31 @@ export const BUTTON_ART = {
 /**
  * HUD icons.
  *
- * From `neon_pixel_ui_icon_sheet.png` rather than `pixel_sci_fi_hud_icon_set`,
- * which is the order the brief asks for: the main set first, the neon sheet
- * only where the main set has no match. The main set draws a marble, a prism,
- * a progress bar, a divider and an info badge, and none of the five below.
- *
- * The game skin drew these as SVG glyphs and as two sprites left over from an
- * older pack. These are the pack's own.
- *
- * The sheet's sound on and off icons were cropped alongside these and taken
- * back out: the sound toggle lives in the settings sheet, which every skin
- * shares, so swapping its icon from here would change Classic and Pixel too.
+ * One icon, not five. Jam, blueprints and settings were cropped from the neon
+ * sheet and have since been delivered as individual 32x32 files, so they come
+ * from `UI_SPRITE` now and their crops are gone. The check has no delivered
+ * twin, so it stays here.
  */
 export const ICON_ART = {
-  /** neon_pixel_ui_icon_sheet: 144,78 200x250 */
-  jam: `${BASE}/icons/jam.png`,
-  /** 587,82 260x266 */
-  blueprints: `${BASE}/icons/blueprints.png`,
-  /** 1033,70 291x299 */
-  settings: `${BASE}/icons/settings.png`,
-  /** 170,768 223x224 */
+  /** neon_pixel_ui_icon_sheet: 170,768 223x224 */
   check: `${BASE}/icons/check.png`,
 } as const;
 
 /**
- * Frame strips, six frames each, 96px per frame.
+ * The effect frames.
  *
- * The atlas draws these as loose rows with the frames at different sizes and
- * uneven spacing, which a `steps()` animation cannot read. Each frame is
- * recut on its own centre into a fixed box and the six are stacked into an
- * even strip, so the animation is a background-position walk rather than six
- * separate files.
+ * Six per effect, 64x64, delivered as individual files and played by swapping
+ * `background-image` at six discrete steps. An earlier pass composed strips
+ * out of the FX atlas — its rows have frames at different sizes and uneven
+ * gaps, so each had to be recut on its own centre before a `steps()` walk
+ * could read them. The delivered frames are already aligned and centred, so
+ * the composed strips are gone.
  *
- * Spring and Bell play on the cell that fired; Jam plays on the panel when one
- * arrives. Coil and Prism have rows in the atlas too and are not used: the
- * pixel skin already gives them a pulse and a split in CSS, and those rules
- * are unscoped, so they play here as well.
- *
- * Source windows in retro_pixel_game_fx_sprite_atlas, each 176x176 taken on
- * its frame's own centre, in play order:
- *
- *   spring: 92,504 176x176 · 310,522 176x176 · 527,500 176x176 ·
- *           739,535 176x176 · 956,498 176x176 · 1173,506 176x176
- *   bell:   78,685 176x176 · 313,684 176x176 · 532,677 176x176 ·
- *           768,675 176x176 · 960,682 176x176 · 1189,684 176x176
- *   jam:    82,855 176x176 · 302,856 176x176 · 526,856 176x176 ·
- *           751,854 176x176 · 972,861 176x176 · 1191,855 176x176
+ * Listed here so the shipped-set test sees them; the URLs themselves are
+ * written out in the keyframes, which is the only place that can name six.
  */
-export const FX_STRIP = {
-  spring: `${BASE}/fx/spring.png`,
-  bell: `${BASE}/fx/bell.png`,
-  jam: `${BASE}/fx/jamfx.png`,
-} as const;
-
-/** How many frames each strip holds. The CSS `steps()` has to match. */
-export const FX_FRAMES = 6;
+export const FX_FRAME_COUNT = 6;
+export const FX_EFFECTS = ['spring', 'bell', 'jam'] as const;
 
 /**
  * The burst behind the biggest score pops.

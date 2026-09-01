@@ -37,10 +37,27 @@ export const PART_SPRITE: Record<PartKey, string> = {
   bell: `${BASE}/parts/bell.png`,
 };
 
-/** The two interface sprites, which are not parts. */
+/** The interface sprites, which are not parts. All 32x32 PNG with alpha. */
 export const UI_SPRITE = {
-  jam: `${BASE}/ui/jam.webp`,
-  blueprints: `${BASE}/ui/blueprints.webp`,
+  jam: `${BASE}/ui/jam.png`,
+  blueprints: `${BASE}/ui/blueprints.png`,
+  settings: `${BASE}/ui/settings.png`,
+  soundOn: `${BASE}/ui/sound-on.png`,
+  soundOff: `${BASE}/ui/sound-off.png`,
+} as const;
+
+/**
+ * The marble, in its four tints.
+ *
+ * All four share a silhouette and an upper-left highlight on purpose, so a
+ * tint reads as the same object in a different state rather than as a
+ * different object.
+ */
+export const MARBLE_SPRITE = {
+  silver: `${BASE}/marbles/marble-silver.png`,
+  blue: `${BASE}/marbles/marble-blue.png`,
+  red: `${BASE}/marbles/marble-red.png`,
+  dim: `${BASE}/marbles/marble-dim.png`,
 } as const;
 
 export const PIXEL_PARTS = new Set<PartKey>(Object.keys(PART_SPRITE) as PartKey[]);
@@ -91,7 +108,7 @@ export function PixelMarble({ label }: { readonly label: number }) {
   return (
     <span className="px-marble" style={{ width: '64%' }}>
       <img
-        src={`${BASE}/marbles/marble-blue.png`}
+        src={MARBLE_SPRITE.blue}
         alt=""
         aria-hidden
         draggable={false}

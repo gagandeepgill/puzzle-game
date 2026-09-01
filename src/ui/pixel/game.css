@@ -357,22 +357,25 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-board > div > div { gap: 0; }
 .gm-board button[aria-label^='Row'] {
   border-radius: 2px;
+  /* The pack's own cell tile. */
+  background-image: url('/assets/pixel/tiles/cell.png');
+  background-size: 100% 100%;
+  image-rendering: pixelated;
   /* 1px, not the 2px the sheet's note gives panels. The note is about panels,
      and at 2px across thirty cells the grid stopped being a grid and became a
      wall of buttons. Two neighbours share their edges, so the lattice draws at
      2px anyway. */
   border: 1px solid var(--gm-grid);
   background-color: var(--gm-bg);
-  background-image: none;
   /* No `box-shadow: none` here. Placement heat arrives as a Tailwind ring,
      which is a box-shadow, and clearing the classic recess took the ring with
      it — twice now. The recess is an inset on a flat fill and is invisible. */
 }
-/* The sheet names two cells, `cell` and `cell (alt)`. Five columns is an odd
-   count, so alternating on the child index lands as a checkerboard without
-   the row having to be known. */
+/* The pack ships `cell` and `cell-alt`. Five columns is an odd count, so
+   alternating on the child index lands as a checkerboard without the row
+   having to be known. */
 .gm-board button[aria-label^='Row']:nth-child(even) {
-  background-color: color-mix(in srgb, var(--gm-bg) 82%, var(--gm-panel));
+  background-image: url('/assets/pixel/tiles/cell-alt.png');
 }
 .gm-board button[aria-label^='Row']:focus-visible {
   border-color: var(--gm-blue);
@@ -572,22 +575,45 @@ body:has(.game-skin) { background-color: #0a0f18; }
   from { background-position: 0% 50%; }
   to { background-position: 100% 50%; }
 }
-.gm-board button.animate-fire:has(img[data-part='spring'])::after {
-  background-image: url('/assets/pixel/hud/fx/spring.png');
-  --fx-ms: var(--px-t-spring, 260ms);
+/* Six delivered frames each, so the walk swaps the image at six discrete
+   steps rather than panning one composed strip. `background-image` does not
+   interpolate, so each keyframe pair holds its frame and snaps to the next.
+   Plays once and holds the last frame; nothing loops. */
+@keyframes gm-bell-frames {
+  0.00%, 16.66% { background-image: url('/assets/pixel/effects/bell-1.png'); }
+  16.67%, 33.32% { background-image: url('/assets/pixel/effects/bell-2.png'); }
+  33.33%, 49.99% { background-image: url('/assets/pixel/effects/bell-3.png'); }
+  50.00%, 66.66% { background-image: url('/assets/pixel/effects/bell-4.png'); }
+  66.67%, 83.32% { background-image: url('/assets/pixel/effects/bell-5.png'); }
+  83.33%, 99.99% { background-image: url('/assets/pixel/effects/bell-6.png'); }
 }
 .gm-board button.animate-fire:has(img[data-part='bell'])::after {
-  background-image: url('/assets/pixel/hud/fx/bell.png');
-  --fx-ms: var(--px-t-bell, 350ms);
+  animation: gm-bell-frames var(--px-t-bell, 350ms) steps(1) 1 forwards;
 }
-/* Every other part keeps the CSS motion the pixel skin already defines. The
-   atlas has coil and prism rows, but a pulse and a split are exactly what
-   those rules do, and a strip on top would play the effect twice. */
-.gm-board button.animate-fire:not(:has(img[data-part='spring'])):not(:has(img[data-part='bell']))::after {
+/* Every other part keeps the CSS motion the pixel skin already defines: a
+   pulse for coil, a split for prism, a bounce for spring, all of which those
+   rules already do.
+   
+   Spring is among them only for now. Its six frames arrived with two of the
+   six overwritten by the cell tiles in the same download, and across every
+   saved variant only five distinct images survive, so there is no sixth to
+   play. Rather than flash a board tile mid-launch, it keeps its CSS bounce
+   until the frames are re-sent. */
+.gm-board button.animate-fire:not(:has(img[data-part='bell']))::after {
   content: none;
 }
 
-/* The jam burst, on the panel, when one arrives. */
+@keyframes gm-jam-frames {
+  0.00%, 16.66% { background-image: url('/assets/pixel/effects/jam-1.png'); }
+  16.67%, 33.32% { background-image: url('/assets/pixel/effects/jam-2.png'); }
+  33.33%, 49.99% { background-image: url('/assets/pixel/effects/jam-3.png'); }
+  50.00%, 66.66% { background-image: url('/assets/pixel/effects/jam-4.png'); }
+  66.67%, 83.32% { background-image: url('/assets/pixel/effects/jam-5.png'); }
+  83.33%, 99.99% { background-image: url('/assets/pixel/effects/jam-6.png'); }
+}
+/* The jam burst, on the panel, when one arrives. Once, on arrival — the
+   element is keyed on the jam's name, so a new jam remounts it and replays,
+   and an unchanged one never does. */
 .gm-jam.is-active::before {
   content: '';
   position: absolute;
@@ -597,10 +623,10 @@ body:has(.game-skin) { background-color: #0a0f18; }
   height: 40px;
   transform: translateY(-50%);
   pointer-events: none;
-  background: url('/assets/pixel/hud/fx/jamfx.png') no-repeat;
-  background-size: 600% 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   image-rendering: pixelated;
-  animation: gm-fx-walk var(--px-t-jam, 600ms) steps(6) 1 forwards;
+  animation: gm-jam-frames var(--px-t-jam, 600ms) steps(1) 1 forwards;
 }
 .gm-jam { position: relative; overflow: hidden; }
 
