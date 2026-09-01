@@ -445,3 +445,50 @@
   letter-spacing: .04em;
 }
 .px-card-name { font-size: 12px; }
+
+ * Gate outcomes, from the animation spec: pass reads as opening, fail as a
+ * short reject.
+ *
+ * Both come from the real result rather than from a guess. A pass arrives as a
+ * `trigger` event with the gate's part key and gets `px-gate`; a confiscation
+ * arrives as its own `confiscated` event kind and gets this. The engine already
+ * distinguished them, so nothing about the rules changed to tell them apart.
+ */
+@keyframes px-seized {
+  0% { border-color: var(--px-red); transform: translateX(0); }
+  30% { border-color: var(--px-red); transform: translateX(-2px); }
+  55% { transform: translateX(2px); }
+  80% { border-color: var(--px-red); transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+.px-seized {
+  animation: px-seized var(--px-t-gate) steps(4) 1;
+}
+
+/**
+ * The footer, from the component map's PixelFooterControls.
+ *
+ * Only controls that exist. The reference shows a version and a skin toggle;
+ * the skin toggle already lives in the settings sheet, so this carries the
+ * build identity and a link back to the hub rather than duplicating it.
+ */
+.px-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--px-edge-dim);
+  padding-top: 8px;
+  font-size: 11px;
+  color: var(--px-muted);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.px-footer a { text-decoration: underline; text-decoration-style: dotted; }
+@media (hover: hover) and (pointer: fine) {
+  .px-footer a:hover { color: var(--px-text); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-seized { animation: none; border-color: var(--px-red); }
+}

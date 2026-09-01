@@ -52,6 +52,10 @@ export interface Playback {
   /** Cells firing this frame. Plural because marbles now advance together,
    *  so a bell drop can trigger several parts at once. */
   readonly firingCells: readonly CellIndex[];
+  /** Cells where a marble was confiscated this frame. Separate from
+   *  `firingCells` because a Gate that rejects has to read differently from a
+   *  part that fired, and one list cannot say which of the two happened. */
+  readonly seizedCells: readonly CellIndex[];
   /** Bumped on every flash so a Spring re-triggering the same cell restarts
    *  the animation, which a class toggle alone cannot do. */
   readonly firingSeq: number;
@@ -87,7 +91,7 @@ export interface Playback {
  * the maths, and what will let a replay verifier re-derive a score server-side.
  */
 const EMPTY_PLAYBACK: Playback = {
-  firingCells: [], firingSeq: 0, tick: 0, ticking: false,
+  firingCells: [], seizedCells: [], firingSeq: 0, tick: 0, ticking: false,
   marbles: [], labels: [], stepMs: 60, shake: 0, breakdown: [], announcement: '',
 };
 
@@ -271,6 +275,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; 
     let labels: FloatLabel[] = [];
     let labelId = 0;
     let firingCells: CellIndex[] = [];
+    let seizedCells: CellIndex[] = [];
     let stepMs = 60;
     // Steps since a part last fired, which drives the acceleration.
     let fallStep = 0;
@@ -285,9 +290,10 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; 
       const marbles = [...live.values()];
       const shown = labels.slice(-8);   // bound the DOM; older ones have faded
       const at = firingCells;
+      const seized = seizedCells;
       const n = seq;
       setPlayback((p) => ({
-        ...p, firingCells: at, firingSeq: n, marbles, labels: shown,
+        ...p, firingCells: at, seizedCells: seized, firingSeq: n, marbles, labels: shown,
         tick: running, ticking: true, stepMs: ms,
       }));
       await sleep(ms);
@@ -327,6 +333,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; 
       if (f === lastBankFrame && !instant && !skipRef.current) await sleep(150);
 
       firingCells = [];
+      seizedCells = [];
       let fired = 0;
 
       for (const [id, chunks] of byMarble) {
@@ -368,6 +375,8 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; 
 
             case 'confiscated':
               sfx.seized();
+              seizedCells = [...seizedCells, event.cell];
+              seq += 1;
               float(event.cell, 'seized');
               live.delete(event.marble);
               break;
@@ -418,6 +427,7 @@ export function usePayloadRun(initial: { mode: Mode; difficulty: DifficultyKey; 
 
     setPlayback({
       firingCells: [],
+      seizedCells: [],
       firingSeq: seq,
       stepMs,
       shake,
