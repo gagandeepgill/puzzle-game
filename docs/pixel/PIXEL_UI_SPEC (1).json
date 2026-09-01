@@ -1,0 +1,56 @@
+{
+  "version": 2,
+  "skin": {
+    "type": [
+      "classic",
+      "pixel"
+    ],
+    "default": "pixel"
+  },
+  "board": {
+    "columns": 5,
+    "rows": 6
+  },
+  "draftOffers": 3,
+  "visualReference": "/assets/pixel/reference/payload-ui-hud-asset-sheet.png",
+  "parts": [
+    "weight",
+    "anvil",
+    "coil",
+    "prism",
+    "spring",
+    "wire",
+    "reso",
+    "fork",
+    "gate",
+    "bell"
+  ],
+  "motionMs": {
+    "ui": 120,
+    "marbleStep": 155,
+    "scorePop": 300,
+    "weight": 150,
+    "anvil": 220,
+    "coil": 180,
+    "prism": 260,
+    "spring": 260,
+    "wire": 110,
+    "reso": 300,
+    "fork": 300,
+    "gate": 220,
+    "bell": 350,
+    "jamIntro": 600,
+    "roundClear": 750,
+    "gameResult": 900
+  },
+  "prohibitedMechanics": [
+    "currency",
+    "shops",
+    "reroll costs",
+    "lives",
+    "energy",
+    "boss systems",
+    "new HUD resources",
+    "fake end-round mechanics"
+  ]
+}
