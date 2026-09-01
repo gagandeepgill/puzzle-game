@@ -544,27 +544,6 @@ body:has(.game-skin) { background-color: #0a0f18; }
    part sprite inside it too, because a filter applies to the whole subtree. */
 .gm-card.is-blueprint { background-image: url('/assets/pixel/hud/cards/frame.png'); }
 
-/* ---- part sprites ---- */
-
-/*
- * The asset sheet's own parts, replacing the pixel skin's set.
- *
- * `PixelPart` is shared and points at `/assets/pixel/parts/`, which belongs to
- * that skin — a flatter, earlier set whose coil is a plain orange ladder where
- * this one is a coiled spring with depth. Swapped with `content` rather than
- * by changing the component, so the pixel skin keeps the art it shipped with.
- */
-.game-skin .px-sprite[data-part='weight'] { content: url('/assets/pixel/hud/parts/weight.png'); }
-.game-skin .px-sprite[data-part='anvil'] { content: url('/assets/pixel/hud/parts/anvil.png'); }
-.game-skin .px-sprite[data-part='coil'] { content: url('/assets/pixel/hud/parts/coil.png'); }
-.game-skin .px-sprite[data-part='prism'] { content: url('/assets/pixel/hud/parts/prism.png'); }
-.game-skin .px-sprite[data-part='spring'] { content: url('/assets/pixel/hud/parts/spring.png'); }
-.game-skin .px-sprite[data-part='wire'] { content: url('/assets/pixel/hud/parts/wire.png'); }
-.game-skin .px-sprite[data-part='reso'] { content: url('/assets/pixel/hud/parts/reso.png'); }
-.game-skin .px-sprite[data-part='fork'] { content: url('/assets/pixel/hud/parts/fork.png'); }
-.game-skin .px-sprite[data-part='gate'] { content: url('/assets/pixel/hud/parts/gate.png'); }
-.game-skin .px-sprite[data-part='bell'] { content: url('/assets/pixel/hud/parts/bell.png'); }
-
 /* ---- part effects ---- */
 
 /*

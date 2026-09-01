@@ -7,31 +7,28 @@ import type { PartKey } from '../../game/types.js';
  * so a cell that measures 55.6px on a phone and 90px on a monitor shows the
  * same crisp sprite at a different size rather than a resampled one.
  *
- * The pack arrived in two halves and two formats: six as PNG, and the four
- * that completed it as lossless WebP. `PART_SPRITE` below is the one place
- * that knows which is which.
+ * All ten are 32x32 PNG with alpha, delivered as individual files. They
+ * replace an earlier pack that arrived in two halves and two formats, which
+ * is why `PART_SPRITE` below used to be an explicit map of mixed extensions.
  */
 const BASE = '/assets/pixel';
 
 /**
  * Every part's sprite file.
  *
- * Explicit rather than `${part}.png`, because the pack arrived in two halves
- * and two formats: the first six as PNG, the four that completed it as lossless
- * WebP. Both are 32x32 and both render identically, so converting one half to
- * match the other would be churn for no gain. This map is where that fact
- * lives, so nothing else has to know about it.
+ * Still written out rather than derived as `${part}.png`, so the set is
+ * legible in one place and a part added to the game without art fails
+ * typecheck rather than 404ing at runtime.
  *
- * All ten resolve now. The `hasPixelArt` fallback to the SVG glyph stays,
- * because a missing file should degrade to a readable board rather than to an
- * empty cell, and a test asserts this map against the filesystem in both
- * directions.
+ * The `hasPixelArt` fallback to the SVG glyph stays, because a missing file
+ * should degrade to a readable board rather than to an empty cell, and a test
+ * asserts this map against the filesystem in both directions.
  */
 export const PART_SPRITE: Record<PartKey, string> = {
-  weight: `${BASE}/parts/weight.webp`,
-  anvil: `${BASE}/parts/anvil.webp`,
-  reso: `${BASE}/parts/reso.webp`,
-  fork: `${BASE}/parts/fork.webp`,
+  weight: `${BASE}/parts/weight.png`,
+  anvil: `${BASE}/parts/anvil.png`,
+  reso: `${BASE}/parts/reso.png`,
+  fork: `${BASE}/parts/fork.png`,
   coil: `${BASE}/parts/coil.png`,
   prism: `${BASE}/parts/prism.png`,
   spring: `${BASE}/parts/spring.png`,

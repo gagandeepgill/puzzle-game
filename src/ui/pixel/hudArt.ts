@@ -111,6 +111,10 @@ export const BUTTON_ART = {
  *
  * The game skin drew these as SVG glyphs and as two sprites left over from an
  * older pack. These are the pack's own.
+ *
+ * The sheet's sound on and off icons were cropped alongside these and taken
+ * back out: the sound toggle lives in the settings sheet, which every skin
+ * shares, so swapping its icon from here would change Classic and Pixel too.
  */
 export const ICON_ART = {
   /** neon_pixel_ui_icon_sheet: 144,78 200x250 */
@@ -119,29 +123,9 @@ export const ICON_ART = {
   blueprints: `${BASE}/icons/blueprints.png`,
   /** 1033,70 291x299 */
   settings: `${BASE}/icons/settings.png`,
-  /** 157,451 266x217 */
-  soundOn: `${BASE}/icons/sound-on.png`,
-  /** 615,444 224x230 */
-  soundOff: `${BASE}/icons/sound-off.png`,
   /** 170,768 223x224 */
   check: `${BASE}/icons/check.png`,
 } as const;
-
-/**
- * The header stat plate, as a 9-slice.
- *
- * The sheet draws this with ROUND and a 7 painted into it, which is why an
- * earlier pass called it unusable and drew a CSS border instead. That was
- * wrong: a 9-slice discards the centre unless `fill` is asked for, so the
- * baked text goes with it and the live value sits in the well. Only using the
- * plate whole is impossible.
- *
- * Stored at a quarter of the source, 106x40, so a 10px slice renders at a
- * 10px border with no resampling.
- *
- * retro_payload_hud_pixel_art_assets: 151,502 425x162.
- */
-export const PLATE_ART = `${BASE}/ui/plate.png`;
 
 /**
  * Frame strips, six frames each, 96px per frame.
@@ -187,33 +171,6 @@ export const FX_FRAMES = 6;
  * retro_pixel_game_fx_sprite_atlas: 56,43 149x187.
  */
 export const SCORE_BURST = `${BASE}/fx/score-burst.png`;
-
-/**
- * The ten part sprites, from the asset sheet's own PART SPRITES row.
- *
- * The game skin was drawing parts out of `/assets/pixel/parts/`, which belongs
- * to the pixel skin and is a different, flatter set — its coil is a plain
- * orange ladder where this one is a coiled spring with depth. Same part, not
- * the same art, so the skin was borrowing.
- *
- * Extracted from the sheet rather than supplied loose: the sheet draws each
- * one inside a rounded tile, so each is cropped inside its frame and the
- * tile's #16202b interior keyed out.
- *
- * payload-ui-hud-asset-sheet, 33x33 windows on a 44x65 grid from 1311,36.
- */
-export const PART_ART: Record<string, string> = {
-  weight: `${BASE}/parts/weight.png`,
-  anvil: `${BASE}/parts/anvil.png`,
-  coil: `${BASE}/parts/coil.png`,
-  prism: `${BASE}/parts/prism.png`,
-  spring: `${BASE}/parts/spring.png`,
-  wire: `${BASE}/parts/wire.png`,
-  reso: `${BASE}/parts/reso.png`,
-  fork: `${BASE}/parts/fork.png`,
-  gate: `${BASE}/parts/gate.png`,
-  bell: `${BASE}/parts/bell.png`,
-};
 
 /**
  * Placement states, on the cell being aimed at.
@@ -269,18 +226,4 @@ export const CARD_ART = {
   selected: `${BASE}/cards/frame-selected.png`,
   /** 1109,182 315x454 */
   disabled: `${BASE}/cards/frame-disabled.png`,
-} as const;
-
-/**
- * The wordmark plate.
- *
- * The word is painted into the art, so the element that carries it needs a
- * real text alternative. Ratio is 1269:303, which the CSS holds so the plate
- * never stretches.
- */
-export const LOGO_ART = {
-  /** retro_payload_hud_pixel_art_assets: 90,117 1269x303 */
-  src: `${BASE}/ui/logo.png`,
-  width: 1269,
-  height: 303,
 } as const;

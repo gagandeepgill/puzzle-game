@@ -7,7 +7,7 @@ import { COLS, column } from '../../game/types.js';
 import type { CellIndex } from '../../game/types.js';
 import type { usePayloadRun } from '../usePayloadRun.js';
 import type { HeatTier } from '../../game/preview.js';
-import { ICON_ART, LOGO_ART } from './hudArt.js';
+import { ICON_ART } from './hudArt.js';
 
 /**
  * The `game` theme: the rework against the reference sheet.
