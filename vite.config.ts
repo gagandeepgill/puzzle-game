@@ -1,4 +1,5 @@
-import { readFileSync, rmSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -33,6 +34,36 @@ export default defineConfig({
       apply: 'build' as const,
       closeBundle() {
         rmSync('dist/assets/pixel/hud-sources', { recursive: true, force: true });
+      },
+    },
+    /**
+     * Stamp the service worker's cache version from the emitted bundle.
+     *
+     * `sw.js` is copied out of `public/` verbatim, so a literal version in it
+     * only changes when somebody remembers. Nobody did: it read 'v3' across
+     * every deploy from the day it was written, which meant the file was
+     * byte-identical each time, which meant the browser never saw a new worker
+     * and never offered the update. Derived from every emitted asset name
+     * instead, so it changes when — and only when — the app does.
+     *
+     * Every asset, not just the JS bundle: those names carry Vite's content
+     * hashes, and a first version of this read only `app-*.js`. Measured, a
+     * CSS-only change left the stamp identical, and this whole skin is mostly
+     * CSS — so the fix would not have covered the changes it was written for.
+     */
+    {
+      name: 'stamp-sw-version',
+      apply: 'build' as const,
+      closeBundle() {
+        const assets = readdirSync('dist/assets').filter((f) => /-[A-Za-z0-9_-]{6,}./.test(f));
+        if (assets.length === 0) throw new Error('stamp-sw-version: no hashed assets in dist/assets');
+        const stamp = createHash('sha256').update(assets.sort().join('|')).digest('hex').slice(0, 12);
+        const sw = 'dist/sw.js';
+        const src = readFileSync(sw, 'utf8');
+        if (!src.includes('__SW_VERSION__')) {
+          throw new Error('stamp-sw-version: no __SW_VERSION__ token in sw.js');
+        }
+        writeFileSync(sw, src.replace('__SW_VERSION__', stamp));
       },
     },
   ],
