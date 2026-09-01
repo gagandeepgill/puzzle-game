@@ -31,6 +31,27 @@
 
   color: var(--gm-text);
   font-family: 'Pixelify Sans', 'Outfit', 'Segoe UI', system-ui, sans-serif;
+
+  /* Sizing lives on the root, not on the board, because the draft and the
+     readout line up to the board and cannot read a token declared below them.
+     The subtrahend is everything the board is not: header, the two stat rows
+     and the drop buttons. Measured at 375x812, not guessed: 320 gave a 64px
+     cell and put the draft cards 118px below the fold, 430 gives 62px and
+     brings their names on screen. */
+  --cell: clamp(44px, min((100dvh - 430px) / 6, (100vw - 40px) / 5), 64px);
+  /* The board's outer width, named once: the drop buttons above it and the
+     draft below it are both sized from this, and copies of the arithmetic
+     desync the moment any of them changes. 42px is the board's own inset,
+     2px frame plus 1px panel border plus 8px padding a side. */
+  --board-w: calc(var(--cell) * 5 + 42px);
+  --glyph: calc(var(--cell) * 0.66);
+  --badge: clamp(9px, calc(var(--cell) * 0.16), 12px);
+  /* The two rail columns plus the two grid gaps, so one number describes the
+     desktop composition's width. */
+  --rails-w: 332px;
+}
+@media (min-width: 880px) {
+  .game-skin { --cell: clamp(52px, min((100dvh - 340px) / 6, (100vw - 520px) / 5), 64px); }
 }
 
 body:has(.game-skin) { background-color: var(--gm-bg); }
@@ -76,6 +97,7 @@ body:has(.game-skin) { background-color: var(--gm-bg); }
   color: var(--gm-muted);
 }
 .gm-num { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.gm-label-icon { display: inline-flex; align-items: center; gap: 6px; }
 .gm-gold { color: var(--gm-gold); }
 .gm-blue { color: var(--gm-blue); }
 
@@ -167,21 +189,6 @@ body:has(.game-skin) { background-color: var(--gm-bg); }
   align-items: center;
   gap: 8px;
   width: 100%;
-  /* The subtrahend is everything the board is not: header, the two stat rows
-     and the drop buttons. Measured at 375x812, not guessed: 320 gave a 64px
-     cell and put the draft cards 118px below the fold, 430 gives 62px and
-     brings their names on screen. The rule text is still one short scroll. */
-  --cell: clamp(44px, min((100dvh - 430px) / 6, (100vw - 40px) / 5), 64px);
-  /* The board's outer width, named once. The drop buttons above it are sized
-     from the same value, and two copies of the arithmetic would desync the
-     moment either changed. 42px is the board's own inset: 2px frame, 1px panel
-     border and 8px padding on each side. */
-  --board-w: calc(var(--cell) * 5 + 42px);
-  --glyph: calc(var(--cell) * 0.66);
-  --badge: clamp(9px, calc(var(--cell) * 0.16), 12px);
-}
-@media (min-width: 880px) {
-  .gm-boardwrap { --cell: clamp(52px, min((100dvh - 340px) / 6, (100vw - 520px) / 5), 64px); }
 }
 
 /* Sized and padded to the board rather than to itself, so each button sits
@@ -272,10 +279,17 @@ body:has(.game-skin) { background-color: var(--gm-bg); }
 
 /* ---- draft ---- */
 
-.gm-draft {
+/* As wide as the rails and the board above it, which is what the sheet does.
+   Capped rather than set, and stated here rather than in the 880px block: a
+   media query adds no specificity, so a rule up there lost to this one and
+   the panel ran the full width of the shell. Under 880 the cap exceeds the
+   viewport and stops mattering. */
+.gm-draft, .gm-readout {
   width: 100%;
-  max-width: 620px;
+  max-width: calc(var(--rails-w) + var(--board-w));
   margin-inline: auto;
+}
+.gm-draft {
   display: flex;
   flex-direction: column;
   gap: 8px;

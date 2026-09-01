@@ -128,7 +128,7 @@ export function GameView({
                 <i key={i} className={`gm-pip${i < state.dropsLeft ? ' is-on' : ''}`} />
               ))}
             </span>
-            <b className="gm-num">{state.dropsLeft}</b>
+            <b className="gm-num sr-only">{state.dropsLeft} left</b>
           </Box>
 
           <Box label="Banked">
@@ -168,7 +168,17 @@ export function GameView({
           </div>
 
           <div className="gm-panel">
-            <span className="gm-label">Blueprints</span>
+            <span className="gm-label gm-label-icon">
+              <img
+                src={UI_SPRITE.blueprints}
+                alt=""
+                aria-hidden
+                className="gm-icon"
+                width={16}
+                height={16}
+              />
+              Blueprints
+            </span>
             {state.blueprints.size === 0 ? (
               <span className="gm-note">None yet.</span>
             ) : (
