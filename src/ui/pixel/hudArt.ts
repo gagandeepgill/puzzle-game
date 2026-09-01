@@ -43,6 +43,22 @@ export const BOARD_FRAME = `${BASE}/board/frame.png`;
 export const MARBLE_ART = `${BASE}/board/marble.png`;
 
 /**
+ * The header stat plate, as a 9-slice.
+ *
+ * The sheet draws this with ROUND and a 7 painted into it, which is why an
+ * earlier pass called it unusable and drew a CSS border instead. That was
+ * wrong: a 9-slice discards the centre unless `fill` is asked for, so the
+ * baked text goes with it and the live value sits in the well. Only using the
+ * plate whole is impossible.
+ *
+ * Stored at a quarter of the source, 106x40, so a 10px slice renders at a
+ * 10px border with no resampling.
+ *
+ * retro_payload_hud_pixel_art_assets: 151,502 425x162.
+ */
+export const PLATE_ART = `${BASE}/ui/plate.png`;
+
+/**
  * The burst behind the biggest score pops.
  *
  * The atlas also draws `+10`, `+50` and `+100` as finished plates. Those are

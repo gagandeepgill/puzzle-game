@@ -102,14 +102,24 @@ body:has(.game-skin) { background-color: #0a0f18; }
   width: auto;
   image-rendering: pixelated;
 }
+/* The sheet's own stat plate, not a border pretending to be one. The 9-slice
+   drops the centre, so the ROUND and the 7 painted into the source go with it
+   and the live value sits in the well. 10px slices at a 10px border is 1:1,
+   which is why the file is stored at a quarter of the source.
+   
+   The well measures #0a101b, so text on it is 15.79:1 and the gold 10.25:1 —
+   both well clear, and both were measured off the sprite rather than assumed
+   from the token the CSS border used to sit on. */
 .gm-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--gm-border);
-  border-radius: 2px;
-  padding: 7px 10px;
-  background: var(--gm-panel);
+  border: 10px solid transparent;
+  border-image: url('/assets/pixel/hud/ui/plate.png') 10 / 10px / 0 round;
+  border-radius: 0;
+  padding: 2px 4px;
+  min-height: 40px;
+  background: transparent;
 }
 .gm-header-spacer { flex: 1 1 auto; }
 
@@ -629,7 +639,17 @@ body:has(.game-skin) { background-color: #0a0f18; }
      replaced, which pushed the settings button onto a line of its own again;
      measured, the row needs to come in under 355px and this puts it at 324. */
   .gm-logo img { height: 20px; }
-  .gm-chip { gap: 4px; padding: 4px 5px; }
+  /* Back to a border under 600px. The plate's frame is 10px a side, which is
+     20px of a chip that has to fit two of them, a wordmark and two buttons
+     across 355px — measured, the header wrapped to two rows with it on. */
+  .gm-chip {
+    gap: 4px;
+    padding: 4px 5px;
+    border: 1px solid var(--gm-border);
+    border-image: none;
+    min-height: 0;
+    background: var(--gm-panel);
+  }
   .gm-chip .gm-label { font-size: 8px; }
   .gm-chip .gm-num { font-size: 12px; }
   .gm-header { gap: 5px; }
