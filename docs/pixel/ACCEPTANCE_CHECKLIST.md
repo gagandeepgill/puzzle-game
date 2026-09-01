@@ -12,7 +12,7 @@ Claude should not consider the Pixel implementation complete until these pass.
 - [ ] Jam / Blueprints are supporting panels.
 - [ ] Draft sits below gameplay and shows exactly 3 offers.
 - [ ] Page is centered and not stretched awkwardly on wide screens.
-- [ ] Layout resembles `/public/assets/pixel/reference/payload-ui-hud-asset-sheet.png`.
+- [ ] Layout resembles `/docs/pixel/hud-sources/reference/payload-ui-hud-asset-sheet.png`.
 
 ## Game correctness
 

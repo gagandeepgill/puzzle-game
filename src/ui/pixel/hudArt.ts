@@ -30,6 +30,18 @@ const BASE = '/assets/pixel/hud';
  */
 export const BOARD_FRAME = `${BASE}/board/frame.png`;
 
+/**
+ * The marble in flight.
+ *
+ * Every mockup draws it as a silver sphere. `PixelMarble` is shared with the
+ * pixel skin, which uses a blue tile, so this is swapped in `game.css` rather
+ * than in the component: changing the component would change a skin that has
+ * already shipped.
+ *
+ * pixel_sci_fi_hud_icon_set: 590,129 252x259.
+ */
+export const MARBLE_ART = `${BASE}/board/marble.png`;
+
 /*
  * Board cells are not here on purpose.
  *

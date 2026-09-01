@@ -254,6 +254,16 @@ body:has(.game-skin) { background-color: #0a0f18; }
   border: 12px solid transparent;
   border-image: url('/assets/pixel/hud/board/frame.png') 48 / 12px / 0 round;
 }
+/* A silver sphere, which is how every mockup draws the marble. The sprite is
+   painted on the wrapper and the shared `img` is hidden rather than swapped,
+   because that `img` belongs to the pixel skin too and its blue tile is what
+   that skin shipped with. The value label is a sibling and is unaffected. */
+.game-skin .px-marble {
+  background: url('/assets/pixel/hud/board/marble.png') center / contain no-repeat;
+  image-rendering: pixelated;
+}
+.game-skin .px-marble-img { visibility: hidden; }
+
 /* The field behind the grid is the same dark as a cell, so the only thing
    drawn between cells is the line itself. */
 .gm-board .bg-panel-lit { background-color: var(--gm-bg); }
