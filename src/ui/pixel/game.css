@@ -60,7 +60,11 @@
      desync the moment any of them changes. 42px is the board's own inset,
      2px frame plus 1px panel border plus 8px padding a side. */
   --board-w: calc(var(--cell) * 5 + 42px);
-  --glyph: calc(var(--cell) * 0.66);
+  /* 0.78, against classic's 0.47 and pixel's 0.62. Held against the mockup at
+     a matched cell size, the part filled about 70% of its cell and this filled
+     50%: the sprites carry their own padding inside a 32px canvas, so the
+     share of the cell has to be larger to land in the same place. */
+  --glyph: calc(var(--cell) * 0.78);
   --badge: clamp(9px, calc(var(--cell) * 0.16), 12px);
   /* The two rail columns plus the two grid gaps, so one number describes the
      desktop composition's width. */
@@ -251,8 +255,10 @@ body:has(.game-skin) { background-color: #0a0f18; }
   position: relative;
   width: var(--board-w);
   max-width: 100%;
-  border: 12px solid transparent;
-  border-image: url('/assets/pixel/hud/board/frame.png') 48 / 12px / 0 round;
+  /* 16px against 48px slices, an exact third. At 12px the bezel read thinner
+     than the mockup's next to the same board. */
+  border: 16px solid transparent;
+  border-image: url('/assets/pixel/hud/board/frame.png') 48 / 16px / 0 round;
 }
 /* A silver sphere, which is how every mockup draws the marble. The sprite is
    painted on the wrapper and the shared `img` is hidden rather than swapped,
