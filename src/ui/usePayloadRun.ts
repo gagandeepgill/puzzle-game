@@ -154,7 +154,10 @@ function toneFor(text: string): string {
  * though the character count is the same.
  */
 export function popFor(text: string): FloatLabel['pop'] {
-  const n = Math.abs(Number(text.replace(/[^0-9.]/g, '')));
+  // The class strips the sign along with everything else, so a loss arrives
+  // here as its own size and is tiered like a gain. That is deliberate: -30
+  // is as big a moment as +30, in the other direction.
+  const n = Number(text.replace(/[^0-9.]/g, ''));
   if (!Number.isFinite(n) || n === 0) return 'md';
   if (text.startsWith('×')) return n >= 4 ? 'lg' : n >= 3 ? 'md' : 'sm';
   return n >= 20 ? 'lg' : n >= 8 ? 'md' : 'sm';

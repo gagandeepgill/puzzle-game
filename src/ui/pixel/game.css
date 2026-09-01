@@ -481,10 +481,13 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-board .animate-floatup[data-pop='lg'] { font-size: 21px; }
 
 /* Tone arrives as a classic Tailwind class, so the skin restates it in its
-   own palette rather than the cockpit's brass and steel. */
-.gm-board .animate-floatup.text-ok,
-.gm-board .animate-floatup.text-brass { color: var(--gm-gold); }
-.gm-board .animate-floatup.text-glow { color: var(--gm-blue); }
+   own palette rather than the cockpit's brass and steel. The sheet's
+   score-pop row separates the two kinds: gains are gold, multipliers are not.
+   Mapping both to gold, as a first pass here did, throws that away — a ×4 and
+   a +4 are different things and should not read the same. */
+.gm-board .animate-floatup.text-ok { color: var(--gm-gold); }
+.gm-board .animate-floatup.text-brass { color: var(--gm-blue); }
+.gm-board .animate-floatup.text-glow { color: var(--gm-purple); }
 .gm-board .animate-floatup.text-bad { color: var(--gm-red); }
 
 /* Only the largest tier gets the burst, so it stays an event rather than
