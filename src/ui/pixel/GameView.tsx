@@ -7,6 +7,7 @@ import { COLS, column } from '../../game/types.js';
 import type { CellIndex } from '../../game/types.js';
 import type { usePayloadRun } from '../usePayloadRun.js';
 import type { HeatTier } from '../../game/preview.js';
+import { LOGO_ART } from './hudArt.js';
 
 /**
  * The `game` theme: the rework against the reference sheet.
@@ -76,7 +77,14 @@ export function GameView({
   return (
     <div className="gm-shell">
       <header className="gm-header">
-        <h1 className="gm-logo">Payload</h1>
+        <h1 className="gm-logo">
+          <img
+            src={LOGO_ART.src}
+            alt="Payload"
+            width={LOGO_ART.width}
+            height={LOGO_ART.height}
+          />
+        </h1>
         <span className="gm-chip">
           <b className="gm-label">Round</b>
           <b className="gm-num">{state.round + 1} / {state.difficulty.rounds}</b>

@@ -7,10 +7,11 @@
  * parts, and a coverage set that drifts from the filesystem would render a
  * broken image in a board cell rather than falling back to the SVG glyph.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SKIN, SKINS, SKIN_LABEL, loadSkin, saveSkin } from '../pixel/skin.js';
 import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
+import { CARD_ART, CELL_ART, LOGO_ART } from '../pixel/hudArt.js';
 import { PART_KEYS } from '../../game/types.js';
 
 // Resolved through the map, because the pack is half PNG and half WebP.
@@ -99,5 +100,48 @@ describe('pixel sprite coverage', () => {
     // names, and a board where Anvil and Weight look identical is unreadable.
     const paths = PART_KEYS.map((p) => PART_SPRITE[p]);
     expect(new Set(paths).size, 'two parts share a sprite').toBe(paths.length);
+  });
+});
+
+/**
+ * The game skin's HUD art.
+ *
+ * These are crops out of an eight-sheet pack, and the sheets themselves are
+ * not in `public/`, so a path that drifts cannot be caught by the build: it
+ * ships as a broken image on a board cell or a draft card. Hence checking the
+ * files rather than the constants.
+ */
+describe('game HUD art', () => {
+  const paths = [...Object.values(CELL_ART), ...Object.values(CARD_ART), LOGO_ART.src];
+
+  it('every referenced file is on disk', () => {
+    for (const path of paths) {
+      expect(existsSync(fileFor(path)), `missing ${path}`).toBe(true);
+    }
+  });
+
+  it('maps every state to a distinct file', () => {
+    // Two states sharing a file is the failure that looks like nothing
+    // happened: a valid cell and an invalid one would draw the same tile.
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it('ships only what it references', () => {
+    // The pack is 6.7MB of source sheets. Anything unreferenced under the
+    // shipped directory is weight in `dist/` that nobody asked for.
+    const dir = new URL('../../../public/assets/pixel/hud/', import.meta.url);
+    const walk = (u: URL): string[] => readdirSync(u, { withFileTypes: true })
+      .flatMap((e) => (e.isDirectory()
+        ? walk(new URL(`${e.name}/`, u))
+        : [`${u.pathname.split('/public')[1]}${e.name}`]));
+    expect(walk(dir).sort()).toEqual([...paths].sort());
+  });
+
+  it('records the crop rectangle for every piece', () => {
+    // The source sheets are 1448x1086 and the pieces were located by
+    // measurement. Losing the rectangles means re-deriving them by eye.
+    const src = readFileSync(new URL('../pixel/hudArt.ts', import.meta.url), 'utf8');
+    const rects = src.match(/\d+,\d+ \d+x\d+/g) ?? [];
+    expect(rects.length).toBe(paths.length);
   });
 });

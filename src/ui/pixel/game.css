@@ -73,15 +73,14 @@ body:has(.game-skin) { background-color: #0a0f18; }
 /* ---- header: every item its own bordered box, as the sheet draws it ---- */
 
 .gm-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.gm-logo {
-  font-family: 'Press Start 2P', 'Pixelify Sans', monospace;
-  font-size: clamp(12px, 1.5vw, 16px);
-  color: var(--gm-text);
-  border: 2px solid var(--gm-gold);
-  border-radius: 2px;
-  padding: 8px 12px;
-  letter-spacing: 0;
-  text-transform: uppercase;
+/* The wordmark is the pack's plate, so the height is what is set and the
+   width follows the art's 1269:303. Decorative scale steps down with the
+   breakpoints; the text alternative on the img is what carries the name. */
+.gm-logo { display: flex; }
+.gm-logo img {
+  height: 42px;
+  width: auto;
+  image-rendering: pixelated;
 }
 .gm-chip {
   display: inline-flex;
@@ -238,30 +237,38 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-board .bg-panel-lit { background-color: var(--gm-panel-alt); }
 /* Board is shared, so it arrives painted for classic: dashed borders, 9px
    corners, a recessed shadow. Restated here rather than teaching Board about
-   skins. Border colour is left alone so the gold placement heat still shows. */
+   skins. The pack draws a cell for each placement state, so the tile carries
+   the state and the border goes away entirely; the gold heat ring stays,
+   because it says which of the valid cells is worth the most and the green
+   tile only says the cell is valid at all. */
 .gm-board > * { border-radius: 2px; }
 .gm-board button[aria-label^='Row'] {
   border-radius: 2px;
-  border-style: solid;
-  background-image: url('/assets/pixel/tiles/cell.png');
+  border-color: transparent;
+  background-image: url('/assets/pixel/hud/board/cell.png');
   background-size: 100% 100%;
   image-rendering: pixelated;
+}
+.gm-board button[aria-label^='Row']:focus-visible {
+  background-image: url('/assets/pixel/hud/board/cell-focus.png');
 }
 /* Placement heat arrives as a Tailwind ring, which is a box-shadow. An earlier
    `box-shadow: none` here to clear the classic recess took the ring with it and
    the whole preview went dark, so the recess is left in place instead: the tile
    covers it. */
 
-/* Placement states, from the sheet's valid/invalid cells. Gated on actually
-   holding a part: without that, every empty cell reads as red during normal
-   play, because "not installable" is also true when holding nothing. */
-.gm-board.is-placing button[aria-label*='press to install']:hover {
-  border-color: var(--gm-green);
-  box-shadow: inset 0 0 0 2px var(--gm-green);
+/* Placement states: the pack's crosshair tiles, on the cell being aimed at.
+   Gated on actually holding a part, because "not installable" is also true
+   when holding nothing, and on hover or focus rather than every cell at once
+   — painting all 24 empty cells green washed the board out and buried the
+   gold heat ring, which is the reading that actually says where to build. */
+.gm-board.is-placing button[aria-label*='press to install']:hover,
+.gm-board.is-placing button[aria-label*='press to install']:focus-visible {
+  background-image: url('/assets/pixel/hud/board/cell-valid.png');
 }
-.gm-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):hover {
-  border-color: var(--gm-red);
-  box-shadow: inset 0 0 0 2px var(--gm-red);
+.gm-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):hover,
+.gm-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):focus-visible {
+  background-image: url('/assets/pixel/hud/board/cell-invalid.png');
 }
 
 .gm-cleared {
@@ -308,51 +315,76 @@ body:has(.game-skin) { background-color: #0a0f18; }
   color: var(--gm-gold);
 }
 
-.gm-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.gm-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  justify-items: center;
+}
+/* The frame is art, and the art is 311x454, so the card holds that ratio and
+   the plate never stretches. Padding is in percent for the same reason: the
+   bezel, the badge well and the bottom plate are painted at fixed fractions
+   of the frame, so the content has to be placed in fractions too. */
 .gm-card {
   position: relative;
-  background: var(--gm-panel);
-  border: 2px solid var(--gm-purple);
-  border-radius: 2px;
-  padding: 12px 8px 10px;
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 311 / 454;
+  border: 0;
+  background: url('/assets/pixel/hud/cards/frame.png') center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  padding: 9% 9% 12%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 4%;
   min-width: 0;
-  transition: transform 120ms steps(2), border-color 120ms, background-color 120ms;
+  transition: transform 120ms steps(2), filter 120ms;
 }
+/* The frame paints an empty box in its top-right corner. This sits in it,
+   rather than drawing a second box beside it. Measured off the art: the well
+   is 17% of the frame's width, inset 5% from the top and 6% from the right. */
 .gm-card-badge {
   position: absolute;
-  top: 4px; right: 4px;
-  font-size: 11px;
+  top: 5.5%; right: 6.5%;
+  min-width: 17%;
+  height: 12%;
+  /* 9px, because the longest badge in the set is "+touch" and the painted
+     well is 34px across at the card's 200px cap. */
+  font-size: 9px;
+  letter-spacing: -0.02em;
   font-weight: 700;
   color: var(--gm-text);
-  border: 1px solid var(--gm-purple);
-  border-radius: 2px;
-  padding: 1px 4px;
-  background: var(--gm-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 /* Selected, the badge box turns green and carries the check, which is what
    the sheet's card-state row shows. One box, not two. */
-.gm-card-badge.is-check {
-  border-color: var(--gm-green);
-  color: var(--gm-green);
-  padding: 2px 3px;
-  display: flex;
-}
+.gm-card-badge.is-check { color: var(--gm-green); }
 .gm-card-name { font-size: 13px; font-weight: 700; text-align: center; }
 .gm-card-rule { font-size: 11px; line-height: 1.35; text-align: center; color: var(--gm-muted); }
 @media (hover: hover) and (pointer: fine) {
-  .gm-card:hover { border-color: var(--gm-blue); transform: translateY(-2px); }
+  .gm-card:hover { transform: translateY(-2px); }
 }
+/* The glow was cropped off the selected frame, because as a soft gradient it
+   was four fifths of the file. A drop-shadow puts it back from the frame
+   already on screen. It stays the pack's violet: the frame under it is
+   violet, and a green halo around a violet frame read as a printing error.
+   Green is still what says yes here — it is the check in the badge well and
+   the placement tile the same choice lights up on the board. */
 .gm-card.is-selected {
-  border-color: var(--gm-green);
-  background: #0f2119;
-  transform: scale(1.04);
+  background-image: url('/assets/pixel/hud/cards/frame-selected.png');
+  filter: drop-shadow(0 0 7px rgb(169 124 248 / .6));
 }
-.gm-card:disabled { opacity: .45; filter: grayscale(.6); }
-.gm-card.is-blueprint { border-color: var(--gm-blue); }
+.gm-card:disabled {
+  background-image: url('/assets/pixel/hud/cards/frame-disabled.png');
+  opacity: .55;
+}
+/* Blueprints keep the plain frame. A hue-rotate to tint it blue rotated the
+   part sprite inside it too, because a filter applies to the whole subtree. */
+.gm-card.is-blueprint { background-image: url('/assets/pixel/hud/cards/frame.png'); }
 
 /* ---- readout and footer ---- */
 
@@ -407,7 +439,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
 @media (max-width: 879px) {
   /* One header row on a 375px phone. Untuned, the two chips pushed the
      settings button onto a line of its own and cost 56px of board. */
-  .gm-logo { font-size: 12px; padding: 6px 8px; }
+  .gm-logo img { height: 26px; }
   .gm-chip { gap: 5px; padding: 5px 7px; }
   .gm-chip .gm-label { font-size: 9px; letter-spacing: .06em; }
   .gm-chip .gm-num { font-size: 13px; }
@@ -431,8 +463,30 @@ body:has(.game-skin) { background-color: #0a0f18; }
   .gm-rail > .gm-btn { flex: 1 1 100%; }
   .gm-logo { font-size: 12px; padding: 6px 9px; }
   .gm-cards { gap: 6px; }
-  .gm-card { padding: 10px 5px 8px; }
-  .gm-card-rule { font-size: 10px; }
+  .gm-card-name { font-size: 11px; }
+  .gm-card-rule { font-size: 9px; line-height: 1.3; }
+  .gm-card-badge { font-size: 9px; }
+}
+
+/* Decorative scale steps with the viewport while the text stays CSS-driven.
+   The plates and card frames are art, so they come down faster than type
+   does: full size on desktop, about 80% on a tablet, about 60% on a phone. */
+@media (min-width: 600px) and (max-width: 879px) {
+  .gm-logo img { height: 34px; }
+  .gm-card { max-width: 168px; }
+  .gm-cards { gap: 8px; }
+}
+@media (max-width: 599px) {
+  .gm-card { max-width: 120px; }
+  /* One header row at 375. The plate is wider than the text wordmark it
+     replaced, which pushed the settings button onto a line of its own again;
+     measured, the row needs to come in under 355px and this puts it at 324. */
+  .gm-logo img { height: 20px; }
+  .gm-chip { gap: 4px; padding: 4px 5px; }
+  .gm-chip .gm-label { font-size: 8px; }
+  .gm-chip .gm-num { font-size: 12px; }
+  .gm-header { gap: 5px; }
+  .gm-btn-icon { padding: 0 6px; min-width: 30px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
