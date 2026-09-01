@@ -26,18 +26,18 @@
  * deliberately not to the jam warning, quota clear or round clear.
  */
 import type { PartKey } from '../../game/types.js';
+import { duckMovement, playSample } from './sampleBank.js';
+import { PIXEL_VOLUME } from './sfxMap.js';
+import type { SfxName } from './sfxMap.js';
 
-/** From the spec's volume guidelines. Perceived level, not raw gain. */
-export const LEVEL = {
-  ui: 0.30,
-  marble: 0.45,
-  part: 0.58,
-  scoreSmall: 0.35,
-  scoreMedium: 0.45,
-  scoreBig: 0.55,
-  event: 0.72,
-  win: 0.80,
-} as const;
+/**
+ * The mix, re-exported from the one table that defines it.
+ *
+ * These were local constants until the fuller sound spec arrived with its own
+ * numbers. Two copies of a mix is how a mix drifts, so `sfxMap.ts` owns them
+ * now and this is an alias kept so existing call sites and tests still read.
+ */
+export const LEVEL = PIXEL_VOLUME;
 
 /**
  * Deterministic-ish jitter for repeated cues, +/-4%.
@@ -235,3 +235,69 @@ export const pixelVoices = {
 } as const;
 
 export type PixelVoice = keyof typeof pixelVoices;
+
+/**
+ * Play a cue: the recorded sample if one is loaded, otherwise the synthesised
+ * voice for the same cue.
+ *
+ * This is the whole upgrade path. Today no `.wav` exists so every call
+ * synthesises; when a file lands, the same call plays it instead and nothing
+ * else changes. The choice is made per cue, so a half-delivered pack is a
+ * working mix rather than a broken one.
+ */
+export function playCue(ac: AudioContext, name: SfxName, part?: PartKey): void {
+  // Big activations briefly duck the tiny movement ticks, so a chain reads.
+  if (name !== 'marbleMove' && name !== 'marbleDrop' && name !== 'hover') duckMovement();
+  if (playSample(ac, name)) return;
+  const synth = SYNTH_FOR[name];
+  if (synth) synth(ac);
+  else if (part) pixelVoices.part(ac, part);
+}
+
+/**
+ * The synthesised stand-in for each cue.
+ *
+ * Cues with no entry either resolve through a part voice (`playCue` passes the
+ * key) or have no synthesised form yet, in which case they are simply silent
+ * until their file arrives rather than borrowing a sound that means something
+ * else.
+ */
+const SYNTH_FOR: Partial<Record<SfxName, (ac: AudioContext) => void>> = {
+  marbleDrop: (ac) => pixelVoices.marbleDrop(ac),
+  marbleMove: (ac) => tone(ac, { f: 620 * vary(), d: 0.045, type: 'square', g: LEVEL.marble * 0.18 }),
+  marbleLand: (ac) => pixelVoices.marbleLand(ac),
+
+  weight: (ac) => pixelVoices.part(ac, 'weight'),
+  anvil: (ac) => pixelVoices.part(ac, 'anvil'),
+  coil: (ac) => pixelVoices.part(ac, 'coil'),
+  prism: (ac) => pixelVoices.part(ac, 'prism'),
+  spring: (ac) => pixelVoices.part(ac, 'spring'),
+  wire: (ac) => pixelVoices.part(ac, 'wire'),
+  reso: (ac) => pixelVoices.part(ac, 'reso'),
+  fork: (ac) => pixelVoices.part(ac, 'fork'),
+  gatePass: (ac) => pixelVoices.part(ac, 'gate'),
+  gateFail: (ac) => pixelVoices.gateFail(ac),
+  bell: (ac) => pixelVoices.part(ac, 'bell'),
+
+  scoreSmall: (ac) => pixelVoices.scoreSmall(ac),
+  scoreMedium: (ac) => pixelVoices.scoreMedium(ac),
+  scoreBig: (ac) => pixelVoices.scoreBig(ac),
+  quotaClear: (ac) => pixelVoices.quotaClear(ac),
+
+  select: (ac) => pixelVoices.select(ac),
+  place: (ac) => pixelVoices.place(ac),
+  blueprint: (ac) => pixelVoices.blueprint(ac),
+  click: (ac) => tone(ac, { f: 740, d: 0.055, type: 'square', g: LEVEL.ui }),
+  hover: (ac) => tone(ac, { f: 1200, d: 0.035, type: 'square', g: LEVEL.hover }),
+  error: (ac) => {
+    tone(ac, { f: 330, d: 0.07, type: 'square', g: LEVEL.ui });
+    tone(ac, { f: 247, d: 0.09, type: 'square', g: LEVEL.ui, at: 0.06 });
+  },
+  draftOpen: (ac) => seq(ac, [523, 659, 880], 0.06, { d: 0.08, type: 'triangle', g: LEVEL.ui }),
+
+  jam: (ac) => pixelVoices.jam(ac),
+  roundStart: (ac) => pixelVoices.roundStart(ac),
+  roundClear: (ac) => pixelVoices.roundClear(ac),
+  win: (ac) => pixelVoices.gameWin(ac),
+  gameOver: (ac) => pixelVoices.gameOver(ac),
+};
