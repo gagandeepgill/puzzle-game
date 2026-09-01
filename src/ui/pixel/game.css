@@ -586,35 +586,75 @@ body:has(.game-skin) { background-color: #0a0f18; }
 /* ---- part effects ---- */
 
 /*
- * The pack's frame strips, played on the cell that fired.
+ * One delivered sequence per part, played on the cell that fired.
  *
- * Six frames at 96px, walked with background-position rather than by swapping
- * six files. The overlay is a pseudo-element on the cell, not on the part
- * sprite, because the sprite is an `img` and cannot carry one — and because
- * the effect should sit over the part rather than replace it.
+ * The overlay is a pseudo-element on the cell rather than on the part sprite,
+ * because the sprite is an `img` and cannot carry one, and because the effect
+ * should sit over the part rather than replace it. `:has` picks the sequence
+ * from the part already in the cell, so nothing new is threaded through Board.
  *
- * `:has` picks the strip from the part already in the cell, so nothing new
- * has to be threaded through Board.
+ * `background-image` does not interpolate, so each keyframe pair holds its
+ * frame and snaps to the next. Every sequence plays once and holds its last
+ * frame; nothing loops. Durations are the `--px-t-*` mirrors of PIXEL_MOTION,
+ * which already match the timings the batch suggests.
  */
 .gm-board button.animate-fire { position: relative; }
-.gm-board button.animate-fire::after {
+.gm-board button.animate-fire::after,
+.gm-board button.px-seized::after {
   content: '';
   position: absolute;
   inset: -12%;
   pointer-events: none;
   background-repeat: no-repeat;
-  background-size: 600% 100%;
+  background-size: contain;
+  background-position: center;
   image-rendering: pixelated;
-  animation: gm-fx-walk var(--fx-ms, 260ms) steps(6) 1 forwards;
 }
-@keyframes gm-fx-walk {
-  from { background-position: 0% 50%; }
-  to { background-position: 100% 50%; }
+
+@keyframes gm-weight-frames {
+  0.00%, 24.99% { background-image: url('/assets/pixel/effects/weight-1.png'); }
+  25.00%, 49.99% { background-image: url('/assets/pixel/effects/weight-2.png'); }
+  50.00%, 74.99% { background-image: url('/assets/pixel/effects/weight-3.png'); }
+  75.00%, 99.99% { background-image: url('/assets/pixel/effects/weight-4.png'); }
 }
-/* Six delivered frames each, so the walk swaps the image at six discrete
-   steps rather than panning one composed strip. `background-image` does not
-   interpolate, so each keyframe pair holds its frame and snaps to the next.
-   Plays once and holds the last frame; nothing loops. */
+@keyframes gm-anvil-frames {
+  0.00%, 24.99% { background-image: url('/assets/pixel/effects/anvil-1.png'); }
+  25.00%, 49.99% { background-image: url('/assets/pixel/effects/anvil-2.png'); }
+  50.00%, 74.99% { background-image: url('/assets/pixel/effects/anvil-3.png'); }
+  75.00%, 99.99% { background-image: url('/assets/pixel/effects/anvil-4.png'); }
+}
+@keyframes gm-coil-frames {
+  0.00%, 24.99% { background-image: url('/assets/pixel/effects/coil-1.png'); }
+  25.00%, 49.99% { background-image: url('/assets/pixel/effects/coil-2.png'); }
+  50.00%, 74.99% { background-image: url('/assets/pixel/effects/coil-3.png'); }
+  75.00%, 99.99% { background-image: url('/assets/pixel/effects/coil-4.png'); }
+}
+@keyframes gm-prism-frames {
+  0.00%, 16.66% { background-image: url('/assets/pixel/effects/prism-1.png'); }
+  16.67%, 33.32% { background-image: url('/assets/pixel/effects/prism-2.png'); }
+  33.33%, 49.99% { background-image: url('/assets/pixel/effects/prism-3.png'); }
+  50.00%, 66.66% { background-image: url('/assets/pixel/effects/prism-4.png'); }
+  66.67%, 83.32% { background-image: url('/assets/pixel/effects/prism-5.png'); }
+  83.33%, 99.99% { background-image: url('/assets/pixel/effects/prism-6.png'); }
+}
+@keyframes gm-wire-frames {
+  0.00%, 24.99% { background-image: url('/assets/pixel/effects/wire-1.png'); }
+  25.00%, 49.99% { background-image: url('/assets/pixel/effects/wire-2.png'); }
+  50.00%, 74.99% { background-image: url('/assets/pixel/effects/wire-3.png'); }
+  75.00%, 99.99% { background-image: url('/assets/pixel/effects/wire-4.png'); }
+}
+@keyframes gm-reso-frames {
+  0.00%, 24.99% { background-image: url('/assets/pixel/effects/reso-1.png'); }
+  25.00%, 49.99% { background-image: url('/assets/pixel/effects/reso-2.png'); }
+  50.00%, 74.99% { background-image: url('/assets/pixel/effects/reso-3.png'); }
+  75.00%, 99.99% { background-image: url('/assets/pixel/effects/reso-4.png'); }
+}
+@keyframes gm-fork-frames {
+  0.00%, 24.99% { background-image: url('/assets/pixel/effects/fork-1.png'); }
+  25.00%, 49.99% { background-image: url('/assets/pixel/effects/fork-2.png'); }
+  50.00%, 74.99% { background-image: url('/assets/pixel/effects/fork-3.png'); }
+  75.00%, 99.99% { background-image: url('/assets/pixel/effects/fork-4.png'); }
+}
 @keyframes gm-bell-frames {
   0.00%, 16.66% { background-image: url('/assets/pixel/effects/bell-1.png'); }
   16.67%, 33.32% { background-image: url('/assets/pixel/effects/bell-2.png'); }
@@ -623,64 +663,65 @@ body:has(.game-skin) { background-color: #0a0f18; }
   66.67%, 83.32% { background-image: url('/assets/pixel/effects/bell-5.png'); }
   83.33%, 99.99% { background-image: url('/assets/pixel/effects/bell-6.png'); }
 }
+@keyframes gm-gatepass-frames {
+  0.00%, 24.99% { background-image: url('/assets/pixel/effects/gate-pass-1.png'); }
+  25.00%, 49.99% { background-image: url('/assets/pixel/effects/gate-pass-2.png'); }
+  50.00%, 74.99% { background-image: url('/assets/pixel/effects/gate-pass-3.png'); }
+  75.00%, 99.99% { background-image: url('/assets/pixel/effects/gate-pass-4.png'); }
+}
+@keyframes gm-gatefail-frames {
+  0.00%, 24.99% { background-image: url('/assets/pixel/effects/gate-fail-1.png'); }
+  25.00%, 49.99% { background-image: url('/assets/pixel/effects/gate-fail-2.png'); }
+  50.00%, 74.99% { background-image: url('/assets/pixel/effects/gate-fail-3.png'); }
+  75.00%, 99.99% { background-image: url('/assets/pixel/effects/gate-fail-4.png'); }
+}
+
+.gm-board button.animate-fire:has(img[data-part='weight'])::after {
+  animation: gm-weight-frames var(--px-t-weight, 150ms) steps(1) 1 forwards;
+}
+.gm-board button.animate-fire:has(img[data-part='anvil'])::after {
+  animation: gm-anvil-frames var(--px-t-anvil, 220ms) steps(1) 1 forwards;
+}
+.gm-board button.animate-fire:has(img[data-part='coil'])::after {
+  animation: gm-coil-frames var(--px-t-coil, 180ms) steps(1) 1 forwards;
+}
+.gm-board button.animate-fire:has(img[data-part='prism'])::after {
+  animation: gm-prism-frames var(--px-t-prism, 260ms) steps(1) 1 forwards;
+}
+.gm-board button.animate-fire:has(img[data-part='wire'])::after {
+  animation: gm-wire-frames var(--px-t-wire, 110ms) steps(1) 1 forwards;
+}
+.gm-board button.animate-fire:has(img[data-part='reso'])::after {
+  animation: gm-reso-frames var(--px-t-reso, 300ms) steps(1) 1 forwards;
+}
+.gm-board button.animate-fire:has(img[data-part='fork'])::after {
+  animation: gm-fork-frames var(--px-t-fork, 300ms) steps(1) 1 forwards;
+}
 .gm-board button.animate-fire:has(img[data-part='bell'])::after {
   animation: gm-bell-frames var(--px-t-bell, 350ms) steps(1) 1 forwards;
 }
-/* Every other part keeps the CSS motion the pixel skin already defines: a
-   pulse for coil, a split for prism, a bounce for spring, all of which those
-   rules already do.
-   
-   Spring is among them only for now. Its six frames arrived with two of the
-   six overwritten by the cell tiles in the same download, and across every
-   saved variant only five distinct images survive, so there is no sixth to
-   play. Rather than flash a board tile mid-launch, it keeps its CSS bounce
-   until the frames are re-sent. */
-.gm-board button.animate-fire:not(:has(img[data-part='bell']))::after {
+
+/* The gate is the one part whose effect depends on the outcome, and the
+   outcome is already in the DOM: a rejected marble marks its cell
+   `px-seized`, which only a gate ever does. Pass is the gate firing normally.
+   Neither decides anything — the engine has already ruled. */
+.gm-board button.animate-fire:has(img[data-part='gate'])::after {
+  animation: gm-gatepass-frames var(--px-t-gate, 220ms) steps(1) 1 forwards;
+}
+.gm-board button.px-seized::after {
+  animation: gm-gatefail-frames var(--px-t-gate, 220ms) steps(1) 1 forwards;
+}
+
+/* Spring has no delivered sequence — two of its six arrived overwritten by the
+   cell tiles — so it keeps the single-frame hit until they are re-sent. */
+.gm-board button.animate-fire:has(img[data-part='spring'])::after {
   background-image: url('/assets/pixel/hud/effects/hit.png');
-  background-size: contain;
-  background-position: center;
-  animation: gm-fx-pop var(--px-t-weight, 150ms) steps(3) 1 forwards;
-}
-.gm-board button.animate-fire:has(img[data-part='coil'])::after,
-.gm-board button.animate-fire:has(img[data-part='reso'])::after {
-  background-image: url('/assets/pixel/hud/effects/pulse.png');
-  animation-duration: var(--px-t-coil, 180ms);
-}
-.gm-board button.animate-fire:has(img[data-part='prism'])::after {
-  background-image: url('/assets/pixel/hud/effects/spark.png');
-  animation-duration: var(--px-t-prism, 260ms);
+  animation: gm-fx-pop var(--px-t-spring, 260ms) steps(3) 1 forwards;
 }
 @keyframes gm-fx-pop {
   from { opacity: 1; transform: scale(.6); }
   to { opacity: 0; transform: scale(1.3); }
 }
-
-@keyframes gm-jam-frames {
-  0.00%, 16.66% { background-image: url('/assets/pixel/effects/jam-1.png'); }
-  16.67%, 33.32% { background-image: url('/assets/pixel/effects/jam-2.png'); }
-  33.33%, 49.99% { background-image: url('/assets/pixel/effects/jam-3.png'); }
-  50.00%, 66.66% { background-image: url('/assets/pixel/effects/jam-4.png'); }
-  66.67%, 83.32% { background-image: url('/assets/pixel/effects/jam-5.png'); }
-  83.33%, 99.99% { background-image: url('/assets/pixel/effects/jam-6.png'); }
-}
-/* The jam burst, on the panel, when one arrives. Once, on arrival — the
-   element is keyed on the jam's name, so a new jam remounts it and replays,
-   and an unchanged one never does. */
-.gm-jam.is-active::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  width: 40px;
-  height: 40px;
-  transform: translateY(-50%);
-  pointer-events: none;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  image-rendering: pixelated;
-  animation: gm-jam-frames var(--px-t-jam, 600ms) steps(1) 1 forwards;
-}
-.gm-jam { position: relative; overflow: hidden; }
 
 /* ---- score pops ---- */
 

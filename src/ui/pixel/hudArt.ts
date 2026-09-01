@@ -130,19 +130,36 @@ export const CELL_ART = {
 /**
  * The one button frame, and the effects that play over a cell.
  *
- * `hit`, `spark` and `pulse` are single frames rather than sequences, so they
- * scale and fade rather than walking. They cover the parts with no delivered
- * frame set: a pulse for the multipliers, a spark for a split, a hit for
- * everything else.
+ * `hit` is the one single frame left. Every part now has a delivered sequence
+ * except Spring, whose six arrived with two overwritten, so `hit` covers it
+ * until they are re-sent. `spark` and `pulse` covered coil, reso and prism
+ * and are retired now that those have frames of their own.
  */
 export const BUTTON_FRAME = `${BASE}/frames/button-frame.png`;
 export const CARD_FRAME = `${BASE}/frames/card-frame.png`;
 export const EFFECT_ART = {
   hit: `${BASE}/effects/hit.png`,
-  spark: `${BASE}/effects/spark.png`,
-  pulse: `${BASE}/effects/pulse.png`,
   scorePop: `${BASE}/effects/score-pop-fx.png`,
 } as const;
+
+/**
+ * The delivered activation sequences, by part.
+ *
+ * Frame files live under `/assets/pixel/effects/` and are named by the keys
+ * here. The URLs are written out in the keyframes, which is the only place
+ * that can name four or six of them; this is the manifest, so a part that
+ * loses its frames is visible from one place.
+ *
+ * Gate has two, chosen by the outcome the engine already decided: a rejected
+ * marble marks its cell `px-seized`, which only a gate ever does.
+ *
+ * Spring is absent. Its six arrived with two overwritten by the cell tiles in
+ * the same download, and only five distinct images survive.
+ */
+export const PART_FRAMES: Record<string, number> = {
+  weight: 4, anvil: 4, coil: 4, prism: 6, wire: 4, reso: 4, fork: 4, bell: 6,
+  'gate-pass': 4, 'gate-fail': 4,
+};
 
 /*
  * Idle board cells are not here on purpose.
