@@ -9,7 +9,7 @@
  */
 import { existsSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_SKIN, SKINS, loadSkin, saveSkin } from '../pixel/skin.js';
+import { DEFAULT_SKIN, SKINS, SKIN_LABEL, loadSkin, saveSkin } from '../pixel/skin.js';
 import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
 import { PART_KEYS } from '../../game/types.js';
 
@@ -53,6 +53,23 @@ describe('skin persistence', () => {
 
   it('the default is one of the known skins', () => {
     expect(SKINS).toContain(DEFAULT_SKIN);
+  });
+
+  it('round-trips every skin, so adding one cannot half-land', () => {
+    // The picker maps over SKINS. A skin listed there but rejected by the
+    // validator would render a tab that silently does nothing.
+    for (const skin of SKINS) {
+      stubStorage();
+      saveSkin(skin);
+      expect(loadSkin(), skin).toBe(skin);
+    }
+  });
+
+  it('names every skin in the picker', () => {
+    for (const skin of SKINS) {
+      expect(SKIN_LABEL[skin], skin).toBeTruthy();
+    }
+    expect(new Set(Object.values(SKIN_LABEL)).size).toBe(SKINS.length);
   });
 });
 

@@ -194,3 +194,56 @@ describe('pixel palette floors', () => {
     }
   });
 });
+
+/**
+ * The game skin's palette.
+ *
+ * Same treatment as the pixel one above: custom properties the Tailwind suite
+ * cannot see, read out of `game.css` and held to the same floors. Two of the
+ * sheet's swatches did not clear them and were lifted, purple at 3.42:1 as a
+ * card border, red at 4.26:1 as text, and the border swatch at 2.92:1.
+ */
+describe('game palette floors', () => {
+  const css = readFileSync(new URL('../pixel/game.css', import.meta.url), 'utf8');
+  const token = (name: string): Hex => {
+    const at = css.indexOf(`--gm-${name}:`);
+    if (at < 0) throw new Error(`--gm-${name} not declared in game.css`);
+    const m = /#[0-9a-fA-F]{6}/.exec(css.slice(at, at + 80));
+    if (!m) throw new Error(`--gm-${name} has no hex value`);
+    return m[0].toLowerCase() as Hex;
+  };
+
+  // panel-alt is the lightest of the three and therefore the binding one, but
+  // all three are checked so that darkening one later cannot go unnoticed.
+  const surfaces = (['bg', 'panel', 'panel-alt'] as const).map((n) => [n, token(n)] as const);
+
+  const text = ['text', 'muted', 'green', 'blue', 'purple', 'gold', 'orange', 'red', 'cyan'] as const;
+
+  for (const name of text) {
+    it(`--gm-${name} clears 4.5:1 on every game surface`, () => {
+      for (const [bgName, bg] of surfaces) {
+        const ratio = contrast(token(name), bg);
+        expect(
+          Number(ratio.toFixed(2)),
+          `--gm-${name} on --gm-${bgName} is ${ratio.toFixed(2)}:1`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+  }
+
+  it('--gm-border clears 3:1, because it is what identifies a board cell', () => {
+    for (const [bgName, bg] of surfaces) {
+      const ratio = contrast(token('border'), bg);
+      expect(
+        Number(ratio.toFixed(2)),
+        `--gm-border on --gm-${bgName} is ${ratio.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('keeps the supplied value recorded next to each correction', () => {
+    for (const original of ['#8b5cf6', '#d94b56', '#4d6a88']) {
+      expect(css, original).toContain(original);
+    }
+  });
+});
