@@ -16,23 +16,22 @@
 
 const BASE = '/assets/pixel/hud';
 
-/**
- * Board cells, one per placement state.
+/*
+ * Board cells are not here on purpose.
  *
- * The pack draws these four explicitly, which is why the skin uses art here
- * rather than a border colour: green and red placement cells are the
- * clearest thing in the sheet and CSS cannot draw the crosshair.
+ * An earlier pass tiled them with the cracked stone sprites out of
+ * `retro_sci_fi_board_tileset_sprites.png`, the blob at x=31 y=522 and the
+ * three states beside it. That was the wrong asset. Both the layout mockups and the
+ * reference sheet's own CELL & FX row draw a board cell flat: a dark well with
+ * a thin light edge, so the part sprite in it is the thing you look at. The
+ * stone tiles have a heavy bevel and a crack pattern, and thirty of them
+ * shouted over every part on the board.
+ *
+ * So the cells are drawn in `game.css` instead, which is also what the
+ * sheet's notes describe — 2px borders, 2px radius — and it costs no files.
+ * The stone tileset is still in `docs/pixel/hud-sources/` if a future skin
+ * wants a stone board.
  */
-export const CELL_ART = {
-  /** retro_sci_fi_board_tileset_sprites: 31,522 323x329 */
-  idle: `${BASE}/board/cell.png`,
-  /** 386,521 323x333 */
-  valid: `${BASE}/board/cell-valid.png`,
-  /** 739,521 327x333 */
-  invalid: `${BASE}/board/cell-invalid.png`,
-  /** 1091,518 333x340 */
-  focus: `${BASE}/board/cell-focus.png`,
-} as const;
 
 /**
  * Draft card frames.

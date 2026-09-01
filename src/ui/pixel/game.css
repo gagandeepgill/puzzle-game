@@ -250,13 +250,17 @@ body:has(.game-skin) { background-color: #0a0f18; }
    sheet: four L shapes are eight bars, and CSS keeps them crisp at every size
    where a bitmap would need a file per scale. One element with eight
    backgrounds, because `::before` and `::after` are two boxes and the sheet
-   draws four corners. Decorative, so it is out of the tree. */
+   draws four corners. Decorative, so it is out of the tree.
+   
+   Metal rather than gold: 4.17 draws them in the same grey as the frame, and
+   the sheet reserves gold for a primary action or an important state, which a
+   frame corner is not. */
 .gm-board::before {
   content: '';
   position: absolute;
   inset: -2px;
   pointer-events: none;
-  --bar: linear-gradient(var(--gm-gold), var(--gm-gold));
+  --bar: linear-gradient(var(--gm-muted), var(--gm-muted));
   background:
     var(--bar) 0 0 / 32px 2px no-repeat,
     var(--bar) 0 0 / 2px 32px no-repeat,
@@ -270,38 +274,53 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-board .bg-panel-lit { background-color: var(--gm-panel-alt); }
 /* Board is shared, so it arrives painted for classic: dashed borders, 9px
    corners, a recessed shadow. Restated here rather than teaching Board about
-   skins. The pack draws a cell for each placement state, so the tile carries
-   the state and the border goes away entirely; the gold heat ring stays,
-   because it says which of the valid cells is worth the most and the green
-   tile only says the cell is valid at all. */
+   skins.
+   
+   A cell is a dark well with a thin edge, which is how every mockup draws the
+   board and what the reference sheet's own CELL & FX row shows. An earlier
+   pass tiled these with the cracked stone sprite out of the board tileset;
+   thirty of those shouted over every part on the board, which is the opposite
+   of what a board cell is for. */
 .gm-board > * { border-radius: 2px; }
 .gm-board button[aria-label^='Row'] {
   border-radius: 2px;
-  border-color: transparent;
-  background-image: url('/assets/pixel/hud/board/cell.png');
-  background-size: 100% 100%;
-  image-rendering: pixelated;
+  border: 2px solid var(--gm-border);
+  background-color: var(--gm-bg);
+  background-image: none;
+  /* No `box-shadow: none` here. Placement heat arrives as a Tailwind ring,
+     which is a box-shadow, and clearing the classic recess took the ring with
+     it — twice now. The recess is an inset on a flat fill and is invisible. */
+}
+/* The sheet names two cells, `cell` and `cell (alt)`. Five columns is an odd
+   count, so alternating on the child index lands as a checkerboard without
+   the row having to be known. */
+.gm-board button[aria-label^='Row']:nth-child(even) {
+  background-color: color-mix(in srgb, var(--gm-bg) 82%, var(--gm-panel));
 }
 .gm-board button[aria-label^='Row']:focus-visible {
-  background-image: url('/assets/pixel/hud/board/cell-focus.png');
+  border-color: var(--gm-blue);
 }
 /* Placement heat arrives as a Tailwind ring, which is a box-shadow. An earlier
    `box-shadow: none` here to clear the classic recess took the ring with it and
    the whole preview went dark, so the recess is left in place instead: the tile
    covers it. */
 
-/* Placement states: the pack's crosshair tiles, on the cell being aimed at.
+/* Placement states, on the cell being aimed at. Drawn in the sheet's own
+   accent-green and accent-red rather than with the tileset's crosshair
+   sprites, which carry the same heavy stone base the cells no longer have.
    Gated on actually holding a part, because "not installable" is also true
    when holding nothing, and on hover or focus rather than every cell at once
-   — painting all 24 empty cells green washed the board out and buried the
-   gold heat ring, which is the reading that actually says where to build. */
+   — lighting all 24 empty cells buried the gold heat ring, which is the
+   reading that says where to build rather than merely where it is legal to. */
 .gm-board.is-placing button[aria-label*='press to install']:hover,
 .gm-board.is-placing button[aria-label*='press to install']:focus-visible {
-  background-image: url('/assets/pixel/hud/board/cell-valid.png');
+  border-color: var(--gm-green);
+  background-color: color-mix(in srgb, var(--gm-green) 16%, var(--gm-bg));
 }
 .gm-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):hover,
 .gm-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):focus-visible {
-  background-image: url('/assets/pixel/hud/board/cell-invalid.png');
+  border-color: var(--gm-red);
+  background-color: color-mix(in srgb, var(--gm-red) 16%, var(--gm-bg));
 }
 
 .gm-cleared {
