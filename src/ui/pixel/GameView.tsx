@@ -1,13 +1,13 @@
 import { Board } from '../Board.js';
 import { Icon, UIIcon } from '../icons.js';
 import type { IconName } from '../icons.js';
-import { PixelPart, hasPixelArt } from './PixelSprite.js';
+import { PixelPart, UI_SPRITE, hasPixelArt } from './PixelSprite.js';
 import { BLUEPRINTS, PARTS } from '../../game/content.js';
 import { COLS, column } from '../../game/types.js';
 import type { CellIndex } from '../../game/types.js';
 import type { usePayloadRun } from '../usePayloadRun.js';
 import type { HeatTier } from '../../game/preview.js';
-import { ICON_ART, LOGO_ART } from './hudArt.js';
+import { ICON_ART } from './hudArt.js';
 
 /**
  * The `game` theme: the rework against the reference sheet.
@@ -84,19 +84,12 @@ export function GameView({
   return (
     <div className="gm-shell">
       <header className="gm-header">
-        <h1 className="gm-logo">
-          <img
-            src={LOGO_ART.src}
-            alt="Payload"
-            width={LOGO_ART.width}
-            height={LOGO_ART.height}
-          />
-        </h1>
-        <span className="gm-chip">
+        <h1 className="gm-logo">Payload</h1>
+        <span className="gm-chip gm-chip-round">
           <b className="gm-label">Round</b>
           <b className="gm-num">{state.round + 1} / {state.difficulty.rounds}</b>
         </span>
-        <span className="gm-chip">
+        <span className="gm-chip gm-chip-score">
           <b className="gm-label">Score</b>
           <b className="gm-num gm-gold">{n(state.total)}</b>
         </span>
@@ -106,7 +99,9 @@ export function GameView({
           onClick={onReset}
           className={`gm-btn gm-btn-icon${resetArmed ? ' gm-btn-danger' : ''}`}
         >
-          <UIIcon name="reset" size={14} />
+          {resetArmed
+            ? <img src={ICON_ART.warning} alt="" aria-hidden className="gm-icon-sm" width={32} height={32} />
+            : <UIIcon name="reset" size={14} />}
           <span className={resetArmed ? '' : 'sr-only'}>
             {resetArmed ? 'Reset run?' : 'Reset the run'}
           </span>
@@ -118,7 +113,7 @@ export function GameView({
           onClick={onToggleSheet}
           className="gm-btn gm-btn-icon"
         >
-          <img src={ICON_ART.settings} alt="" aria-hidden className="gm-icon-sm" width={32} height={32} />
+          <img src={UI_SPRITE.settings} alt="" aria-hidden className="gm-icon-sm" width={32} height={32} />
           <span className="sr-only">Settings</span>
         </button>
       </header>
@@ -127,14 +122,14 @@ export function GameView({
 
       <div className="gm-play">
         <aside className="gm-rail">
-          <Box label="Quota">
+          <Box label="Quota" className="gm-box-quota">
             <span className="gm-num">
               <b className="gm-gold">{n(state.roundScore)}</b> / {n(run.quota)}
             </span>
             <div className="gm-bar"><div className="gm-bar-fill" style={{ width: `${pct}%` }} /></div>
           </Box>
 
-          <Box label="Drops">
+          <Box label="Drops" className="gm-box-drops">
             {/* Filled and empty pips, which is what the sheet's drops indicator
                 shows: how many are left against how many the round started
                 with, rather than a bare count. */}
@@ -146,7 +141,7 @@ export function GameView({
             <b className="gm-num sr-only">{state.dropsLeft} left</b>
           </Box>
 
-          <Box label="Banked">
+          <Box label="Banked" className="gm-box-inline gm-box-banked">
             <b className="gm-num">{n(state.total)}</b>
             <span aria-hidden className="gm-diamond" />
             {playback.ticking && (
@@ -227,11 +222,11 @@ export function GameView({
           <span className="gm-label">Jam</span>
           {run.jam ? (
             <div className="gm-jam-body">
-              <img src={ICON_ART.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
-              <span>
-                <b className="gm-jam-name">{run.jam.name}</b>
-                <span className="gm-note">{run.jam.rule}</span>
+              <span className="gm-well">
+                <img src={UI_SPRITE.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
               </span>
+              <b className="gm-jam-name">{run.jam.name}</b>
+              <span className="gm-note">{run.jam.rule}</span>
             </div>
           ) : (
             <span className="gm-note">None active.</span>
@@ -241,7 +236,7 @@ export function GameView({
         <div className="gm-panel gm-bp">
           <span className="gm-label gm-label-icon">
             <img
-              src={ICON_ART.blueprints}
+              src={UI_SPRITE.blueprints}
               alt=""
               aria-hidden
               className="gm-icon-sm"
@@ -249,6 +244,9 @@ export function GameView({
               height={32}
             />
             Blueprints
+          </span>
+          <span aria-hidden className="gm-well gm-bp-well">
+            <img src={UI_SPRITE.blueprints} alt="" className="gm-icon" width={32} height={32} />
           </span>
           {state.blueprints.size === 0 ? (
             <span className="gm-note">None yet.</span>
@@ -267,7 +265,7 @@ export function GameView({
 
       {drafting && (
         <section className="gm-draft">
-          <div className="gm-draft-head gm-panel">
+          <div className="gm-draft-head">
             <h2 className="gm-draft-title">Draft: choose 1 part</h2>
             <button
               type="button"
@@ -292,7 +290,7 @@ export function GameView({
                       which does not exist here, so this carries the part's real
                       effect badge instead: +3, ×2. Same position, real data. */}
                   <span aria-hidden className={`gm-card-badge${on ? ' is-check' : ''}`}>
-                    {on ? <img src={ICON_ART.check} alt="" aria-hidden className="gm-icon-xs" width={32} height={32} /> : PARTS[key].badge}
+                    {on ? <img src={ICON_ART.success} alt="" aria-hidden className="gm-icon-xs" width={32} height={32} /> : PARTS[key].badge}
                   </span>
                   {hasPixelArt(key)
                     ? <PixelPart part={key} size="32px" />

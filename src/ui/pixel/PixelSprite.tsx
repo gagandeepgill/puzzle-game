@@ -7,31 +7,28 @@ import type { PartKey } from '../../game/types.js';
  * so a cell that measures 55.6px on a phone and 90px on a monitor shows the
  * same crisp sprite at a different size rather than a resampled one.
  *
- * The pack arrived in two halves and two formats: six as PNG, and the four
- * that completed it as lossless WebP. `PART_SPRITE` below is the one place
- * that knows which is which.
+ * All ten are 32x32 PNG with alpha, delivered as individual files. They
+ * replace an earlier pack that arrived in two halves and two formats, which
+ * is why `PART_SPRITE` below used to be an explicit map of mixed extensions.
  */
 const BASE = '/assets/pixel';
 
 /**
  * Every part's sprite file.
  *
- * Explicit rather than `${part}.png`, because the pack arrived in two halves
- * and two formats: the first six as PNG, the four that completed it as lossless
- * WebP. Both are 32x32 and both render identically, so converting one half to
- * match the other would be churn for no gain. This map is where that fact
- * lives, so nothing else has to know about it.
+ * Still written out rather than derived as `${part}.png`, so the set is
+ * legible in one place and a part added to the game without art fails
+ * typecheck rather than 404ing at runtime.
  *
- * All ten resolve now. The `hasPixelArt` fallback to the SVG glyph stays,
- * because a missing file should degrade to a readable board rather than to an
- * empty cell, and a test asserts this map against the filesystem in both
- * directions.
+ * The `hasPixelArt` fallback to the SVG glyph stays, because a missing file
+ * should degrade to a readable board rather than to an empty cell, and a test
+ * asserts this map against the filesystem in both directions.
  */
 export const PART_SPRITE: Record<PartKey, string> = {
-  weight: `${BASE}/parts/weight.webp`,
-  anvil: `${BASE}/parts/anvil.webp`,
-  reso: `${BASE}/parts/reso.webp`,
-  fork: `${BASE}/parts/fork.webp`,
+  weight: `${BASE}/parts/weight.png`,
+  anvil: `${BASE}/parts/anvil.png`,
+  reso: `${BASE}/parts/reso.png`,
+  fork: `${BASE}/parts/fork.png`,
   coil: `${BASE}/parts/coil.png`,
   prism: `${BASE}/parts/prism.png`,
   spring: `${BASE}/parts/spring.png`,
@@ -40,10 +37,27 @@ export const PART_SPRITE: Record<PartKey, string> = {
   bell: `${BASE}/parts/bell.png`,
 };
 
-/** The two interface sprites, which are not parts. */
+/** The interface sprites, which are not parts. All 32x32 PNG with alpha. */
 export const UI_SPRITE = {
-  jam: `${BASE}/ui/jam.webp`,
-  blueprints: `${BASE}/ui/blueprints.webp`,
+  jam: `${BASE}/ui/jam.png`,
+  blueprints: `${BASE}/ui/blueprints.png`,
+  settings: `${BASE}/ui/settings.png`,
+  soundOn: `${BASE}/ui/sound-on.png`,
+  soundOff: `${BASE}/ui/sound-off.png`,
+} as const;
+
+/**
+ * The marble, in its four tints.
+ *
+ * All four share a silhouette and an upper-left highlight on purpose, so a
+ * tint reads as the same object in a different state rather than as a
+ * different object.
+ */
+export const MARBLE_SPRITE = {
+  silver: `${BASE}/marbles/marble-silver.png`,
+  blue: `${BASE}/marbles/marble-blue.png`,
+  red: `${BASE}/marbles/marble-red.png`,
+  dim: `${BASE}/marbles/marble-dim.png`,
 } as const;
 
 export const PIXEL_PARTS = new Set<PartKey>(Object.keys(PART_SPRITE) as PartKey[]);
@@ -94,7 +108,7 @@ export function PixelMarble({ label }: { readonly label: number }) {
   return (
     <span className="px-marble" style={{ width: '64%' }}>
       <img
-        src={`${BASE}/marbles/marble-blue.png`}
+        src={MARBLE_SPRITE.blue}
         alt=""
         aria-hidden
         draggable={false}
