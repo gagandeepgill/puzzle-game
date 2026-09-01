@@ -10,8 +10,14 @@ export type GameSkin = 'classic' | 'pixel';
 
 export const SKINS: readonly GameSkin[] = ['classic', 'pixel'];
 
-/** Change this one line to ship a different skin by default. */
-export const DEFAULT_SKIN: GameSkin = 'classic';
+/**
+ * Change this one line to ship a different skin by default.
+ *
+ * Pixel, as of the sprite pack completing. A player who has already chosen a
+ * skin is unaffected: this is only the fallback when storage holds nothing
+ * usable, so nobody who picked Classic gets moved off it.
+ */
+export const DEFAULT_SKIN: GameSkin = 'pixel';
 
 const KEY = 'payload.skin.v1';
 

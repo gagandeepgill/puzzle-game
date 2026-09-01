@@ -10,11 +10,12 @@
 import { existsSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SKIN, SKINS, loadSkin, saveSkin } from '../pixel/skin.js';
-import { PIXEL_PARTS, hasPixelArt } from '../pixel/PixelSprite.js';
+import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
 import { PART_KEYS } from '../../game/types.js';
 
-const spriteFor = (part: string) =>
-  new URL(`../../../public/assets/pixel/parts/${part}.png`, import.meta.url);
+// Resolved through the map, because the pack is half PNG and half WebP.
+const fileFor = (webPath: string) =>
+  new URL(`../../../public${webPath}`, import.meta.url);
 
 afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -56,26 +57,30 @@ describe('skin persistence', () => {
 });
 
 describe('pixel sprite coverage', () => {
-  it('every part claimed to have art has a file on disk', () => {
-    for (const part of PIXEL_PARTS) {
-      expect(existsSync(spriteFor(part)), `missing sprite for ${part}`).toBe(true);
-    }
-  });
-
-  it('every part with a file on disk is claimed', () => {
-    // The other direction: dropping a PNG in without adding the key would
-    // leave it rendering the SVG glyph and look like the file did nothing.
+  it('every one of the ten parts has a sprite file on disk', () => {
+    // The pack is complete now. This replaces the ledger that recorded
+    // weight, anvil, reso and fork as missing.
     for (const part of PART_KEYS) {
-      if (existsSync(spriteFor(part))) {
-        expect(hasPixelArt(part), `${part}.png exists but is not in PIXEL_PARTS`).toBe(true);
-      }
+      expect(PART_SPRITE[part], `no path mapped for ${part}`).toBeTruthy();
+      expect(existsSync(fileFor(PART_SPRITE[part])), `missing file for ${part}`).toBe(true);
     }
   });
 
-  it('records which parts the supplied pack did not include', () => {
-    // Not a floor, a ledger. When the four missing sprites arrive this fails,
-    // which is the reminder to update it and the coverage set together.
-    const missing = PART_KEYS.filter((p) => !hasPixelArt(p));
-    expect(missing).toEqual(['weight', 'anvil', 'reso', 'fork']);
+  it('claims art for every part, so nothing falls back to the SVG glyph', () => {
+    for (const part of PART_KEYS) expect(hasPixelArt(part), part).toBe(true);
+  });
+
+  it('the two interface sprites resolve', () => {
+    for (const [name, path] of Object.entries(UI_SPRITE)) {
+      expect(existsSync(fileFor(path)), `missing ${name}`).toBe(true);
+    }
+  });
+
+  it('maps every part to a distinct file', () => {
+    // Two parts pointing at one sprite is the failure mode this pack kept
+    // producing: several drops arrived with duplicate images under different
+    // names, and a board where Anvil and Weight look identical is unreadable.
+    const paths = PART_KEYS.map((p) => PART_SPRITE[p]);
+    expect(new Set(paths).size, 'two parts share a sprite').toBe(paths.length);
   });
 });
