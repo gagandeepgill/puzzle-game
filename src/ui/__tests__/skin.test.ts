@@ -12,8 +12,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SKIN, SKINS, SKIN_LABEL, loadSkin, saveSkin } from '../pixel/skin.js';
 import { PART_SPRITE, PIXEL_PARTS, UI_SPRITE, hasPixelArt } from '../pixel/PixelSprite.js';
 import {
-  BAR_ART, BOARD_FRAME, BUTTON_ART, CARD_ART, CELL_ART, DIVIDER_ART, ICON_ART,
-  PANEL_ART, SCORE_BURST,
+  BAR_ART, BOARD_FRAME, BUTTON_FRAME, CARD_ART, CARD_FRAME, CELL_ART, DIVIDER_ART, EFFECT_ART,
+  ICON_ART, PANEL_ART,
 } from '../pixel/hudArt.js';
 import { PART_KEYS } from '../../game/types.js';
 
@@ -116,9 +116,9 @@ describe('pixel sprite coverage', () => {
  */
 describe('game HUD art', () => {
   const paths = [
-    ...Object.values(CARD_ART), ...Object.values(ICON_ART), ...Object.values(BUTTON_ART),
+    ...Object.values(CARD_ART), ...Object.values(ICON_ART), ...Object.values(EFFECT_ART),
     ...Object.values(BAR_ART), ...Object.values(CELL_ART),
-    BOARD_FRAME, SCORE_BURST, PANEL_ART, DIVIDER_ART,
+    BOARD_FRAME, PANEL_ART, DIVIDER_ART, BUTTON_FRAME, CARD_FRAME,
   ];
 
   it('every referenced file is on disk', () => {
@@ -144,14 +144,16 @@ describe('game HUD art', () => {
     expect(walk(dir).sort()).toEqual([...paths].sort());
   });
 
-  it('records a crop rectangle for every piece', () => {
-    // The source sheets are 1448x1086 and the pieces were located by
-    // measurement. Losing the rectangles means re-deriving them by eye.
-    // At least one per shipped file, and more where a piece was composed out
-    // of several: the board frame names two.
+  it('records where the pieces that were cropped came from', () => {
+    // Most of the art is delivered as individual files now and has no source
+    // rectangle to record. What is left cut out of a contact sheet still
+    // does, because losing the rectangle means re-deriving it by eye — and
+    // the sheets are 1448x1086.
+    const cropped = ['divider', 'bar-track', 'bar-fill', 'cards/frame'];
     const src = readFileSync(new URL('../pixel/hudArt.ts', import.meta.url), 'utf8');
     const rects = src.match(/\d+,\d+ \d+x\d+/g) ?? [];
-    expect(rects.length).toBeGreaterThanOrEqual(paths.length);
+    expect(rects.length, 'no crop rectangles are recorded at all')
+      .toBeGreaterThanOrEqual(cropped.length);
   });
 });
 

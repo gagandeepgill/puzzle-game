@@ -83,7 +83,19 @@ body:has(.game-skin) { background-color: #0a0f18; }
 
 /* The mockup frames the whole app in one console, gold-edged, rather than
    letting the panels float loose on the page. */
+/* The delivered corner sits in the console's top-left. Decorative, so it is
+   a background rather than an element in the tree. */
+.gm-shell::before {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  background: url('/assets/pixel/hud/icons/header-corner.png') no-repeat center / contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
 .gm-shell {
+  position: relative;
   border: 2px solid var(--gm-gold);
   border-radius: 4px;
   background: var(--gm-bg);
@@ -178,15 +190,13 @@ body:has(.game-skin) { background-color: #0a0f18; }
 
 .gm-box, .gm-panel {
   background: var(--gm-panel);
-  /* 2px borders and 2px radius on every panel, from the sheet's notes.
-  
-     Not the pack's panel frame. It was tried here and taken back out: that
-     frame is authored at 461x376 with a notched top edge and a status lamp,
-     and 9-sliced down to a 150x56 stat box the notch tiles into a scalloped
-     strip along every panel. It is used on the settings sheet instead, which
-     is the one surface in this skin big enough to carry it. */
-  border: 2px solid var(--gm-border);
-  border-radius: 2px;
+  /* The delivered panel frame, at its stated 8px inset. An earlier attempt
+     used the sci-fi panel sheet here and had to be taken back out: that art is
+     drawn at 461x376 with a notched top edge, and sliced down to a 150x56 box
+     the notch tiled into a scallop. This one is authored to slice. */
+  border: 8px solid transparent;
+  border-image: url('/assets/pixel/hud/frames/panel-frame.png') 8 / 8px / 0 round;
+  border-radius: 0;
   padding: var(--u) calc(var(--u) * 1.25);
   display: flex;
   flex-direction: column;
@@ -322,10 +332,10 @@ body:has(.game-skin) { background-color: #0a0f18; }
   position: relative;
   width: var(--board-w);
   max-width: 100%;
-  /* 16px against 48px slices, an exact third. At 12px the bezel read thinner
-     than the mockup's next to the same board. */
-  border: 16px solid transparent;
-  border-image: url('/assets/pixel/hud/board/frame.png') 48 / 16px / 0 round;
+  /* The delivered frame, at its stated 8px inset. Replaces one I composed out
+     of the tileset's corner and bar, which needed the inset inferred. */
+  border: 12px solid transparent;
+  border-image: url('/assets/pixel/hud/frames/board-frame.png') 8 / 12px / 0 round;
 }
 /* A silver sphere, which is how every mockup draws the marble. The sprite is
    painted on the wrapper and the shared `img` is hidden rather than swapped,
@@ -377,12 +387,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-board button[aria-label^='Row']:nth-child(even) {
   background-image: url('/assets/pixel/tiles/cell-alt.png');
 }
-.gm-board button[aria-label^='Row']:focus-visible {
-  border-color: var(--gm-blue);
-  background-image: url('/assets/pixel/hud/board/cell-focus.png');
-  background-size: 100% 100%;
-  image-rendering: pixelated;
-}
+.gm-board button[aria-label^='Row']:focus-visible { border-color: var(--gm-blue); }
 /* Placement heat arrives as a Tailwind ring, which is a box-shadow. An earlier
    `box-shadow: none` here to clear the classic recess took the ring with it and
    the whole preview went dark, so the recess is left in place instead: the tile
@@ -395,20 +400,23 @@ body:has(.game-skin) { background-color: #0a0f18; }
    when holding nothing, and on hover or focus rather than every cell at once
    — lighting all 24 empty cells buried the gold heat ring, which is the
    reading that says where to build rather than merely where it is legal to. */
-.gm-board.is-placing button[aria-label*='press to install']:hover,
-.gm-board.is-placing button[aria-label*='press to install']:focus-visible {
-  border-color: var(--gm-green);
-  background-image: url('/assets/pixel/hud/board/cell-valid.png');
-  background-size: 100% 100%;
+/* The delivered overlays, layered over the cell rather than replacing its
+   tile — they are transparent brackets, so the board reads through them. The
+   tileset's stone crosshairs they replace had to swap the whole tile out. */
+.gm-board.is-placing button[aria-label^='Row']:hover::before,
+.gm-board.is-placing button[aria-label^='Row']:focus-visible::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/assets/pixel/hud/board/invalid-placement.png') center / 100% 100% no-repeat;
   image-rendering: pixelated;
+  pointer-events: none;
 }
-.gm-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):hover,
-.gm-board.is-placing button[aria-label^='Row']:not([aria-label*='press to install']):focus-visible {
-  border-color: var(--gm-red);
-  background-image: url('/assets/pixel/hud/board/cell-invalid.png');
-  background-size: 100% 100%;
-  image-rendering: pixelated;
+.gm-board.is-placing button[aria-label*='press to install']:hover::before,
+.gm-board.is-placing button[aria-label*='press to install']:focus-visible::before {
+  background-image: url('/assets/pixel/hud/board/valid-placement.png');
 }
+.gm-board button[aria-label^='Row'] { position: relative; }
 
 .gm-cleared {
   position: absolute;
@@ -545,7 +553,15 @@ body:has(.game-skin) { background-color: #0a0f18; }
 }
 /* Blueprints keep the plain frame. A hue-rotate to tint it blue rotated the
    part sprite inside it too, because a filter applies to the whole subtree. */
-.gm-card.is-blueprint { background-image: url('/assets/pixel/hud/cards/frame.png'); }
+/* Blueprints take the delivered scalable frame, so they read as a different
+   kind of offer from a part rather than reusing the part card's art. */
+.gm-card.is-blueprint {
+  background-image: none;
+  aspect-ratio: auto;
+  border: 8px solid transparent;
+  border-image: url('/assets/pixel/hud/frames/card-frame.png') 8 / 8px / 0 round;
+  padding: 12px 10px;
+}
 
 /* ---- part effects ---- */
 
@@ -600,7 +616,23 @@ body:has(.game-skin) { background-color: #0a0f18; }
    play. Rather than flash a board tile mid-launch, it keeps its CSS bounce
    until the frames are re-sent. */
 .gm-board button.animate-fire:not(:has(img[data-part='bell']))::after {
-  content: none;
+  background-image: url('/assets/pixel/hud/effects/hit.png');
+  background-size: contain;
+  background-position: center;
+  animation: gm-fx-pop var(--px-t-weight, 150ms) steps(3) 1 forwards;
+}
+.gm-board button.animate-fire:has(img[data-part='coil'])::after,
+.gm-board button.animate-fire:has(img[data-part='reso'])::after {
+  background-image: url('/assets/pixel/hud/effects/pulse.png');
+  animation-duration: var(--px-t-coil, 180ms);
+}
+.gm-board button.animate-fire:has(img[data-part='prism'])::after {
+  background-image: url('/assets/pixel/hud/effects/spark.png');
+  animation-duration: var(--px-t-prism, 260ms);
+}
+@keyframes gm-fx-pop {
+  from { opacity: 1; transform: scale(.6); }
+  to { opacity: 0; transform: scale(1.3); }
 }
 
 @keyframes gm-jam-frames {
@@ -679,7 +711,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
   width: 52px;
   height: 52px;
   transform: translate(-50%, -50%);
-  background: url('/assets/pixel/hud/fx/score-burst.png') center / contain no-repeat;
+  background: url('/assets/pixel/hud/effects/score-pop-fx.png') center / contain no-repeat;
   image-rendering: pixelated;
   animation: gm-burst var(--px-t-score, 300ms) steps(4) 1 forwards;
 }
@@ -722,8 +754,8 @@ body:has(.game-skin) { background-color: #0a0f18; }
    border is 1:1, which is why the files are stored at a quarter of source. */
 .gm-btn {
   background: transparent;
-  border: 8px solid transparent;
-  border-image: url('/assets/pixel/hud/buttons/btn.png') 8 / 8px / 0 round;
+  border: 6px solid transparent;
+  border-image: url('/assets/pixel/hud/frames/button-frame.png') 6 / 6px / 0 round;
   border-radius: 0;
   color: var(--gm-text);
   font-size: 12px;
@@ -738,37 +770,21 @@ body:has(.game-skin) { background-color: #0a0f18; }
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   transition: border-color 120ms, color 120ms;
 }
-.gm-btn-icon {
-  padding: 0;
-  min-width: 40px;
-  border-image: url('/assets/pixel/hud/buttons/btn-icon.png') 12 / 10px / 0 round;
-  border-width: 10px;
-}
+.gm-btn-icon { padding: 0; min-width: 40px; }
 @media (hover: hover) and (pointer: fine) {
   .gm-btn:hover { filter: brightness(1.25); }
 }
-.gm-btn:active {
-  transform: translateY(1px);
-  border-image-source: url('/assets/pixel/hud/buttons/btn-down.png');
-}
-.gm-btn-on {
-  border-image-source: url('/assets/pixel/hud/buttons/btn-on.png');
-  color: var(--gm-gold);
-}
+.gm-btn:active { transform: translateY(1px); filter: brightness(.85); }
+/* One button frame in this batch, not the three-state set it replaces, so
+   active is carried by colour. Gold is what the sheet's notes give an
+   important state. */
+.gm-btn-on { color: var(--gm-gold); }
 /* No red frame in the pack, so the armed reset keeps a colour rather than a
    frame. It is the one state that has to read as a warning. */
 .gm-btn-danger { color: var(--gm-red); }
 
 .gm-settings button { border-radius: 2px; }
-/* The pack's panel frame, at the size it was drawn for. The notched top edge
-   and the corner lamp read as intended across a full-width sheet, where on a
-   stat box they tiled. */
-.gm-settings {
-  gap: 8px;
-  border: 14px solid transparent;
-  border-image: url('/assets/pixel/hud/panels/panel.png') 20 / 14px / 0 round;
-  border-radius: 0;
-}
+.gm-settings { gap: 8px; }
 
 /* ---- mobile: the sheet's stacked order ---- */
 

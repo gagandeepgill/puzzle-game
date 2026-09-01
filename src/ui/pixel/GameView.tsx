@@ -99,7 +99,9 @@ export function GameView({
           onClick={onReset}
           className={`gm-btn gm-btn-icon${resetArmed ? ' gm-btn-danger' : ''}`}
         >
-          <UIIcon name="reset" size={14} />
+          {resetArmed
+            ? <img src={ICON_ART.warning} alt="" aria-hidden className="gm-icon-sm" width={32} height={32} />
+            : <UIIcon name="reset" size={14} />}
           <span className={resetArmed ? '' : 'sr-only'}>
             {resetArmed ? 'Reset run?' : 'Reset the run'}
           </span>
@@ -288,7 +290,7 @@ export function GameView({
                       which does not exist here, so this carries the part's real
                       effect badge instead: +3, ×2. Same position, real data. */}
                   <span aria-hidden className={`gm-card-badge${on ? ' is-check' : ''}`}>
-                    {on ? <img src={ICON_ART.check} alt="" aria-hidden className="gm-icon-xs" width={32} height={32} /> : PARTS[key].badge}
+                    {on ? <img src={ICON_ART.success} alt="" aria-hidden className="gm-icon-xs" width={32} height={32} /> : PARTS[key].badge}
                   </span>
                   {hasPixelArt(key)
                     ? <PixelPart part={key} size="32px" />

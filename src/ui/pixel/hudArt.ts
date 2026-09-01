@@ -28,7 +28,7 @@ const BASE = '/assets/pixel/hud';
  * Two source rectangles, both in retro_sci_fi_board_tileset_sprites:
  * the corner at 53,118 324x334 and the bar at 454,206 696x98.
  */
-export const BOARD_FRAME = `${BASE}/board/frame.png`;
+export const BOARD_FRAME = `${BASE}/frames/board-frame.png`;
 
 /**
  * The quota bar, and the divider under a section title.
@@ -63,31 +63,7 @@ export const DIVIDER_ART = `${BASE}/panels/divider.png`;
  *
  * pixel_art_sci_fi_hud_panel_set: 925,35 461x376.
  */
-export const PANEL_ART = `${BASE}/panels/panel.png`;
-
-/**
- * Button frames, as 9-slices.
- *
- * Blue is the resting state and gold marks an active or important one, which
- * is the sheet's own rule for gold. The pressed frame is the third column of
- * each row rather than a CSS darkening, so the press is authored art.
- *
- * The sheet also draws S / E / 1 keycaps beside these. They stay unused: the
- * game has no keyboard shortcut to label, and drawing one would promise a
- * binding that does not exist.
- *
- * Quartered from the source so an 8px slice renders at an 8px border.
- */
-export const BUTTON_ART = {
-  /** pixel_ui_button_and_keycap_sprite_sheet: 32,329 431x146 */
-  idle: `${BASE}/buttons/btn.png`,
-  /** 32,98 431x148 */
-  active: `${BASE}/buttons/btn-on.png`,
-  /** 986,100 428x153 */
-  pressed: `${BASE}/buttons/btn-down.png`,
-  /** 56,552 195x188, the square one, for the header's icon buttons */
-  icon: `${BASE}/buttons/btn-icon.png`,
-} as const;
+export const PANEL_ART = `${BASE}/frames/panel-frame.png`;
 
 /**
  * HUD icons.
@@ -98,8 +74,10 @@ export const BUTTON_ART = {
  * twin, so it stays here.
  */
 export const ICON_ART = {
-  /** neon_pixel_ui_icon_sheet: 170,768 223x224 */
-  check: `${BASE}/icons/check.png`,
+  /** The selected card's tick, and the armed reset's warning. */
+  success: `${BASE}/icons/success-badge.png`,
+  warning: `${BASE}/icons/warning.png`,
+  headerCorner: `${BASE}/icons/header-corner.png`,
 } as const;
 
 /**
@@ -119,18 +97,6 @@ export const FX_FRAME_COUNT = 6;
 export const FX_EFFECTS = ['spring', 'bell', 'jam'] as const;
 
 /**
- * The burst behind the biggest score pops.
- *
- * The atlas also draws `+10`, `+50` and `+100` as finished plates. Those are
- * unusable here: a score is whatever the machine made it, and a plate with
- * 100 painted on it cannot show 37. The burst carries no number, so it goes
- * behind a figure the run actually produced.
- *
- * retro_pixel_game_fx_sprite_atlas: 56,43 149x187.
- */
-export const SCORE_BURST = `${BASE}/fx/score-burst.png`;
-
-/**
  * Placement states, on the cell being aimed at.
  *
  * The pack draws these three and CSS cannot draw a crosshair, so they are art.
@@ -145,9 +111,25 @@ export const SCORE_BURST = `${BASE}/fx/score-burst.png`;
  * invalid 739,521 327x333, focus 1091,518 333x340.
  */
 export const CELL_ART = {
-  valid: `${BASE}/board/cell-valid.png`,
-  invalid: `${BASE}/board/cell-invalid.png`,
-  focus: `${BASE}/board/cell-focus.png`,
+  valid: `${BASE}/board/valid-placement.png`,
+  invalid: `${BASE}/board/invalid-placement.png`,
+} as const;
+
+/**
+ * The one button frame, and the effects that play over a cell.
+ *
+ * `hit`, `spark` and `pulse` are single frames rather than sequences, so they
+ * scale and fade rather than walking. They cover the parts with no delivered
+ * frame set: a pulse for the multipliers, a spark for a split, a hit for
+ * everything else.
+ */
+export const BUTTON_FRAME = `${BASE}/frames/button-frame.png`;
+export const CARD_FRAME = `${BASE}/frames/card-frame.png`;
+export const EFFECT_ART = {
+  hit: `${BASE}/effects/hit.png`,
+  spark: `${BASE}/effects/spark.png`,
+  pulse: `${BASE}/effects/pulse.png`,
+  scorePop: `${BASE}/effects/score-pop-fx.png`,
 } as const;
 
 /*
