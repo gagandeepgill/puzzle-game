@@ -38,14 +38,16 @@ export const CELL_ART = {
  * Draft card frames.
  *
  * All three are 311x454 in the sheet, so they swap without the card
- * changing size. The selected one is cropped inside its glow: the glow is a
- * soft gradient that quadrupled the file, and a CSS drop-shadow reproduces it
- * from the frame that is already there.
+ * changing size. The selected one is the gold frame, because the sheet's
+ * notes make gold the colour of a primary action or an important state and
+ * its own card-state row draws SELECTED in gold. It is cropped inside its
+ * glow: the glow is a soft gradient that quadrupled the file, and a CSS
+ * drop-shadow reproduces it from the frame that is already there.
  */
 export const CARD_ART = {
   /** pixel_sci_fi_card_ui_sprite_sheet: 27,182 311x454 */
   idle: `${BASE}/cards/frame.png`,
-  /** 383,185 311x454, the glowing frame cropped to the same box as the others */
+  /** 749,185 311x454, the gold frame cropped to the same box as the others */
   selected: `${BASE}/cards/frame-selected.png`,
   /** 1109,182 315x454 */
   disabled: `${BASE}/cards/frame-disabled.png`,

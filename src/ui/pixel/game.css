@@ -1,33 +1,44 @@
 /**
  * The `game` theme.
  *
- * A second reading of the reference sheet, added beside `pixel` rather than
- * replacing it. Its own `gm-` vocabulary, so it cannot disturb either of the
- * other two skins: `classic` uses `ck-`, `pixel` uses `px-`.
+ * Added beside `pixel` rather than replacing it. Its own `gm-` vocabulary, so
+ * it cannot disturb either of the other two skins: `classic` uses `ck-`,
+ * `pixel` uses `px-`.
  *
- * The palette is the sheet's own swatch row. Three values were lifted to clear
- * their contrast floors, measured against `--gm-panel-alt`, which is the
- * tightest background here. The supplied value stays in the comment.
+ * Palette, spacing and the responsive ratios are the mockup sheet's own
+ * tables, transcribed rather than interpreted. One value moved: `border`
+ * measured 1.29:1 against `panel`, under the 3.0 that WCAG 1.4.11 wants of a
+ * control boundary, and it is the outline of every panel and every board cell,
+ * and cells are buttons. Everything else passed as supplied; the numbers are
+ * in `contrast.test.ts`, which reads them back out of this file.
  */
 
 .game-skin {
-  --gm-bg: #0a0f18;
-  --gm-panel: #111a26;
-  --gm-panel-alt: #16202e;
-  /* #4d6a88 measured 2.92:1, under the 3.0 a control boundary needs. */
-  --gm-border: #4f6c8b;   /* 3.01:1 on panel-alt */
-  --gm-text: #f2ece0;
-  --gm-muted: #93a0b4;
+  /* 6.3 Color tokens. */
+  --gm-bg: #0c1220;
+  --gm-panel: #121a2b;
+  --gm-panel-alt: #1a2436;
+  /* #2a3650 measured 1.29:1 on panel. Scaled until it cleared 3.0. */
+  --gm-border: #566fa4;   /* 3.12:1 on panel-alt */
+  --gm-text: #e6eaf2;
+  --gm-muted: #8b94a6;
 
-  --gm-green: #6ee7b7;
-  --gm-blue: #5aa9f8;
-  /* #8b5cf6 measured 3.42:1 as card-border and text. */
-  --gm-purple: #a97cf8;
-  --gm-gold: #f4b825;
+  --gm-green: #39d16a;
+  --gm-blue: #4aa3ff;
+  --gm-purple: #c475ff;
+  --gm-gold: #f0b43c;
+  --gm-red: #ff5a5a;
+  /* Not in the sheet's swatch row. Kept because the wire and coil sprites are
+     orange and the drop readout picks up their colour. */
   --gm-orange: #f07808;
-  /* #d94b56 measured 4.26:1, the same lift the other skins needed. */
-  --gm-red: #e8515c;      /* 4.50:1 on panel-alt */
   --gm-cyan: #6fd3d9;
+
+  /* 6.1 Spacing scale, base 8px, and 6.2's ratios applied to it. Everything
+     that is a gap or a padding in this file is a multiple of --u, so one
+     declaration per breakpoint moves the whole layout rather than forty. */
+  --u: 8px;
+  --icon: 32px;
+  --card-pad: 12px;
 
   color: var(--gm-text);
   font-family: 'Pixelify Sans', 'Outfit', 'Segoe UI', system-ui, sans-serif;
@@ -48,7 +59,7 @@
   --badge: clamp(9px, calc(var(--cell) * 0.16), 12px);
   /* The two rail columns plus the two grid gaps, so one number describes the
      desktop composition's width. */
-  --rails-w: 332px;
+  --rails-w: 316px;
 }
 @media (min-width: 880px) {
   .game-skin { --cell: clamp(52px, min((100dvh - 340px) / 6, (100vw - 520px) / 5), 64px); }
@@ -107,28 +118,29 @@ body:has(.game-skin) { background-color: #0a0f18; }
 
 /* ---- gameplay row ---- */
 
-.gm-play { display: flex; flex-direction: column; gap: 14px; }
+.gm-play { display: flex; flex-direction: column; gap: calc(var(--u) * 2); }
 
 @media (min-width: 880px) {
-  /* The sheet's desktop composition: a narrow stats column, a slightly wider
-     column of jam and blueprints, and the board to the right of both. The
-     board column sizes to the board, and the group is centred, so the rails
-     sit against it rather than out at the shell edges. */
+  /* The mockup's composition, all three of them: stats left, board centre,
+     jam and blueprints right. An earlier pass put both rails on the left,
+     reading a different sheet; the desktop, tablet and mobile mockups all
+     agree on this one. */
   .gm-play {
     display: grid;
-    grid-template-columns: 136px 168px auto;
+    grid-template-columns: 136px auto 152px;
     justify-content: center;
     align-items: start;
   }
 }
 
-.gm-rail { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.gm-rail { display: flex; flex-direction: column; gap: var(--u); min-width: 0; }
 
 .gm-box, .gm-panel {
   background: var(--gm-panel);
-  border: 1px solid var(--gm-border);
+  /* 2px borders and 2px radius on every panel, from the sheet's notes. */
+  border: 2px solid var(--gm-border);
   border-radius: 2px;
-  padding: 8px 10px;
+  padding: var(--u) calc(var(--u) * 1.25);
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -231,8 +243,29 @@ body:has(.game-skin) { background-color: #0a0f18; }
   position: relative;
   width: var(--board-w);
   max-width: 100%;
-  border: 2px solid var(--gm-gold);
+  border: 2px solid var(--gm-border);
   border-radius: 2px;
+}
+/* 4.17's corner brackets, 32px, in gold. Drawn rather than cropped out of the
+   sheet: four L shapes are eight bars, and CSS keeps them crisp at every size
+   where a bitmap would need a file per scale. One element with eight
+   backgrounds, because `::before` and `::after` are two boxes and the sheet
+   draws four corners. Decorative, so it is out of the tree. */
+.gm-board::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  --bar: linear-gradient(var(--gm-gold), var(--gm-gold));
+  background:
+    var(--bar) 0 0 / 32px 2px no-repeat,
+    var(--bar) 0 0 / 2px 32px no-repeat,
+    var(--bar) 100% 0 / 32px 2px no-repeat,
+    var(--bar) 100% 0 / 2px 32px no-repeat,
+    var(--bar) 0 100% / 32px 2px no-repeat,
+    var(--bar) 0 100% / 2px 32px no-repeat,
+    var(--bar) 100% 100% / 32px 2px no-repeat,
+    var(--bar) 100% 100% / 2px 32px no-repeat;
 }
 .gm-board .bg-panel-lit { background-color: var(--gm-panel-alt); }
 /* Board is shared, so it arrives painted for classic: dashed borders, 9px
@@ -306,7 +339,16 @@ body:has(.game-skin) { background-color: #0a0f18; }
   flex-direction: column;
   gap: 8px;
 }
-.gm-draft-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* 4.9 draft title bar: the title is a panel with the skip control in it,
+   rather than a heading floating above the cards. */
+.gm-draft-head {
+  /* Row, restated. `.gm-panel` stacks its children, and inheriting that here
+     put the skip control on a line of its own under the title. */
+  display: flex; flex-direction: row;
+  align-items: center; justify-content: space-between;
+  gap: calc(var(--u) * 1.25);
+  padding-block: calc(var(--u) * 0.5);
+}
 .gm-draft-title {
   font-size: 15px;
   font-weight: 700;
@@ -318,7 +360,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
 .gm-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: calc(var(--u) * 1.25);
   justify-items: center;
 }
 /* The frame is art, and the art is 311x454, so the card holds that ratio and
@@ -334,6 +376,7 @@ body:has(.game-skin) { background-color: #0a0f18; }
   background: url('/assets/pixel/hud/cards/frame.png') center / 100% 100% no-repeat;
   image-rendering: pixelated;
   padding: 9% 9% 12%;
+  --pad: var(--card-pad);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -362,21 +405,19 @@ body:has(.game-skin) { background-color: #0a0f18; }
 }
 /* Selected, the badge box turns green and carries the check, which is what
    the sheet's card-state row shows. One box, not two. */
-.gm-card-badge.is-check { color: var(--gm-green); }
+.gm-card-badge.is-check { color: var(--gm-gold); }
 .gm-card-name { font-size: 13px; font-weight: 700; text-align: center; }
 .gm-card-rule { font-size: 11px; line-height: 1.35; text-align: center; color: var(--gm-muted); }
 @media (hover: hover) and (pointer: fine) {
   .gm-card:hover { transform: translateY(-2px); }
 }
-/* The glow was cropped off the selected frame, because as a soft gradient it
-   was four fifths of the file. A drop-shadow puts it back from the frame
-   already on screen. It stays the pack's violet: the frame under it is
-   violet, and a green halo around a violet frame read as a printing error.
-   Green is still what says yes here — it is the check in the badge well and
-   the placement tile the same choice lights up on the board. */
+/* Selected is gold, from the sheet's card-state row and its note that gold
+   marks a primary action or an important state. The glow was cropped off the
+   frame, because as a soft gradient it was four fifths of the file; a
+   drop-shadow puts it back from the frame already on screen. */
 .gm-card.is-selected {
   background-image: url('/assets/pixel/hud/cards/frame-selected.png');
-  filter: drop-shadow(0 0 7px rgb(169 124 248 / .6));
+  filter: drop-shadow(0 0 7px rgb(240 180 60 / .55));
 }
 .gm-card:disabled {
   background-image: url('/assets/pixel/hud/cards/frame-disabled.png');
@@ -408,22 +449,30 @@ body:has(.game-skin) { background-color: #0a0f18; }
   text-transform: uppercase;
 }
 .gm-footer a { text-decoration: underline; text-decoration-style: dotted; }
+/* Pushes the arcade link to the right edge and leaves the version beside the
+   name, which is where the mockup's footer puts it. */
+.gm-version { margin-right: auto; }
 
 /* ---- buttons ---- */
 
 .gm-btn {
   background: var(--gm-panel);
-  border: 1px solid var(--gm-border);
+  border: 2px solid var(--gm-border);
   border-radius: 2px;
   color: var(--gm-text);
   font-size: 12px;
   font-weight: 700;
-  padding: 0 12px;
+  /* "Text is uppercase" is one of the sheet's notes, and every button in
+     every mockup is set that way. Applied as a transform so the accessible
+     name stays the sentence case a screen reader should read. */
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 0 calc(var(--u) * 1.5);
   min-height: 36px;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   transition: border-color 120ms, color 120ms;
 }
-.gm-btn-icon { padding: 0 10px; min-width: 36px; }
+.gm-btn-icon { padding: 0 calc(var(--u) * 1.25); min-width: 36px; }
 @media (hover: hover) and (pointer: fine) {
   .gm-btn:hover { border-color: var(--gm-blue); }
 }
@@ -472,11 +521,15 @@ body:has(.game-skin) { background-color: #0a0f18; }
    The plates and card frames are art, so they come down faster than type
    does: full size on desktop, about 80% on a tablet, about 60% on a phone. */
 @media (min-width: 600px) and (max-width: 879px) {
+  /* 6.2, tablet column: 80%. */
+  .game-skin { --u: 6.4px; --icon: 26px; --card-pad: 10px; }
   .gm-logo img { height: 34px; }
   .gm-card { max-width: 168px; }
-  .gm-cards { gap: 8px; }
 }
 @media (max-width: 599px) {
+  /* 6.2, mobile column: 60%. Border width and corner radius are 2px at every
+     size, which is why neither of them is on this scale. */
+  .game-skin { --u: 4.8px; --icon: 19px; --card-pad: 8px; }
   .gm-card { max-width: 120px; }
   /* One header row at 375. The plate is wider than the text wordmark it
      replaced, which pushed the settings button onto a line of its own again;

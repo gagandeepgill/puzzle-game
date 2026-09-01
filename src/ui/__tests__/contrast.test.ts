@@ -199,9 +199,12 @@ describe('pixel palette floors', () => {
  * The game skin's palette.
  *
  * Same treatment as the pixel one above: custom properties the Tailwind suite
- * cannot see, read out of `game.css` and held to the same floors. Two of the
- * sheet's swatches did not clear them and were lifted, purple at 3.42:1 as a
- * card border, red at 4.26:1 as text, and the border swatch at 2.92:1.
+ * cannot see, read out of `game.css` and held to the same floors.
+ *
+ * The mockup sheet's own token table, transcribed. Ten of its eleven values
+ * cleared as supplied; `border` measured 1.29:1 against `panel` and was
+ * lifted, which matters more here than anywhere else because it is the
+ * outline of every panel and every board cell, and cells are buttons.
  */
 describe('game palette floors', () => {
   const css = readFileSync(new URL('../pixel/game.css', import.meta.url), 'utf8');
@@ -241,9 +244,22 @@ describe('game palette floors', () => {
     }
   });
 
-  it('keeps the supplied value recorded next to each correction', () => {
-    for (const original of ['#8b5cf6', '#d94b56', '#4d6a88']) {
-      expect(css, original).toContain(original);
+  it('keeps the supplied value recorded next to the correction', () => {
+    // The one token that moved. Its supplied hex stays in a comment so the
+    // change is auditable rather than silent.
+    expect(css).toContain('#2a3650');
+  });
+
+  it('uses the sheet hexes for the tokens that passed', () => {
+    // Transcription, not interpretation. If one of these drifts, it drifted
+    // by hand rather than by measurement.
+    const supplied: Record<string, Hex> = {
+      bg: '#0c1220', panel: '#121a2b', 'panel-alt': '#1a2436',
+      text: '#e6eaf2', muted: '#8b94a6', gold: '#f0b43c',
+      green: '#39d16a', blue: '#4aa3ff', purple: '#c475ff', red: '#ff5a5a',
+    };
+    for (const [name, hex] of Object.entries(supplied)) {
+      expect(token(name), `--gm-${name}`).toBe(hex);
     }
   });
 });

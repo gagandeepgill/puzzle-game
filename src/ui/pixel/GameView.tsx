@@ -33,6 +33,13 @@ import { LOGO_ART } from './hudArt.js';
  * Everything rendered here is real run state.
  */
 
+/**
+ * Grouped digits, which is how every number in the mockup is set: SCORE reads
+ * 12,450 rather than 12450. Presentation only — the value is unchanged and
+ * the screen reader gets the same number either way.
+ */
+const n = (value: number) => value.toLocaleString();
+
 interface Props {
   readonly run: ReturnType<typeof usePayloadRun>;
   readonly heat: ReadonlyMap<CellIndex, HeatTier>;
@@ -91,7 +98,7 @@ export function GameView({
         </span>
         <span className="gm-chip">
           <b className="gm-label">Score</b>
-          <b className="gm-num gm-gold">{state.total}</b>
+          <b className="gm-num gm-gold">{n(state.total)}</b>
         </span>
         <span className="gm-header-spacer" />
         <button
@@ -122,7 +129,7 @@ export function GameView({
         <aside className="gm-rail">
           <Box label="Quota">
             <span className="gm-num">
-              <b className="gm-gold">{state.roundScore}</b> / {run.quota}
+              <b className="gm-gold">{n(state.roundScore)}</b> / {n(run.quota)}
             </span>
             <div className="gm-bar"><div className="gm-bar-fill" style={{ width: `${pct}%` }} /></div>
           </Box>
@@ -140,7 +147,7 @@ export function GameView({
           </Box>
 
           <Box label="Banked">
-            <b className="gm-num">{state.total}</b>
+            <b className="gm-num">{n(state.total)}</b>
             <span aria-hidden className="gm-diamond" />
             {playback.ticking && (
               <b key={playback.tick} className="gm-tick">+{playback.tick}</b>
@@ -157,49 +164,6 @@ export function GameView({
               {!moving ? 'Move a part' : moveFrom === null ? 'Pick a part…' : 'Pick a cell…'}
             </button>
           )}
-        </aside>
-
-        <aside className="gm-rail gm-rail-info">
-          <div key={run.jam?.name ?? 'none'} className={`gm-panel gm-jam${run.jam ? ' is-active' : ''}`}>
-            <span className="gm-label">Jam</span>
-            {run.jam ? (
-              <div className="gm-jam-body">
-                <img src={UI_SPRITE.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
-                <span>
-                  <b className="gm-jam-name">{run.jam.name}</b>
-                  <span className="gm-note">{run.jam.rule}</span>
-                </span>
-              </div>
-            ) : (
-              <span className="gm-note">None active.</span>
-            )}
-          </div>
-
-          <div className="gm-panel">
-            <span className="gm-label gm-label-icon">
-              <img
-                src={UI_SPRITE.blueprints}
-                alt=""
-                aria-hidden
-                className="gm-icon"
-                width={16}
-                height={16}
-              />
-              Blueprints
-            </span>
-            {state.blueprints.size === 0 ? (
-              <span className="gm-note">None yet.</span>
-            ) : (
-              <ul aria-label="Blueprints in effect" className="gm-bplist">
-                {[...state.blueprints].map((key) => (
-                  <li key={key} aria-label={`${BLUEPRINTS[key].name}. ${BLUEPRINTS[key].rule}`}>
-                    <Icon name={BLUEPRINTS[key].glyph as IconName} size={13} />
-                    <span>{BLUEPRINTS[key].name}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
         </aside>
 
         <div className="gm-boardwrap">
@@ -258,11 +222,54 @@ export function GameView({
             </button>
           )}
         </div>
+
+        <aside className="gm-rail gm-rail-info">
+          <div key={run.jam?.name ?? 'none'} className={`gm-panel gm-jam${run.jam ? ' is-active' : ''}`}>
+            <span className="gm-label">Jam</span>
+            {run.jam ? (
+              <div className="gm-jam-body">
+                <img src={UI_SPRITE.jam} alt="" aria-hidden className="gm-icon" width={32} height={32} />
+                <span>
+                  <b className="gm-jam-name">{run.jam.name}</b>
+                  <span className="gm-note">{run.jam.rule}</span>
+                </span>
+              </div>
+            ) : (
+              <span className="gm-note">None active.</span>
+            )}
+          </div>
+
+          <div className="gm-panel">
+            <span className="gm-label gm-label-icon">
+              <img
+                src={UI_SPRITE.blueprints}
+                alt=""
+                aria-hidden
+                className="gm-icon"
+                width={16}
+                height={16}
+              />
+              Blueprints
+            </span>
+            {state.blueprints.size === 0 ? (
+              <span className="gm-note">None yet.</span>
+            ) : (
+              <ul aria-label="Blueprints in effect" className="gm-bplist">
+                {[...state.blueprints].map((key) => (
+                  <li key={key} aria-label={`${BLUEPRINTS[key].name}. ${BLUEPRINTS[key].rule}`}>
+                    <Icon name={BLUEPRINTS[key].glyph as IconName} size={13} />
+                    <span>{BLUEPRINTS[key].name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </aside>
       </div>
 
       {drafting && (
         <section className="gm-draft">
-          <div className="gm-draft-head">
+          <div className="gm-draft-head gm-panel">
             <h2 className="gm-draft-title">Draft: choose 1 part</h2>
             <button
               type="button"
@@ -304,7 +311,7 @@ export function GameView({
 
       {state.phase.kind === 'blueprint' && (
         <section className="gm-draft">
-          <h2 className="gm-draft-title gm-blue">A blueprint surfaces</h2>
+          <h2 className="gm-draft-title gm-blue gm-panel">A blueprint surfaces</h2>
           <div className="gm-cards">
             {state.phase.offers.map((key) => (
               <button
@@ -333,6 +340,7 @@ export function GameView({
 
       <footer className="gm-footer">
         <span>Payload · Game</span>
+        <span className="gm-version">v{__APP_VERSION__}</span>
         <a href="/">Arcade</a>
       </footer>
 
